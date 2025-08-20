@@ -35,7 +35,21 @@ function Draft({ wsService }) {
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(false);
 
-
+  // Test Supabase connection
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const response = await axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-status');
+        console.log('✅ Supabase connection successful:', response.data);
+        setError(null);
+      } catch (err) {
+        console.error('❌ Supabase connection failed:', err);
+        setError('Cannot connect to Supabase backend');
+      }
+    };
+    
+    testConnection();
+  }, []);
 
   useEffect(() => {
     if (currentUser) {

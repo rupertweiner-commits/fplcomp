@@ -38,17 +38,20 @@ class AuthService {
     );
   }
 
-  async login(username, password) {
+  async login(username, email) {
     try {
-      const response = await axios.post('/api/draft/login', { username, password });
+      const response = await axios.post('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/auth-login', { 
+        username, 
+        email: email || `${username}@example.com` 
+      });
       
       if (response.data.success) {
-        const { user, token } = response.data;
+        const { user } = response.data.data;
         
-        // Store token and user data
-        this.token = token;
+        // Store user data (no token for now)
+        this.token = 'temp-token';
         this.user = user;
-        localStorage.setItem(this.tokenKey, token);
+        localStorage.setItem(this.tokenKey, 'temp-token');
         localStorage.setItem(this.userKey, JSON.stringify(user));
         
         return { success: true, user };
