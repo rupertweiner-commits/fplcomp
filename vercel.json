@@ -24,11 +24,6 @@
     "REACT_APP_SUPABASE_URL": "@supabase_url",
     "REACT_APP_SUPABASE_ANON_KEY": "@supabase_anon_key"
   },
-  "functions": {
-    "api/**/*.js": {
-      "runtime": "nodejs18.x"
-    }
-  },
   "regions": ["iad1"],
   "cleanUrls": true,
   "trailingSlash": false,
