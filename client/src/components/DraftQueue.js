@@ -1,18 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Clock, Play, Pause, Trophy, User, SkipForward, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
-import { 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  Clock, 
-  User, 
-  CheckCircle, 
-  AlertCircle,
-  SkipForward,
-  Users,
-  Trophy
-} from 'lucide-react';
-
 const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   const [draftStatus, setDraftStatus] = useState(null);
   const [draftProgress, setDraftProgress] = useState(null);

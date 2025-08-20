@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { User, Mail, Camera, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import ProfilePictureUpload from './ProfilePictureUpload';
 
 const ProfileCompletion = ({ currentUser, onProfileComplete }) => {

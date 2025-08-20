@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, X, User, CheckCircle, AlertCircle } from 'lucide-react';
-
+import { X, Upload, Camera, AlertCircle, CheckCircle } from 'lucide-react';
 const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -327,4 +326,5 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 };
 
 export default ProfilePictureUpload;
+
 

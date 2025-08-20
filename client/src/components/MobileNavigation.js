@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Shield, User, LogOut, Settings } from 'lucide-react';
-import { authService } from '../services/authService.js';
-
+import { Shield, User, Settings, X, Menu, LogOut } from 'lucide-react';
 const MobileNavigation = ({ currentUser, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();

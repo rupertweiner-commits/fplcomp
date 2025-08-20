@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Activity, Clock, User, TrendingUp, BarChart3 } from 'lucide-react';
-
+import { Activity, User, TrendingUp, BarChart3, Clock } from 'lucide-react';
 const UserActivity = ({ userId, isAdmin = false }) => {
   const [activityData, setActivityData] = useState(null);
   const [recentActivity, setRecentActivity] = useState([]);

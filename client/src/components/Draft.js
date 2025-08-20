@@ -35,23 +35,7 @@ function Draft({ wsService }) {
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(false);
 
-  // Define tabs based on user admin status
-  const getAvailableTabs = () => {
-    const baseTabs = [
-      { id: 'team-management', label: 'Team Management', icon: Users },
-      { id: 'draft-queue', label: 'Draft Queue', icon: Users },
-      { id: 'live-scores', label: 'Live Scores', icon: Clock },
-      { id: 'simulation', label: 'Simulation', icon: Dice6 },
-      { id: 'profile', label: 'Profile', icon: User }
-    ];
 
-    // Add admin-only tabs
-    if (currentUser?.isAdmin) {
-      baseTabs.push({ id: 'user-activity', label: 'User Activity', icon: Activity });
-    }
-
-    return baseTabs;
-  };
 
   useEffect(() => {
     if (currentUser) {
@@ -174,21 +158,7 @@ function Draft({ wsService }) {
     }
   };
 
-  const handleRemovePlayer = async (playerId) => {
-    try {
-      const response = await axios.post('/api/draft/remove-player', {
-        userId: currentUser.id,
-        playerId: playerId
-      });
-      
-      // Refresh data after successful removal
-      await fetchDraftData();
-      
-      return response.data;
-    } catch (err) {
-      throw new Error(err.response?.data?.error || 'Failed to remove player');
-    }
-  };
+
 
   if (!currentUser) {
     return <LoginForm onLogin={handleLogin} error={error} />;
@@ -1146,7 +1116,6 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   const [activeStatsTab, setActiveStatsTab] = useState('leaderboard');
   const [simulationLeaderboard, setSimulationLeaderboard] = useState([]);
   const [simulationData, setSimulationData] = useState(null);
-
   // Fetch simulation data when in simulation mode
   useEffect(() => {
     if (draftStatus?.simulationMode) {
@@ -1233,10 +1202,10 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
 
 function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   const [loading, setLoading] = useState(false);
-  const [simulationData, setSimulationData] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [gameweekHistory, setGameweekHistory] = useState([]);
   const [simulationMode, setSimulationMode] = useState(false);
+  const [simulationData, setSimulationData] = useState(null);
 
   // Utility function to safely extract values from potentially malformed data
   const safeExtract = (obj, key, fallback = 0) => {
@@ -1599,10 +1568,10 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const [allPlayers, setAllPlayers] = useState([]);
   
   // Chips-related state
-  const [chipHistory, setChipHistory] = useState([]);
-  const [chipStats, setChipStats] = useState(null);
   const [simulateGameweek, setSimulateGameweek] = useState(1);
   const [activeManagementTab, setActiveManagementTab] = useState('lineup');
+  const [chipHistory, setChipHistory] = useState([]);
+  const [chipStats, setChipStats] = useState({});
 
   // Define myTeam safely with null check
   const myTeam = draftStatus?.users?.find(u => u.id === currentUser?.id);
@@ -1773,48 +1742,6 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     // Auto-save if we have valid team composition
     if (selectedTeamPlayers.length === 4 && benchedPlayer) {
       await autoSaveTeam(selectedTeamPlayers, benchedPlayer, newCaptain);
-    }
-  };
-
-  // Chips functions
-  const handleSimulateChipDrop = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.post('/api/draft/simulate-chip-drop', {
-        gameweek: simulateGameweek,
-        userId: currentUser?.id
-      });
-      await onRefresh();
-      await fetchChipHistory();
-      alert(`Chip simulation completed for GW${simulateGameweek}! ${response.data.data.dropsProcessed} chips distributed.`);
-    } catch (error) {
-      alert(error.response?.data?.error || 'Failed to simulate chip drop');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGiveTestChip = async () => {
-    const testChips = [
-      { name: 'Point Vampire', description: 'Steal 25% of another user\'s points', rarity: 'RARE' },
-      { name: 'Captain Chaos', description: 'Randomize another user\'s captain', rarity: 'COMMON' },
-      { name: 'Bench Boost', description: 'Your bench player\'s points count this gameweek', rarity: 'COMMON' }
-    ];
-    
-    const randomChip = testChips[Math.floor(Math.random() * testChips.length)];
-    
-    try {
-      setLoading(true);
-      await axios.post('/api/draft/give-chip', {
-        userId: currentUser.id,
-        chipData: randomChip
-      });
-      await onRefresh();
-      alert(`Received ${randomChip.name} chip!`);
-    } catch (error) {
-      alert(error.response?.data?.error || 'Failed to give chip');
-    } finally {
-      setLoading(false);
     }
   };
 

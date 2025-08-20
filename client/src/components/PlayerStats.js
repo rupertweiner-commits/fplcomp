@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Search, TrendingUp, Target, Award, Shield, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 
 function PlayerStats() {
@@ -17,7 +16,7 @@ function PlayerStats() {
   const [currentGameweek, setCurrentGameweek] = useState(1);
 
   useEffect(() => {
-    fetchPlayersData();
+    // eslint-disable-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { User, Edit3, Camera, Save, Lock, Activity } from 'lucide-react';
 import UserActivity from './UserActivity.js';
 import ProfilePictureUpload from './ProfilePictureUpload.js';
-import { User, Lock, Camera, Trash2, Save, Edit3, Activity } from 'lucide-react';
-
 const ProfileManager = ({ userId, onProfileUpdate }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -15,6 +15,7 @@ import { pushNotificationService } from './services/pushNotificationService';
 // Import contexts
 import { ToastProvider } from './contexts/ToastContext';
 
+// KPG FPL Competition - Deployed to Vercel
 function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState('Connecting...');
@@ -82,11 +83,11 @@ function App() {
                 {/* Connection Status and Mobile Navigation */}
                 <div className="flex items-center space-x-3">
                   {/* Connection Status - Hidden on mobile */}
-                  <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+                  <div className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
                     isConnected 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
-                  }">
+                  }`}>
                     {isConnected ? (
                       <Wifi className="w-4 h-4" />
                     ) : (
