@@ -1,0 +1,224 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f9fa;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Loading animation */
+.loading-dots {
+  display: inline-block;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: ''; }
+  40% { content: '.'; }
+  60% { content: '..'; }
+  80%, 100% { content: '...'; }
+}
+
+/* FPL specific styles */
+.fpl-gradient {
+  background: linear-gradient(135deg, #38003c 0%, #ff006e 100%);
+}
+
+.fpl-card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200;
+}
+
+.fpl-button {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-opacity-50;
+}
+
+.fpl-button-primary {
+  @apply fpl-button bg-fpl-primary text-white hover:bg-opacity-90 focus:ring-fpl-primary;
+}
+
+.fpl-button-secondary {
+  @apply fpl-button bg-fpl-secondary text-fpl-primary hover:bg-opacity-90 focus:ring-fpl-secondary;
+}
+
+/* Status indicators */
+.status-live {
+  @apply bg-red-500 text-white;
+}
+
+.status-finished {
+  @apply bg-gray-500 text-white;
+}
+
+.status-upcoming {
+  @apply bg-blue-500 text-white;
+}
+
+/* Responsive grid */
+.fpl-grid {
+  @apply grid gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Animation classes */
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+/* Live indicator */
+.live-indicator {
+  @apply relative;
+}
+
+.live-indicator::before {
+  content: '';
+  @apply absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full;
+  animation: pulse 2s infinite;
+}
+
+/* Custom animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0, 0, 0);
+  }
+  40%, 43% {
+    transform: translate3d(0, -30px, 0);
+  }
+  70% {
+    transform: translate3d(0, -15px, 0);
+  }
+  90% {
+    transform: translate3d(0, -4px, 0);
+  }
+}
+
+/* Animation utility classes */
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+.animate-bounce {
+  animation: bounce 1s ease-in-out;
+}
+
+/* PWA-specific styles */
+.pwa-install-prompt {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 640px) {
+  .pwa-install-prompt {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .pwa-install-prompt {
+    background-color: rgba(31, 41, 55, 0.95);
+    border-color: rgba(75, 85, 99, 0.5);
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pwa-install-prompt {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-bounce {
+    animation: none;
+  }
+}

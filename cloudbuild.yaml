@@ -1,0 +1,69 @@
+# Google Cloud Build configuration for FPL Live Tracker
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/$PROJECT_ID/fpl-live-tracker:$COMMIT_SHA',
+      '-t', 'gcr.io/$PROJECT_ID/fpl-live-tracker:latest',
+      '.'
+    ]
+    timeout: '600s'
+
+  # Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/fpl-live-tracker:$COMMIT_SHA']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/fpl-live-tracker:latest']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'run', 'deploy', 'fpl-live-tracker',
+      '--image', 'gcr.io/$PROJECT_ID/fpl-live-tracker:$COMMIT_SHA',
+      '--region', 'us-central1',
+      '--platform', 'managed',
+      '--allow-unauthenticated',
+      '--port', '8080',
+      '--memory', '1Gi',
+      '--cpu', '1',
+      '--max-instances', '10',
+      '--min-instances', '0',
+      '--concurrency', '80',
+      '--timeout', '3600',
+      '--set-env-vars', 'NODE_ENV=production',
+      '--labels', 'app=fpl-live-tracker,version=$COMMIT_SHA'
+    ]
+
+# Store the built image in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/fpl-live-tracker:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/fpl-live-tracker:latest'
+
+# Build timeout
+timeout: '1200s'
+
+# Build options
+options:
+  # Use high-performance machine type for faster builds
+  machineType: 'E2_HIGHCPU_8'
+  
+  # Increase disk size for build
+  diskSizeGb: 100
+  
+  # Enable build logging
+  logging: CLOUD_LOGGING_ONLY
+
+# Substitutions for environment variables
+substitutions:
+  _SERVICE_NAME: 'fpl-live-tracker'
+  _REGION: 'us-central1'
+
+# Available environment variables for reference:
+# $PROJECT_ID - Your Google Cloud Project ID
+# $COMMIT_SHA - Git commit SHA
+# $BRANCH_NAME - Git branch name
+# $REPO_NAME - Repository name
+# $BUILD_ID - Unique build ID

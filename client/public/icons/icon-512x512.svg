@@ -1,0 +1,43 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="#ffffff"/>
+  
+  <!-- Border -->
+  <rect x="32" y="32" width="448" height="448" 
+        fill="none" stroke="#e5e7eb" stroke-width="8"/>
+  
+  <!-- Main circle -->
+  <circle cx="256" cy="256" r="179" fill="url(#grad)"/>
+  
+  <!-- FPL text -->
+  <text x="256" y="230" 
+        font-family="Arial, sans-serif" font-size="128" 
+        font-weight="bold" text-anchor="middle" fill="#ffffff">
+    FPL
+  </text>
+  
+  <!-- LIVE text -->
+  <text x="256" y="330" 
+        font-family="Arial, sans-serif" font-size="64" 
+        font-weight="bold" text-anchor="middle" fill="#ffffff">
+    LIVE
+  </text>
+  
+  <!-- Football icon -->
+  <circle cx="256" cy="256" r="102" 
+          fill="none" stroke="#ffffff" stroke-width="10"/>
+  
+  <!-- Football lines -->
+  <line x1="154" y1="256" x2="358" y2="256" 
+        stroke="#ffffff" stroke-width="10"/>
+  <line x1="256" y1="154" x2="256" y2="358" 
+        stroke="#ffffff" stroke-width="10"/>
+</svg>
+

@@ -1,0 +1,43 @@
+# Environment variables for FPL Live Tracker
+
+# Server Configuration
+PORT=8080
+NODE_ENV=production
+
+# Frontend URL (for CORS)
+FRONTEND_URL=*
+
+# FPL API Configuration (no auth required for public endpoints)
+FPL_BASE_URL=https://fantasy.premierleague.com/api
+
+# WebSocket Configuration
+WS_HEARTBEAT_INTERVAL=30000
+WS_RECONNECT_ATTEMPTS=5
+
+# Cache Configuration
+CACHE_TTL_SECONDS=300
+LIVE_CACHE_TTL_SECONDS=30
+
+# Update Intervals (in milliseconds)
+LIVE_UPDATE_INTERVAL=120000
+QUICK_UPDATE_INTERVAL=30000
+
+# Logging
+LOG_LEVEL=info
+
+# Security
+HELMET_CSP_ENABLED=true
+
+# Google Cloud Configuration (for deployment)
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_CLOUD_REGION=us-central1
+
+# Optional: Authentication cookies for private manager data
+# (Copy from browser dev tools after logging into FPL)
+FPL_SESSION_COOKIE=
+
+# Optional: Sentry for error tracking
+SENTRY_DSN=
+
+# Optional: Analytics
+GOOGLE_ANALYTICS_ID=

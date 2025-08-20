@@ -1,0 +1,43 @@
+<svg width="1170" height="2532" viewBox="0 0 1170 2532" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1170" height="2532" fill="#ffffff"/>
+  
+  <!-- Header -->
+  <rect x="0" y="0" width="1170" height="380" fill="#1e40af"/>
+  
+  <!-- App icon -->
+  <circle cx="100" cy="190" r="60" fill="url(#grad)"/>
+  <text x="100" y="180" font-family="Arial, sans-serif" font-size="24" font-weight="bold" text-anchor="middle" fill="#ffffff">FPL</text>
+  <text x="100" y="210" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#ffffff">LIVE</text>
+  
+  <!-- App name -->
+  <text x="200" y="200" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#ffffff">FPL Live Tracker</text>
+  
+  <!-- Content -->
+  <text x="585" y="600" font-family="Arial, sans-serif" font-size="36" font-weight="bold" text-anchor="middle" fill="#1f2937">Live Draft & Scoring</text>
+  
+  <!-- Mock UI -->
+  <rect x="117" y="700" width="936" height="100" fill="#059669" rx="10"/>
+  <text x="585" y="750" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#ffffff">Draft Interface</text>
+  
+  <rect x="117" y="850" width="936" height="100" fill="#1e40af" rx="10"/>
+  <text x="585" y="900" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#ffffff">Live Scores</text>
+  
+  <rect x="117" y="1000" width="936" height="100" fill="#dc2626" rx="10"/>
+  <text x="585" y="1050" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#ffffff">Team Management</text>
+  
+  <!-- Features -->
+  <text x="585" y="1200" font-family="Arial, sans-serif" font-size="28" font-weight="bold" text-anchor="middle" fill="#1f2937">Features</text>
+  <text x="585" y="1250" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#6b7280">• Real-time draft updates</text>
+  <text x="585" y="1280" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#6b7280">• Live gameweek scoring</text>
+  <text x="585" y="1310" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#6b7280">• Mobile-first design</text>
+  <text x="585" y="1340" font-family="Arial, sans-serif" font-size="20" text-anchor="middle" fill="#6b7280">• Push notifications</text>
+</svg>
+
