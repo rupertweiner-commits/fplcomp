@@ -52,15 +52,13 @@ function Draft({ wsService }) {
   const fetchDraftData = async () => {
     try {
       setLoading(true);
-      const [statusResponse, playersResponse, scoresResponse] = await Promise.all([
-        axios.get('/api/draft/status'),
-        axios.get('/api/draft/chelsea-players'),
-        axios.get('/api/draft/live-scores')
+      const [statusResponse, playersResponse] = await Promise.all([
+        axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-status'),
+        axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-chelsea-players')
       ]);
       
       setDraftStatus(statusResponse.data.data);
       setChelseaPlayers(playersResponse.data.data);
-      setLiveScores(scoresResponse.data.data);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load draft data');
@@ -78,19 +76,22 @@ function Draft({ wsService }) {
 
   const fetchLiveScores = async () => {
     try {
-      const response = await axios.get('/api/draft/live-scores');
-      setLiveScores(response.data.data);
+      // For now, we'll skip live scores until we implement that endpoint
+      setLiveScores(null);
     } catch (err) {
       console.error('Failed to fetch live scores:', err);
     }
   };
 
-  const handleLogin = async (username, password) => {
+  const handleLogin = async (username, email) => {
     try {
-      const response = await axios.post('/api/draft/login', { username, password });
+      const response = await axios.post('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/auth-login', { 
+        username, 
+        email: email || `${username}@example.com` 
+      });
       const user = { 
-        ...response.data.user, 
-        sessionId: response.data.sessionId 
+        ...response.data.data.user, 
+        sessionId: 'temp-session' 
       };
       setCurrentUser(user);
       setError(null);
@@ -355,7 +356,7 @@ function Draft({ wsService }) {
 
 function LoginForm({ onLogin, error }) {
   const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -364,7 +365,7 @@ function LoginForm({ onLogin, error }) {
     e.preventDefault();
     setLoading(true);
     try {
-              await onLogin(username, password);
+              await onLogin(username, email);
     } finally {
       setLoading(false);
     }
@@ -414,18 +415,18 @@ function LoginForm({ onLogin, error }) {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
               </label>
               <input
-                id="password"
-                name="password"
-                type="password"
+                id="email"
+                name="email"
+                type="email"
                 required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="pass1, pass2, pass3, or pass4"
+                placeholder="your.email@example.com"
               />
             </div>
           </div>
@@ -464,7 +465,7 @@ function LoginForm({ onLogin, error }) {
           </div>
           
           <div className="text-xs text-gray-500 text-center">
-            Demo accounts: Portia/pass1, Yasmin/pass2, Rupert/pass3, Will/pass4
+            Demo: Try "Portia" with any email, or create a new account
           </div>
         </form>
       </div>

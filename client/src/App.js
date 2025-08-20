@@ -17,8 +17,8 @@ import { ToastProvider } from './contexts/ToastContext';
 
 // KPG FPL Competition - Deployed to Vercel
 function App() {
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
+  const [isConnected, setIsConnected] = useState(true);
+  const [connectionStatus, setConnectionStatus] = useState('Connected');
   const [wsService, setWsService] = useState(null);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
 
