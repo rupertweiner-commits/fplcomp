@@ -20,10 +20,6 @@
       "destination": "/index.html"
     }
   ],
-  "env": {
-    "REACT_APP_SUPABASE_URL": "@supabase_url",
-    "REACT_APP_SUPABASE_ANON_KEY": "@supabase_anon_key"
-  },
   "regions": ["iad1"],
   "headers": [
     {
