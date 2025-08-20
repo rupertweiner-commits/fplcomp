@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
 import axios from 'axios';
 
 function PlayerStats() {

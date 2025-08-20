@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { User, Mail, AlertCircle, Camera, CheckCircle, Save } from 'lucide-react';
 import axios from 'axios';
 import ProfilePictureUpload from './ProfilePictureUpload';
 
