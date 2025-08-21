@@ -198,7 +198,6 @@ const ForgotPassword = ({ onBackToLogin }) => {
   const renderMessage = () => {
     if (!message.text) return null;
 
-    const icon = message.type === 'success' ? CheckCircle : AlertCircle;
     const bgColor = message.type === 'success' ? 'bg-green-50' : 'bg-red-50';
     const textColor = message.type === 'success' ? 'text-green-800' : 'text-red-800';
     const iconColor = message.type === 'success' ? 'text-green-400' : 'text-red-400';
@@ -206,7 +205,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
     return (
       <div className={`rounded-lg p-4 ${bgColor} border border-${message.type === 'success' ? 'green' : 'red'}-200`}>
         <div className="flex items-center">
-          <icon className={`h-5 w-5 ${iconColor} mr-2`} />
+          <AlertCircle className={`h-5 w-5 ${iconColor} mr-2`} />
           <p className={`text-sm ${textColor}`}>{message.text}</p>
         </div>
       </div>

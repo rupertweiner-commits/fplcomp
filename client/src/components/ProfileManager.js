@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { User, Edit3, Camera, Save, Lock, Activity } from 'lucide-react';
 import UserActivity from './UserActivity.js';
@@ -25,16 +25,8 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
   });
   const [showInitialPasswordForm, setShowInitialPasswordForm] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (userId) {
-      fetchProfile();
-    }
-  }, [userId]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`/api/auth/profile/${userId}`);
@@ -47,7 +39,13 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+    }
+  }, [userId, fetchProfile]);
 
   const handleProfileUpdate = async (updates) => {
     try {
@@ -243,91 +241,6 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     });
     if (onProfileUpdate) {
       onProfileUpdate();
-    }
-  };
-
-  const handleFileSelect = (file) => {
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        setMessage({
-          type: 'error',
-          text: 'File size must be less than 5MB'
-        });
-        return;
-      }
-      setSelectedFile(file);
-    }
-  };
-
-  const handleProfilePictureUpload = async () => {
-    if (!selectedFile) {
-      setMessage({
-        type: 'error',
-        text: 'Please select a file first'
-      });
-      return;
-    }
-
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append('profilePicture', selectedFile);
-
-      const response = await axios.post(
-        `/api/auth/profile/${userId}/picture`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-
-      if (response.data.success) {
-        setMessage({
-          type: 'success',
-          text: 'Profile picture updated successfully!'
-        });
-        setSelectedFile(null);
-        await fetchProfile();
-        if (onProfileUpdate) {
-          onProfileUpdate();
-        }
-      }
-    } catch (error) {
-      setMessage({
-        type: 'error',
-        text: error.response?.data?.error || 'Failed to upload profile picture'
-      });
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleDeleteProfilePicture = async () => {
-    if (!profile.profilePicture) return;
-
-    try {
-      setLoading(true);
-      const response = await axios.delete(`/api/auth/profile/${userId}/picture`);
-
-      if (response.data.success) {
-        setMessage({
-          type: 'success',
-          text: 'Profile picture deleted successfully!'
-        });
-        await fetchProfile();
-        if (onProfileUpdate) {
-          onProfileUpdate();
-        }
-      }
-    } catch (error) {
-      setMessage({
-        type: 'error',
-        text: error.response?.data?.error || 'Failed to delete profile picture'
-      });
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Activity, User, TrendingUp, BarChart3, Clock } from 'lucide-react';
 const UserActivity = ({ userId, isAdmin = false }) => {
@@ -9,17 +9,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
-  useEffect(() => {
-    if (userId) {
-      fetchUserActivity();
-      fetchRecentActivity();
-      if (isAdmin) {
-        fetchStats();
-      }
-    }
-  }, [userId, selectedPeriod, isAdmin]);
-
-  const fetchUserActivity = async () => {
+  const fetchUserActivity = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -36,9 +26,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId, selectedPeriod]);
 
-  const fetchRecentActivity = async () => {
+  const fetchRecentActivity = useCallback(async () => {
     try {
       setError(null);
       const response = await axios.get(`/api/activity/user/${userId}/recent?limit=20`);
@@ -51,9 +41,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
       console.error('Failed to fetch recent activity:', err);
       setRecentActivity([]);
     }
-  };
+  }, [userId]);
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       setError(null);
       const response = await axios.get(`/api/activity/stats?days=${selectedPeriod}&userId=${userId}`);
@@ -66,7 +56,17 @@ const UserActivity = ({ userId, isAdmin = false }) => {
       console.error('Failed to fetch stats:', err);
       setStats([]);
     }
-  };
+  }, [userId, selectedPeriod]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchUserActivity();
+      fetchRecentActivity();
+      if (isAdmin) {
+        fetchStats();
+      }
+    }
+  }, [userId, selectedPeriod, isAdmin, fetchUserActivity, fetchRecentActivity, fetchStats]);
 
   const formatTimestamp = (timestamp) => {
     try {

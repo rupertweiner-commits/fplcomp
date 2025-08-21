@@ -1,0 +1,35 @@
+# Exclude everything except the client directory
+*
+!client/
+!vercel.json
+
+# Exclude client node_modules and build artifacts
+client/node_modules/
+client/build/
+client/.env*
+
+# Exclude server files
+server.js
+server.production.js
+routes/
+services/
+middleware/
+config/
+database/
+uploads/
+scripts/
+nginx/
+supabase/
+
+# Exclude other unnecessary files
+*.md
+*.sql
+*.sh
+*.yaml
+*.yml
+Dockerfile
+docker-compose.yml
+cloudbuild.yaml
+app.yaml
+deploy.sh
+fix-eslint.js

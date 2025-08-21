@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
 import axios from 'axios';
 
@@ -10,19 +10,10 @@ function PlayerStats() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTeam, setSelectedTeam] = useState('');
   const [selectedPosition, setSelectedPosition] = useState('');
   const [sortBy, setSortBy] = useState('total_points');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentGameweek, setCurrentGameweek] = useState(1);
-
-  useEffect(() => {
-    // eslint-disable-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [players, searchTerm, selectedTeam, selectedPosition, sortBy, sortOrder]);
 
   const fetchPlayersData = async () => {
     try {
@@ -50,7 +41,7 @@ function PlayerStats() {
     }
   };
 
-  const applyFilters = () => {
+  const applyFilters = useCallback(() => {
     let filtered = [...players];
     
     // Text search
@@ -92,7 +83,15 @@ function PlayerStats() {
     });
     
     setFilteredPlayers(filtered);
-  };
+  }, [players, searchTerm, selectedPosition, sortBy, sortOrder]);
+
+  useEffect(() => {
+    // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [applyFilters]);
 
   const getTeamName = (teamId) => {
     const team = teams.find(t => t.id === teamId);

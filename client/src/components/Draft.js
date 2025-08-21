@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, 
   User, 
@@ -55,10 +55,17 @@ function Draft({ wsService }) {
     if (currentUser) {
       fetchDraftData();
       
-      // Subscribe to WebSocket updates for live scores
+      // Subscribe to WebSocket updates for live scores if available
       if (wsService) {
         const unsubscribe = wsService.subscribe('liveUpdate', handleLiveUpdate);
         return unsubscribe;
+      } else {
+        // For frontend-only deployment, use polling for live updates
+        const interval = setInterval(() => {
+          fetchLiveScores();
+        }, 30000); // Poll every 30 seconds
+
+        return () => clearInterval(interval);
       }
     }
   }, [currentUser, wsService]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -806,16 +813,6 @@ function PlayerCard({ player, onSelect, onDraft, isSelected, canDraft, isDraftin
 
 function LeaderboardTab({ liveScores, draftStatus, currentUser, allPlayers }) {
   // Get helper functions from PreviewTab
-  const getPositionColor = (elementType) => {
-    switch (elementType) {
-      case 1: return 'bg-yellow-100 text-yellow-800 border-yellow-300'; // GK
-      case 2: return 'bg-blue-100 text-blue-800 border-blue-300';   // DEF
-      case 3: return 'bg-green-100 text-green-800 border-green-300';  // MID
-      case 4: return 'bg-red-100 text-red-800 border-red-300';     // FWD
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
   const getPositionBgColor = (elementType) => {
     switch (elementType) {
       case 1: return 'bg-yellow-500'; // GK
@@ -1130,26 +1127,23 @@ function LeaderboardTab({ liveScores, draftStatus, currentUser, allPlayers }) {
 function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   const [activeStatsTab, setActiveStatsTab] = useState('leaderboard');
   const [simulationLeaderboard, setSimulationLeaderboard] = useState([]);
-  const [simulationData, setSimulationData] = useState(null);
+  
   // Fetch simulation data when in simulation mode
+  const fetchSimulationData = useCallback(async () => {
+    try {
+      const response = await axios.get(`/api/draft/simulation/data?userId=${currentUser?.id}`);
+      console.log('Simulation data received:', response.data.data);
+      setSimulationLeaderboard(response.data.data);
+    } catch (error) {
+      console.error('Failed to fetch simulation data for stats:', error);
+    }
+  }, [currentUser?.id]);
+
   useEffect(() => {
     if (draftStatus?.simulationMode) {
       fetchSimulationData();
     }
-  }, [draftStatus?.simulationMode, draftStatus?.currentGameweek, draftStatus?.activeGameweek]);
-
-  const fetchSimulationData = async () => {
-    try {
-      const [leaderboardResponse, dataResponse] = await Promise.all([
-        axios.get(`/api/draft/simulation/leaderboard?userId=${currentUser?.id}`),
-        axios.get(`/api/draft/simulation/data?userId=${currentUser?.id}`)
-      ]);
-      setSimulationLeaderboard(leaderboardResponse.data.data);
-      setSimulationData(dataResponse.data.data);
-    } catch (error) {
-      console.error('Failed to fetch simulation data for stats:', error);
-    }
-  };
+  }, [draftStatus?.simulationMode, draftStatus?.currentGameweek, draftStatus?.activeGameweek, fetchSimulationData]);
 
   return (
     <div className="space-y-6">
@@ -1235,14 +1229,7 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     return typeof value === 'string' ? value : fallback;
   };
 
-  useEffect(() => {
-    fetchSimulationData();
-    fetchLeaderboard();
-    // Set simulation mode from draft status
-    setSimulationMode(draftStatus?.simulationMode || false);
-  }, [draftStatus?.simulationMode]);
-
-  const fetchSimulationData = async () => {
+  const fetchSimulationData = useCallback(async () => {
     try {
       const response = await axios.get(`/api/draft/simulation/data?userId=${currentUser?.id}`);
       console.log('Simulation data received:', response.data.data);
@@ -1251,9 +1238,9 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     } catch (error) {
       console.error('Failed to fetch simulation data:', error);
     }
-  };
+  }, [currentUser?.id]);
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       const response = await axios.get(`/api/draft/simulation/leaderboard?userId=${currentUser?.id}`);
       console.log('Leaderboard data received:', response.data.data);
@@ -1261,12 +1248,19 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
     }
-  };
+  }, [currentUser?.id]);
+
+  useEffect(() => {
+    fetchLeaderboard();
+    fetchSimulationData();
+    // Set simulation mode from draft status
+    setSimulationMode(draftStatus?.simulationMode || false);
+  }, [draftStatus?.simulationMode, fetchLeaderboard, fetchSimulationData]);
 
   const handleRandomizeTeams = async () => {
     try {
       setLoading(true);
-      const response = await axios.post('/api/draft/simulation/randomize-teams', {
+      await axios.post('/api/draft/simulation/randomize-teams', {
         userId: currentUser?.id
       });
       await onRefresh();
@@ -1487,7 +1481,7 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
         {!isDraftComplete && simulationMode && (
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800 text-sm">
-              💡 <strong>Start here:</strong> Click "Randomize Teams" to give each user a balanced 5-player Chelsea team, then simulate gameweeks to experience the chip mechanics!
+              �� <strong>Start here:</strong> Click "Randomize Teams" to give each user a balanced 5-player Chelsea team, then simulate gameweeks to experience the chip mechanics!
             </p>
           </div>
         )}
@@ -1583,10 +1577,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const [allPlayers, setAllPlayers] = useState([]);
   
   // Chips-related state
-  const [simulateGameweek, setSimulateGameweek] = useState(1);
   const [activeManagementTab, setActiveManagementTab] = useState('lineup');
-  const [chipHistory, setChipHistory] = useState([]);
-  const [chipStats, setChipStats] = useState({});
 
   // Define myTeam safely with null check
   const myTeam = draftStatus?.users?.find(u => u.id === currentUser?.id);
@@ -1606,8 +1597,6 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     if (draftStatus) {
       fetchAvailablePlayers();
       fetchAllPlayers();
-      fetchChipHistory();
-      fetchChipStats();
     }
   }, [draftStatus]);
 
@@ -1640,24 +1629,6 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
       setAllPlayers(response.data.data);
     } catch (error) {
       console.error('Failed to fetch all players:', error);
-    }
-  };
-
-  const fetchChipHistory = async () => {
-    try {
-      const response = await axios.get('/api/draft/chip-history');
-      setChipHistory(response.data.data.chipHistory);
-    } catch (error) {
-      console.error('Failed to fetch chip history:', error);
-    }
-  };
-
-  const fetchChipStats = async () => {
-    try {
-      const response = await axios.get('/api/draft/chip-statistics');
-      setChipStats(response.data.data);
-    } catch (error) {
-      console.error('Failed to fetch chip statistics:', error);
     }
   };
 
@@ -1791,7 +1762,6 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
         targetUserId
       });
       await onRefresh();
-      await fetchChipHistory();
       alert(`${chipName} used successfully!`);
     } catch (error) {
       alert(error.response?.data?.error || 'Failed to use chip');

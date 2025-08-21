@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { User, Mail, AlertCircle, Camera, CheckCircle, Save } from 'lucide-react';
 import axios from 'axios';
 import ProfilePictureUpload from './ProfilePictureUpload';
@@ -26,13 +26,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
   const [showPictureUpload, setShowPictureUpload] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
-  useEffect(() => {
-    if (currentUser) {
-      fetchProfile();
-    }
-  }, [currentUser]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await axios.get(`/api/users/profile/${currentUser.id}`);
       if (response.data.success) {
@@ -59,7 +53,13 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     } catch (error) {
       console.error('Failed to fetch profile:', error);
     }
-  };
+  }, [currentUser.id]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchProfile();
+    }
+  }, [currentUser, fetchProfile]);
 
   const checkCompletion = (userProfile) => {
     const required = ['email', 'firstName', 'lastName', 'profilePicture'];

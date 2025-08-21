@@ -8,7 +8,6 @@ import MobileNavigation from './components/MobileNavigation';
 import ProfileManager from './components/ProfileManager';
 
 // Import services
-import { WebSocketService } from './services/WebSocketService';
 import { authService } from './services/authService';
 import { pushNotificationService } from './services/pushNotificationService';
 
@@ -19,37 +18,37 @@ import { ToastProvider } from './contexts/ToastContext';
 function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('Connected');
-  const [wsService, setWsService] = useState(null);
   const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
 
   useEffect(() => {
-    // Initialize WebSocket connection
-    const ws = new WebSocketService();
-    setWsService(ws);
-
-    ws.connect(
-      // On connect
-      () => {
-        setIsConnected(true);
-        setConnectionStatus('Connected');
-      },
-      // On disconnect
-      () => {
+    // For frontend-only deployment, skip WebSocket connection
+    // and show connected status based on API availability
+    const checkApiConnection = async () => {
+      try {
+        // Test connection to Supabase Edge Function
+        const response = await fetch('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-status');
+        if (response.ok || response.status === 401 || response.status === 403) {
+          // API is accessible (even if we get auth errors, the connection works)
+          setIsConnected(true);
+          setConnectionStatus('Connected');
+        } else {
+          throw new Error('API not responding');
+        }
+      } catch (error) {
         setIsConnected(false);
-        setConnectionStatus('Disconnected');
-      },
-      // On error
-      (error) => {
-        setIsConnected(false);
-        setConnectionStatus(`Error: ${error.message}`);
+        setConnectionStatus('API Unavailable');
       }
-    );
+    };
+
+    // Check connection immediately and then every 30 seconds
+    checkApiConnection();
+    const interval = setInterval(checkApiConnection, 30000);
 
     // Initialize push notifications
     pushNotificationService.initialize();
 
     return () => {
-      ws.disconnect();
+      clearInterval(interval);
     };
   }, []);
 
@@ -112,8 +111,8 @@ function App() {
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
-            <Route path="/" element={<Draft wsService={wsService} />} />
-            <Route path="/draft" element={<Draft wsService={wsService} />} />
+            <Route path="/" element={<Draft wsService={null} />} />
+            <Route path="/draft" element={<Draft wsService={null} />} />
             <Route path="/profile" element={
               currentUser ? (
                 <ProfileManager userId={currentUser.id} onProfileUpdate={() => {}} />
