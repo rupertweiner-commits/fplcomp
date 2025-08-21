@@ -14,7 +14,7 @@ import { pushNotificationService } from './services/pushNotificationService';
 // Import contexts
 import { ToastProvider } from './contexts/ToastContext';
 
-// KPG FPL Competition - Deployed to Vercel
+// KPG FPL Competition - Deployed to Vercel (v2 - Fixed connection status)
 function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('Connected');
