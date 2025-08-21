@@ -1,7 +1,6 @@
 {
   "version": 2,
   "name": "kpg-fpl-competition-2024-v3",
-  "projectId": "kpg-fpl-2024-v3",
   "builds": [
     {
       "src": "client/package.json",
