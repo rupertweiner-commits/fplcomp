@@ -39,7 +39,7 @@ function Draft({ wsService }) {
   useEffect(() => {
     const testConnection = async () => {
       try {
-        const response = await axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-status');
+        const response = await axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status');
         console.log('✅ Supabase connection successful:', response.data);
         setError(null);
       } catch (err) {
@@ -74,8 +74,8 @@ function Draft({ wsService }) {
     try {
       setLoading(true);
       const [statusResponse, playersResponse] = await Promise.all([
-        axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-status'),
-        axios.get('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/draft-chelsea-players')
+        axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status'),
+        axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-chelsea-players')
       ]);
       
       setDraftStatus(statusResponse.data.data);
@@ -106,7 +106,7 @@ function Draft({ wsService }) {
 
   const handleLogin = async (username, email) => {
     try {
-      const response = await axios.post('https://qtksftbezmrbwllqbhuc.supabase.co/functions/v1/auth-login', { 
+      const response = await axios.post('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/auth-login', { 
         username, 
         email: email || `${username}@example.com` 
       });
