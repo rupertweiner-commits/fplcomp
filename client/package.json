@@ -1,6 +1,7 @@
 {
-  "name": "fpl-tracker-frontend",
-  "version": "1.0.0",
+  "name": "fpl-tracker-frontend-v3",
+  "version": "3.0.0",
+  "description": "KPG FPL Competition Frontend - Version 3 with disabled WebSocket",
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0",
