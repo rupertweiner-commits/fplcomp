@@ -4,30 +4,6 @@
   "description": "KPG FPL Competition - Root package for Vercel deployment",
   "private": true,
   "scripts": {
-    "build": "cd client && npm run build",
-    "install": "cd client && npm install",
-    "start": "cd client && npm start",
-    "test": "cd client && npm test",
-    "eject": "cd client && npm run eject"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "build": "cd client && npm run build"
   }
 }

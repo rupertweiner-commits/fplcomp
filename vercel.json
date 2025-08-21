@@ -1,36 +1,34 @@
 {
   "version": 2,
-  "name": "kpg-fpl-competition-2024-v3",
   "builds": [
     {
-      "src": "package.json",
+      "src": "client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "client/build"
+        "distDir": "build"
       }
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/client/build/static/$1"
+      "dest": "/static/$1"
     },
     {
       "src": "/favicon.svg",
-      "dest": "/client/build/favicon.svg"
+      "dest": "/favicon.svg"
     },
     {
       "src": "/manifest.json",
-      "dest": "/client/build/manifest.json"
+      "dest": "/manifest.json"
     },
     {
       "src": "/icons/(.*)",
-      "dest": "/client/build/icons/$1"
+      "dest": "/icons/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/client/build/index.html"
+      "dest": "/index.html"
     }
-  ],
-  "regions": ["iad1"]
+  ]
 }
