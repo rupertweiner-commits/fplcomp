@@ -1,9 +1,0 @@
-{
-  "name": "kpg-fpl-competition-root",
-  "version": "3.0.0",
-  "description": "KPG FPL Competition - Root package for Vercel deployment",
-  "private": true,
-  "scripts": {
-    "build": "cd client && npm run build"
-  }
-}
