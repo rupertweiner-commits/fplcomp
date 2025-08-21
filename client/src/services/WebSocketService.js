@@ -1,29 +1,36 @@
-// Dummy WebSocketService for frontend-only deployment
-// This prevents any WebSocket connections from being attempted
+// Completely disabled WebSocketService for frontend-only deployment
+// This prevents ANY WebSocket connections from being attempted
 export class WebSocketService {
   constructor() {
-    // Do nothing - prevent WebSocket connections
+    // Do absolutely nothing - prevent any instantiation side effects
+    console.log('🚫 WebSocketService disabled - no connections allowed');
   }
 
   connect() {
-    // Do nothing
+    console.log('🚫 WebSocket connections are disabled');
+    return false;
   }
 
   disconnect() {
-    // Do nothing
+    console.log('🚫 WebSocket disconnect called but no connection exists');
   }
 
   subscribe() {
-    // Return dummy unsubscribe function
-    return () => {};
+    console.log('🚫 WebSocket subscriptions are disabled');
+    return () => {}; // Return empty unsubscribe function
   }
 
   unsubscribe() {
-    // Do nothing
+    console.log('🚫 WebSocket unsubscriptions are disabled');
   }
 
   send() {
-    // Do nothing
+    console.log('🚫 WebSocket sending is disabled');
+    return false;
+  }
+
+  getConnectionState() {
+    return 'DISABLED';
   }
 
   isConnected() {
@@ -31,6 +38,19 @@ export class WebSocketService {
   }
 
   getStatus() {
-    return 'disconnected';
+    return 'disabled';
+  }
+
+  // Override any other methods that might exist
+  getWebSocketUrl() {
+    return null;
+  }
+
+  scheduleReconnect() {
+    console.log('🚫 WebSocket reconnection is disabled');
+  }
+
+  handleMessage() {
+    console.log('🚫 WebSocket message handling is disabled');
   }
 }
