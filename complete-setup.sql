@@ -1,43 +1,20 @@
--- KPG's Annual Chelsea Competition - Supabase Database Setup
--- This script creates all necessary tables, functions, and API endpoints
+-- Complete setup script for KPG's Chelsea Competition
+-- This creates all tables in the correct order with proper dependencies
 
--- Enable necessary extensions
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create users table (extends Supabase auth.users)
+-- Create user_profiles table first (referenced by other tables)
 CREATE TABLE IF NOT EXISTS public.user_profiles (
-    id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    phone VARCHAR(20),
     profile_picture TEXT,
-    notification_preferences JSONB DEFAULT '{
-        "deadlineReminders": true,
-        "deadlineSummaries": true,
-        "transferNotifications": true,
-        "chipNotifications": true,
-        "liveScoreUpdates": false,
-        "weeklyReports": true,
-        "emailNotifications": true,
-        "pushNotifications": true
-    }',
+    phone VARCHAR(20),
     is_admin BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Create draft_status table
-CREATE TABLE IF NOT EXISTS public.draft_status (
-    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-    status VARCHAR(50) DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'paused', 'completed')),
-    current_round INTEGER DEFAULT 1,
-    current_turn_user_id UUID,
-    time_per_turn INTEGER DEFAULT 60,
-    is_simulation_mode BOOLEAN DEFAULT false,
-    active_gameweek INTEGER DEFAULT 1,
-    current_gameweek INTEGER DEFAULT 1,
+    notification_preferences JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -46,19 +23,33 @@ CREATE TABLE IF NOT EXISTS public.draft_status (
 CREATE TABLE IF NOT EXISTS public.user_teams (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     user_id UUID REFERENCES public.user_profiles(id) ON DELETE CASCADE,
-    team_name VARCHAR(100),
-    active_players JSONB DEFAULT '[]',
-    benched_player JSONB,
-    captain UUID,
+    team_name VARCHAR(100) NOT NULL,
+    active_players INTEGER[] DEFAULT '{}',
+    benched_player INTEGER,
+    captain INTEGER,
+    total_points INTEGER DEFAULT 0,
+    gameweek_points INTEGER DEFAULT 0,
     chips JSONB DEFAULT '[]',
     used_chips JSONB DEFAULT '[]',
-    total_points INTEGER DEFAULT 0,
-    gameweek_points JSONB DEFAULT '{}',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create chelsea_players table
+-- Create draft_status table
+CREATE TABLE IF NOT EXISTS public.draft_status (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    status VARCHAR(50) DEFAULT 'waiting',
+    current_round INTEGER DEFAULT 1,
+    current_turn_user_id UUID REFERENCES public.user_profiles(id),
+    time_per_turn INTEGER DEFAULT 60,
+    is_simulation_mode BOOLEAN DEFAULT false,
+    active_gameweek INTEGER DEFAULT 1,
+    current_gameweek INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create chelsea_players table (now user_profiles exists)
 CREATE TABLE IF NOT EXISTS public.chelsea_players (
     id INTEGER PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -128,7 +119,7 @@ CREATE INDEX IF NOT EXISTS idx_draft_queue_user_id ON public.draft_queue(user_id
 CREATE INDEX IF NOT EXISTS idx_user_activity_user_id ON public.user_activity(user_id);
 CREATE INDEX IF NOT EXISTS idx_fpl_cache_expires_at ON public.fpl_cache(expires_at);
 
--- Create RLS (Row Level Security) policies
+-- Enable RLS (Row Level Security) policies
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chelsea_players ENABLE ROW LEVEL SECURITY;
@@ -159,11 +150,8 @@ CREATE POLICY "Users can view their own team" ON public.user_teams
 CREATE POLICY "Users can update their own team" ON public.user_teams
     FOR UPDATE USING (auth.uid() = user_id);
 
-CREATE POLICY "Everyone can view all teams" ON public.user_teams
-    FOR SELECT USING (true);
-
 -- RLS Policies for chelsea_players
-CREATE POLICY "Everyone can view Chelsea players" ON public.chelsea_players
+CREATE POLICY "Users can view all Chelsea players" ON public.chelsea_players
     FOR SELECT USING (true);
 
 CREATE POLICY "Admins can update Chelsea players" ON public.chelsea_players
@@ -185,171 +173,26 @@ CREATE POLICY "Users can manage their own draft queue" ON public.draft_queue
 CREATE POLICY "Users can view their own activity" ON public.user_activity
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Admins can view all activity" ON public.user_activity
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE id = auth.uid() AND is_admin = true
-        )
-    );
+CREATE POLICY "Users can create their own activity" ON public.user_activity
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- RLS Policies for chip_history
 CREATE POLICY "Users can view their own chip history" ON public.chip_history
     FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Everyone can view chip history" ON public.chip_history
-    FOR SELECT USING (true);
+CREATE POLICY "Users can create their own chip history" ON public.chip_history
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
 
 -- RLS Policies for fpl_cache
-CREATE POLICY "Everyone can read FPL cache" ON public.fpl_cache
+CREATE POLICY "Anyone can view FPL cache" ON public.fpl_cache
     FOR SELECT USING (true);
-
-CREATE POLICY "Admins can manage FPL cache" ON public.fpl_cache
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM public.user_profiles 
-            WHERE id = auth.uid() AND is_admin = true
-        )
-    );
-
--- Create functions for common operations
-
--- Function to get or create user profile
-CREATE OR REPLACE FUNCTION public.get_or_create_user_profile(
-    p_username VARCHAR(50),
-    p_email VARCHAR(255)
-)
-RETURNS public.user_profiles
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_user_id UUID;
-    v_profile public.user_profiles;
-BEGIN
-    -- Get current user ID
-    v_user_id := auth.uid();
-    
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'User not authenticated';
-    END IF;
-    
-    -- Try to get existing profile
-    SELECT * INTO v_profile 
-    FROM public.user_profiles 
-    WHERE id = v_user_id;
-    
-    -- If profile doesn't exist, create it
-    IF v_profile IS NULL THEN
-        INSERT INTO public.user_profiles (id, username, email)
-        VALUES (v_user_id, p_username, p_email)
-        RETURNING * INTO v_profile;
-    END IF;
-    
-    RETURN v_profile;
-END;
-$$;
-
--- Function to log user activity
-CREATE OR REPLACE FUNCTION public.log_user_activity(
-    p_action_type VARCHAR(100),
-    p_action_details JSONB DEFAULT NULL,
-    p_ip_address INET DEFAULT NULL,
-    p_user_agent TEXT DEFAULT NULL,
-    p_session_id VARCHAR(255) DEFAULT NULL
-)
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-DECLARE
-    v_user_id UUID;
-    v_username VARCHAR(50);
-    v_activity_id UUID;
-BEGIN
-    -- Get current user ID
-    v_user_id := auth.uid();
-    
-    IF v_user_id IS NULL THEN
-        RAISE EXCEPTION 'User not authenticated';
-    END IF;
-    
-    -- Get username
-    SELECT username INTO v_username 
-    FROM public.user_profiles 
-    WHERE id = v_user_id;
-    
-    -- Log activity
-    INSERT INTO public.user_activity (
-        user_id, username, action_type, action_details, 
-        ip_address, user_agent, session_id
-    )
-    VALUES (
-        v_user_id, v_username, p_action_type, p_action_details,
-        p_ip_address, p_user_agent, p_session_id
-    )
-    RETURNING id INTO v_activity_id;
-    
-    RETURN v_activity_id;
-END;
-$$;
-
--- Function to get draft status
-CREATE OR REPLACE FUNCTION public.get_draft_status()
-RETURNS TABLE (
-    id UUID,
-    status VARCHAR(50),
-    current_round INTEGER,
-    current_turn_user_id UUID,
-    time_per_turn INTEGER,
-    is_simulation_mode BOOLEAN,
-    active_gameweek INTEGER,
-    current_gameweek INTEGER,
-    users JSONB
-)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        ds.id,
-        ds.status,
-        ds.current_round,
-        ds.current_turn_user_id,
-        ds.time_per_turn,
-        ds.is_simulation_mode,
-        ds.active_gameweek,
-        ds.current_gameweek,
-        COALESCE(
-            jsonb_agg(
-                jsonb_build_object(
-                    'id', up.id,
-                    'username', up.username,
-                    'profilePicture', up.profile_picture,
-                    'team', ut.active_players,
-                    'benchedPlayer', ut.benched_player,
-                    'captain', ut.captain,
-                    'totalPoints', ut.total_points,
-                    'gameweekPoints', ut.gameweek_points
-                )
-            ) FILTER (WHERE up.id IS NOT NULL),
-            '[]'::jsonb
-        ) as users
-    FROM public.draft_status ds
-    LEFT JOIN public.user_profiles up ON true
-    LEFT JOIN public.user_teams ut ON ut.user_id = up.id
-    GROUP BY ds.id, ds.status, ds.current_round, ds.current_turn_user_id, 
-             ds.time_per_turn, ds.is_simulation_mode, ds.active_gameweek, ds.current_gameweek;
-END;
-$$;
 
 -- Insert initial data
 INSERT INTO public.draft_status (status, current_round, time_per_turn)
 VALUES ('waiting', 1, 60)
 ON CONFLICT DO NOTHING;
 
--- Insert some sample Chelsea players (you can expand this list)
+-- Insert sample Chelsea players with all required columns
 INSERT INTO public.chelsea_players (id, name, position, team_id, price, total_points, form, is_available, drafted_by, draft_round, draft_position) VALUES
 (1, 'Cole Palmer', 'MID', 7, 5.6, 156, 7.2, true, NULL, NULL, NULL),
 (2, 'Nicolas Jackson', 'FWD', 7, 6.8, 89, 6.1, true, NULL, NULL, NULL),
@@ -362,9 +205,6 @@ INSERT INTO public.chelsea_players (id, name, position, team_id, price, total_po
 (9, 'Ben Chilwell', 'DEF', 7, 5.1, 56, 5.8, true, NULL, NULL, NULL),
 (10, 'Robert Sánchez', 'GKP', 7, 4.5, 89, 6.4, true, NULL, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
-
--- Create admin user (you'll need to replace this with your actual user ID after first login)
--- This will be created automatically when you first log in
 
 -- Grant necessary permissions
 GRANT USAGE ON SCHEMA public TO anon, authenticated;
@@ -396,3 +236,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.draft_status;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.user_teams;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.draft_queue;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.user_activity;
+
+-- Verify the setup
+SELECT 'Tables created successfully!' as status;
+SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;

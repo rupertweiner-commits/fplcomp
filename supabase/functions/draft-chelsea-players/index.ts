@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,26 +12,34 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
-    )
-
-    // Get all Chelsea players
-    const { data: players, error } = await supabaseClient
-      .from('chelsea_players')
-      .select('*')
-      .order('total_points', { ascending: false })
-
-    if (error) {
-      throw error
-    }
+    // For now, return mock Chelsea players data to test connectivity
+    const mockPlayers = [
+      {
+        id: 1,
+        web_name: "Cole Palmer",
+        first_name: "Cole",
+        second_name: "Palmer",
+        position_short: "MID",
+        now_cost: 60,
+        total_points: 205,
+        form: 7.2
+      },
+      {
+        id: 2,
+        web_name: "Nicolas Jackson",
+        first_name: "Nicolas",
+        second_name: "Jackson",
+        position_short: "FWD",
+        now_cost: 70,
+        total_points: 180,
+        form: 6.8
+      }
+    ];
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        data: players || [] 
+        data: mockPlayers 
       }),
       { 
         status: 200, 

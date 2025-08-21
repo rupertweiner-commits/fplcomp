@@ -1,3 +1,4 @@
+// KPG FPL Competition - Deployed to Vercel (v3 - Force rebuild with timestamp: 2024-08-21 14:30)
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Wifi, WifiOff, Shield, User } from 'lucide-react';
@@ -14,6 +15,10 @@ import { pushNotificationService } from './services/pushNotificationService';
 // Import contexts
 import { ToastProvider } from './contexts/ToastContext';
 
+// Debug: Log which version is running
+console.log('🚀 App version: v3 - Force rebuild with timestamp: 2024-08-21 14:30');
+console.log('🔧 WebSocket should be completely disabled');
+
 // KPG FPL Competition - Deployed to Vercel (v2 - Fixed connection status)
 function App() {
   const [isConnected, setIsConnected] = useState(true);
@@ -25,7 +30,8 @@ function App() {
     // and show connected status based on API availability
     const checkApiConnection = async () => {
       try {
-        console.log('Checking API connection...');
+        console.log('🔍 Checking API connection...');
+        console.log('🔧 WebSocket service should be disabled in this version');
         
         // Test connection to Supabase Edge Function
         const response = await fetch('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status', {
@@ -37,24 +43,24 @@ function App() {
           mode: 'cors',
         });
         
-        console.log('API response status:', response.status);
-        console.log('API response ok:', response.ok);
+        console.log('📡 API response status:', response.status);
+        console.log('📡 API response ok:', response.ok);
         
         if (response.ok || response.status === 401 || response.status === 403) {
           // API is accessible (even if we get auth errors, the connection works)
-          console.log('API connection successful');
+          console.log('✅ API connection successful');
           setIsConnected(true);
           setConnectionStatus('Connected');
         } else {
-          console.log('API responded with unexpected status:', response.status);
+          console.log('❌ API responded with unexpected status:', response.status);
           throw new Error(`API responded with status: ${response.status}`);
         }
       } catch (error) {
-        console.error('Primary API connection failed:', error);
+        console.error('❌ Primary API connection failed:', error);
         
         // Try fallback endpoint
         try {
-          console.log('Trying fallback endpoint...');
+          console.log('🔄 Trying fallback endpoint...');
           const fallbackResponse = await fetch('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-chelsea-players', {
             method: 'GET',
             headers: {
@@ -63,17 +69,17 @@ function App() {
             mode: 'cors',
           });
           
-          console.log('Fallback response status:', fallbackResponse.status);
+          console.log('🔄 Fallback response status:', fallbackResponse.status);
           
           if (fallbackResponse.ok || fallbackResponse.status === 401 || fallbackResponse.status === 403) {
-            console.log('Fallback API connection successful');
+            console.log('✅ Fallback API connection successful');
             setIsConnected(true);
             setConnectionStatus('Connected');
           } else {
             throw new Error(`Fallback API responded with status: ${fallbackResponse.status}`);
           }
         } catch (fallbackError) {
-          console.error('Fallback API connection also failed:', fallbackError);
+          console.error('❌ Fallback API connection also failed:', fallbackError);
           setIsConnected(false);
           setConnectionStatus('API Unavailable');
         }
