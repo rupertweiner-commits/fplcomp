@@ -17,7 +17,7 @@ import { authService } from './services/authService';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-console.log('🚀 App version: v5 - Clean deployment with no API files - 2024-09-02 20:00');
+console.log('🚀 App version: v6 - Fixed ESLint errors - 2024-09-02 20:15');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
