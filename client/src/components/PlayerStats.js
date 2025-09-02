@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
-import axios from 'axios';
+import { supabase } from '../config/supabase';
 
 function PlayerStats() {
   const [players, setPlayers] = useState([]);
@@ -19,23 +19,60 @@ function PlayerStats() {
     try {
       setLoading(true);
       
+      // Fetch live data from FPL API
       const [bootstrapResponse, gameweekResponse] = await Promise.all([
-        axios.get('/api/fpl/bootstrap'),
-        axios.get('/api/fpl/current-gameweek')
+        fetch('https://fantasy.premierleague.com/api/bootstrap-static/'),
+        fetch('https://fantasy.premierleague.com/api/me/')
       ]);
       
-      const bootstrap = bootstrapResponse.data.data;
-      setCurrentGameweek(gameweekResponse.data.currentGameweek);
+      if (!bootstrapResponse.ok || !gameweekResponse.ok) {
+        throw new Error('Failed to fetch from FPL API');
+      }
+      
+      const bootstrap = await bootstrapResponse.json();
+      const gameweekData = await gameweekResponse.json();
+      
+      setCurrentGameweek(bootstrap.current_event || 1);
       
       // Filter to show only Chelsea players (team ID = 7)
       const chelseaPlayers = bootstrap.elements.filter(player => player.team === 7);
       
-      setPlayers(chelseaPlayers);
+      // Also fetch from Supabase for additional data
+      const { data: supabasePlayers, error: supabaseError } = await supabase
+        .from('chelsea_players')
+        .select('*');
+      
+      if (supabaseError) {
+        console.warn('Failed to fetch from Supabase:', supabaseError);
+      }
+      
+      // Merge FPL data with Supabase data
+      const mergedPlayers = chelseaPlayers.map(fplPlayer => {
+        const supabasePlayer = supabasePlayers?.find(sp => sp.fpl_id === fplPlayer.id);
+        return {
+          ...fplPlayer,
+          // Override with Supabase data if available
+          ...(supabasePlayer && {
+            name: supabasePlayer.name,
+            web_name: supabasePlayer.web_name || fplPlayer.web_name,
+            first_name: supabasePlayer.first_name || fplPlayer.first_name,
+            second_name: supabasePlayer.second_name || fplPlayer.second_name,
+            total_points: supabasePlayer.total_points || fplPlayer.total_points,
+            form: supabasePlayer.form || fplPlayer.form,
+            news: supabasePlayer.news || fplPlayer.news,
+            chance_of_playing_this_round: supabasePlayer.chance_of_playing_this_round || fplPlayer.chance_of_playing_this_round,
+            chance_of_playing_next_round: supabasePlayer.chance_of_playing_next_round || fplPlayer.chance_of_playing_next_round
+          })
+        };
+      });
+      
+      setPlayers(mergedPlayers);
       setTeams(bootstrap.teams);
       setPositions(bootstrap.element_types);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load player data');
+      console.error('Failed to fetch player data:', err);
+      setError('Failed to load player data from FPL API');
     } finally {
       setLoading(false);
     }
@@ -86,7 +123,7 @@ function PlayerStats() {
   }, [players, searchTerm, selectedPosition, sortBy, sortOrder]);
 
   useEffect(() => {
-    // eslint-disable-line react-hooks/exhaustive-deps
+    fetchPlayersData();
   }, []);
 
   useEffect(() => {
@@ -119,7 +156,7 @@ function PlayerStats() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="flex items-center space-x-3">
-          <RefreshCw className="w-6 h-6 animate-spin text-fpl-primary" />
+          <RefreshCw className="w-6 h-6 animate-spin text-blue-600" />
           <span className="text-lg text-gray-600">Loading player data...</span>
         </div>
       </div>
@@ -134,7 +171,10 @@ function PlayerStats() {
           <p className="text-lg font-medium">Failed to load player data</p>
           <p className="text-sm">{error}</p>
         </div>
-        <button onClick={fetchPlayersData} className="fpl-button-primary">
+        <button 
+          onClick={fetchPlayersData} 
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <RefreshCw className="w-4 h-4 inline mr-2" />
           Retry
         </button>
@@ -156,7 +196,7 @@ function PlayerStats() {
         </div>
 
       {/* Filters */}
-      <div className="fpl-card p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="lg:col-span-2">
@@ -170,7 +210,7 @@ function PlayerStats() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fpl-primary focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -193,7 +233,7 @@ function PlayerStats() {
             <select
               value={selectedPosition}
               onChange={(e) => setSelectedPosition(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fpl-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="">All Positions</option>
               {positions.map(position => (
@@ -216,7 +256,7 @@ function PlayerStats() {
                 setSortBy(field);
                 setSortOrder(order);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fpl-primary focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="total_points-desc">Total Points (High to Low)</option>
               <option value="total_points-asc">Total Points (Low to High)</option>
@@ -282,7 +322,7 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
   const form = getPlayerForm(player);
   
   return (
-    <div className="fpl-card p-6 hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
@@ -303,7 +343,7 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
         </div>
         
         <div className="text-right">
-          <div className="text-lg font-bold text-fpl-primary">
+          <div className="text-lg font-bold" style={{color: '#034694'}}>
             {formatPrice(player.now_cost)}
           </div>
           <div className="text-xs text-gray-500">price</div>
@@ -382,7 +422,8 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
       <div className="mt-4 pt-4 border-t border-gray-100">
         <button 
           onClick={() => {/* Implement player details modal */}}
-          className="w-full text-center text-sm text-fpl-primary hover:text-fpl-primary/80 font-medium"
+          className="w-full text-center text-sm font-medium hover:opacity-80 transition-opacity"
+          style={{color: '#034694'}}
         >
           View Details
         </button>
