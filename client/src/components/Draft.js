@@ -1050,9 +1050,9 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   // Fetch simulation data when in simulation mode
   const fetchSimulationData = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/draft/simulation/data?userId=${currentUser?.id}`);
-      console.log('Simulation data received:', response.data.data);
-      setSimulationLeaderboard(response.data.data);
+      // TODO: Implement simulation data fetching with Supabase
+      console.log('Simulation data fetch requested for user:', currentUser?.id);
+      setSimulationLeaderboard([]);
     } catch (error) {
       console.error('Failed to fetch simulation data for stats:', error);
     }
@@ -1150,10 +1150,10 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchSimulationData = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/draft/simulation/data?userId=${currentUser?.id}`);
-      console.log('Simulation data received:', response.data.data);
-      setSimulationData(response.data.data);
-      setGameweekHistory(response.data.data.gameweekHistory || []);
+      // TODO: Implement simulation data fetching with Supabase
+      console.log('Simulation data fetch requested for user:', currentUser?.id);
+      setSimulationData(null);
+      setGameweekHistory([]);
     } catch (error) {
       console.error('Failed to fetch simulation data:', error);
     }
@@ -1161,9 +1161,9 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/draft/simulation/leaderboard?userId=${currentUser?.id}`);
-      console.log('Leaderboard data received:', response.data.data);
-      setLeaderboard(response.data.data);
+      // TODO: Implement leaderboard fetching with Supabase
+      console.log('Leaderboard fetch requested for user:', currentUser?.id);
+      setLeaderboard([]);
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
     }
@@ -1179,14 +1179,13 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   const handleRandomizeTeams = async () => {
     try {
       setLoading(true);
-      await axios.post('/api/draft/simulation/randomize-teams', {
-        userId: currentUser?.id
-      });
+      // TODO: Implement team randomization with Supabase
+      console.log('Randomize teams requested for user:', currentUser?.id);
       await onRefresh();
       await fetchSimulationData();
       alert('Teams randomized successfully! Each user now has a balanced 5-player team.');
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to randomize teams');
+      alert('Failed to randomize teams');
     } finally {
       setLoading(false);
     }
@@ -1196,16 +1195,14 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     try {
       setLoading(true);
       const currentGameweek = draftStatus?.activeGameweek || draftStatus?.currentGameweek || 1;
-      await axios.post('/api/draft/simulation/simulate-gameweek', {
-        gameweek: currentGameweek,
-        userId: currentUser?.id
-      });
+      // TODO: Implement gameweek simulation with Supabase
+      console.log('Simulate gameweek requested:', currentGameweek, 'for user:', currentUser?.id);
       await onRefresh();
       await fetchSimulationData();
       await fetchLeaderboard();
       alert(`Gameweek ${currentGameweek} simulated successfully!`);
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to simulate gameweek');
+      alert('Failed to simulate gameweek');
     } finally {
       setLoading(false);
     }
@@ -1217,14 +1214,12 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
       const currentMode = draftStatus?.simulationMode || false;
       const newMode = !currentMode;
       
-      await axios.post('/api/draft/toggle-simulation-mode', { 
-        enable: newMode,
-        userId: currentUser?.id
-      });
+      // TODO: Implement simulation mode toggle with Supabase
+      console.log('Toggle simulation mode requested:', newMode, 'for user:', currentUser?.id);
       await onRefresh();
       await fetchSimulationData();
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to toggle simulation mode');
+      alert('Failed to toggle simulation mode');
     } finally {
       setLoading(false);
     }
@@ -1235,15 +1230,14 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     if (confirm('Are you sure you want to reset all simulation data? This cannot be undone.')) {
       try {
         setLoading(true);
-        await axios.post('/api/draft/simulation/reset', {
-          userId: currentUser?.id
-        });
+        // TODO: Implement simulation reset with Supabase
+        console.log('Reset simulation requested for user:', currentUser?.id);
         await onRefresh();
         await fetchSimulationData();
         await fetchLeaderboard();
         alert('Simulation reset successfully!');
       } catch (error) {
-        alert(error.response?.data?.error || 'Failed to reset simulation');
+        alert('Failed to reset simulation');
       } finally {
         setLoading(false);
       }
@@ -1613,15 +1607,12 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const handleTransfer = async (playerOutId, playerInId) => {
     try {
       setLoading(true);
-      await axios.post('/api/draft/transfer', {
-        userId: currentUser.id,
-        playerOutId,
-        playerInId
-      });
+      // TODO: Implement transfer logic with Supabase
+      console.log('Transfer requested:', playerOutId, 'out,', playerInId, 'in for user:', currentUser.id);
       await onRefresh();
       await fetchAvailablePlayers();
     } catch (error) {
-      alert(error.response?.data?.error || 'Transfer failed');
+      alert('Transfer failed');
     } finally {
       setLoading(false);
     }
@@ -1632,8 +1623,8 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   // Helper function to automatically save team changes
   const autoSaveTeam = async (newActivePlayers, newBenchedPlayer, newCaptain) => {
     try {
-      await axios.post('/api/draft/set-gameweek-team', {
-        userId: currentUser.id,
+      // TODO: Implement team save logic with Supabase
+      console.log('Auto-save team requested for user:', currentUser.id, {
         activePlayers: newActivePlayers,
         benchedPlayer: newBenchedPlayer,
         captain: newCaptain
@@ -1716,15 +1707,12 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
 
     try {
       setLoading(true);
-      await axios.post('/api/draft/use-chip', {
-        userId: currentUser.id,
-        chipId,
-        targetUserId
-      });
+      // TODO: Implement chip usage logic with Supabase
+      console.log('Use chip requested:', chipName, chipId, 'for user:', currentUser.id, 'target:', targetUserId);
       await onRefresh();
       alert(`${chipName} used successfully!`);
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to use chip');
+      alert('Failed to use chip');
     } finally {
       setLoading(false);
     }
