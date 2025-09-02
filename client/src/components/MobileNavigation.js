@@ -1,4 +1,4 @@
-Whatimport React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Shield, User, Settings, X, Menu, LogOut } from 'lucide-react';
 const MobileNavigation = ({ currentUser, onLogout }) => {
