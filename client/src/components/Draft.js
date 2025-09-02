@@ -24,6 +24,7 @@ import UserActivity from './UserActivity.js';
 import DraftQueue from './DraftQueue.js';
 import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
+import AuthForm from './AuthForm.js';
 
 function Draft({ wsService }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -110,26 +111,17 @@ function Draft({ wsService }) {
     }
   };
 
-  const handleLogin = async (username, password) => {
+  const handleLogin = async (user) => {
     try {
-      const result = await authService.login(username, password);
+      // The AuthForm now handles the login and passes the user object directly
+      setCurrentUser(user);
+      setError(null);
       
-      if (result.success) {
-        const user = { 
-          ...result.user, 
-          sessionId: 'temp-session' 
-        };
-        setCurrentUser(user);
-        setError(null);
-        
-        // Check if user profile is complete
-        await checkProfileCompletion(user);
-      } else {
-        setError(result.error || 'Login failed');
-      }
+      // Check if user profile is complete
+      await checkProfileCompletion(user);
     } catch (err) {
       console.error('Login error:', err);
-      setError(err.response?.data?.error || 'Login failed');
+      setError('Login failed. Please try again.');
     }
   };
 
@@ -192,7 +184,7 @@ function Draft({ wsService }) {
 
 
   if (!currentUser) {
-    return <LoginForm onLogin={handleLogin} error={error} />;
+    return <AuthForm onLogin={handleLogin} error={error} />;
   }
 
   // Check if profile is complete
@@ -384,130 +376,7 @@ function Draft({ wsService }) {
   );
 }
 
-function LoginForm({ onLogin, error }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-
-  // Debug logging
-  console.log('🔐 LoginForm component rendering - v4 with password field');
-  console.log('📝 onLogin function:', onLogin);
-  console.log('❌ error prop:', error);
-  console.log('🔑 Using password field instead of email');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await onLogin(username, password);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-
-
-  // Show forgot password form if requested
-  if (showForgotPassword) {
-    return (
-      <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />
-    );
-  }
-
-  return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <Shield className="mx-auto h-12 w-12" style={{color: '#034694'}} />
-          <h2 className="mt-6 text-3xl font-extrabold" style={{color: '#034694'}}>
-            KPG's
-          </h2>
-          <h3 className="text-2xl font-bold" style={{color: '#034694'}}>
-            Annual Chelsea Competition
-          </h3>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to join the competition draft
-          </p>
-        </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Portia, Yasmin, Rupert, or Will"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your password"
-              />
-            </div>
-          </div>
-
-          {error && (
-            <div className="text-red-600 text-sm text-center">{error}</div>
-          )}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
-              style={{backgroundColor: '#034694', focusRingColor: '#034694'}}
-            >
-              {loading ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <>
-                  <LogIn className="w-4 h-4 mr-2" />
-                  Sign In
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* Forgot Password Link */}
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
-            >
-              Forgot your password?
-            </button>
-          </div>
-          
-          <div className="text-xs text-gray-500 text-center">
-            Demo: Try "Rupert" with password "password123", or "Portia" with password "password123"
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
+// LoginForm component removed - now using AuthForm
 
 function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, error }) {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
