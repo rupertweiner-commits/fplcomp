@@ -40,13 +40,46 @@ class AuthService {
 
   async login(username, password) {
     try {
-      const response = await axios.post('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/auth-login', { 
-        username, 
-        password 
-      });
-      
-      if (response.data.success) {
-        const { user, token } = response.data.data;
+      // Mock authentication for demo purposes
+      const demoUsers = {
+        'Rupert': { 
+          id: 1, 
+          username: 'Rupert', 
+          email: 'rupertweiner@gmail.com', 
+          firstName: 'Rupert', 
+          lastName: 'Weiner', 
+          isAdmin: true 
+        },
+        'Portia': { 
+          id: 2, 
+          username: 'Portia', 
+          email: 'portia@example.com', 
+          firstName: 'Portia', 
+          lastName: 'Demo', 
+          isAdmin: false 
+        },
+        'Yasmin': { 
+          id: 3, 
+          username: 'Yasmin', 
+          email: 'yasmin@example.com', 
+          firstName: 'Yasmin', 
+          lastName: 'User', 
+          isAdmin: false 
+        },
+        'Will': { 
+          id: 4, 
+          username: 'Will', 
+          email: 'will@example.com', 
+          firstName: 'Will', 
+          lastName: 'User', 
+          isAdmin: false 
+        }
+      };
+
+      // Check if user exists and password is correct (demo password: password123)
+      if (demoUsers[username] && password === 'password123') {
+        const user = demoUsers[username];
+        const token = `demo-token-${user.id}`;
         
         // Store user data and token
         this.token = token;
@@ -57,11 +90,11 @@ class AuthService {
         return { success: true, user, token };
       }
       
-      return { success: false, error: response.data.error };
+      return { success: false, error: 'Invalid username or password' };
     } catch (error) {
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Login failed' 
+        error: 'Login failed' 
       };
     }
   }
