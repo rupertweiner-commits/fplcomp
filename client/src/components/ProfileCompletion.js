@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Mail, AlertCircle, Camera, CheckCircle, Save } from 'lucide-react';
 import axios from 'axios';
+import { supabase } from '../config/supabase';
 import ProfilePictureUpload from './ProfilePictureUpload';
 
 const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
@@ -149,11 +150,27 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     console.log('  - Email length:', formData.email.length);
     
     try {
-      // Mock profile update - no API call needed for demo
-      console.log('✅ Profile update successful (mock)');
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Update profile in Supabase
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
+          phone: formData.phone,
+          profile_picture: formData.profilePicture,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Profile update failed:', error);
+        setErrors({ submit: error.message });
+        return;
+      }
+
+      console.log('✅ Profile update successful');
       
       // Update the current user with new profile data
       const updatedUser = { 

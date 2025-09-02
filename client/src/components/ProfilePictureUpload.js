@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Upload, Camera, AlertCircle, CheckCircle } from 'lucide-react';
+import { supabase } from '../config/supabase';
 const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -90,18 +91,36 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
     setSuccess('');
 
     try {
-      // Mock upload - simulate progress
-      for (let i = 0; i <= 100; i += 10) {
-        setUploadProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 100));
+      // Convert base64 to blob
+      const response = await fetch(previewImage);
+      const blob = await response.blob();
+      const fileExt = 'jpg';
+      const fileName = `${userId}-${Date.now()}.${fileExt}`;
+      const filePath = `profile-pictures/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profile-pictures')
+        .upload(filePath, blob, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) {
+        throw uploadError;
       }
 
-      // Mock successful upload
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('profile-pictures')
+        .getPublicUrl(filePath);
+
+      setUploadProgress(100);
       setSuccess('Profile picture updated successfully!');
       
-      // Update parent component with the preview image (base64 data URL)
+      // Update parent component with the public URL
       if (onPictureUpdate) {
-        onPictureUpdate(previewImage);
+        onPictureUpdate(urlData.publicUrl);
       }
 
       // Reset form
@@ -113,6 +132,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
       }, 2000);
 
     } catch (err) {
+      console.error('Upload error:', err);
       setError('Failed to upload image: ' + err.message);
     } finally {
       setIsUploading(false);
@@ -121,7 +141,18 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
   const removePicture = async () => {
     try {
-      // Mock remove picture
+      // Remove from Supabase Storage if there's a current picture
+      if (currentPicture && currentPicture.includes('supabase')) {
+        const fileName = currentPicture.split('/').pop();
+        const { error: deleteError } = await supabase.storage
+          .from('profile-pictures')
+          .remove([`profile-pictures/${fileName}`]);
+        
+        if (deleteError) {
+          console.error('Delete error:', deleteError);
+        }
+      }
+
       setSuccess('Profile picture removed successfully!');
       if (onPictureUpdate) {
         onPictureUpdate(null);
