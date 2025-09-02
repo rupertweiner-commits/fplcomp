@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -12,13 +14,13 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { username, email } = req.body;
+    const { username, password } = req.body;
 
     // Validate required fields
-    if (!username || !email) {
+    if (!username || !password) {
       return res.status(400).json({
         success: false,
-        error: 'Username and email are required'
+        error: 'Username and password are required'
       });
     }
 
@@ -27,13 +29,12 @@ export default async function handler(req, res) {
       .from('users')
       .select('*')
       .eq('username', username)
-      .eq('email', email)
       .single();
 
     if (error || !user) {
       return res.status(401).json({
         success: false,
-        error: 'Invalid username or email'
+        error: 'Invalid username or password'
       });
     }
 
@@ -45,7 +46,27 @@ export default async function handler(req, res) {
       });
     }
 
-    // Return user data (without sensitive information)
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid username or password'
+      });
+    }
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        username: user.username,
+        isAdmin: user.is_admin 
+      },
+      process.env.JWT_SECRET || 'fallback-secret-key',
+      { expiresIn: '7d' }
+    );
+
+    // Return user data with token
     res.json({
       success: true,
       data: {
@@ -58,7 +79,8 @@ export default async function handler(req, res) {
           isAdmin: user.is_admin,
           profilePicture: user.profile_picture,
           notificationPreferences: user.notification_preferences
-        }
+        },
+        token
       },
       message: 'Login successful'
     });

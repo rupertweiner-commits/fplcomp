@@ -38,23 +38,23 @@ class AuthService {
     );
   }
 
-  async login(username, email) {
+  async login(username, password) {
     try {
       const response = await axios.post('/api/auth/login', { 
         username, 
-        email: email || `${username}@example.com` 
+        password 
       });
       
       if (response.data.success) {
-        const { user } = response.data.data;
+        const { user, token } = response.data.data;
         
-        // Store user data (no token for now)
-        this.token = 'temp-token';
+        // Store user data and token
+        this.token = token;
         this.user = user;
-        localStorage.setItem(this.tokenKey, 'temp-token');
+        localStorage.setItem(this.tokenKey, token);
         localStorage.setItem(this.userKey, JSON.stringify(user));
         
-        return { success: true, user };
+        return { success: true, user, token };
       }
       
       return { success: false, error: response.data.error };
@@ -62,6 +62,30 @@ class AuthService {
       return { 
         success: false, 
         error: error.response?.data?.error || 'Login failed' 
+      };
+    }
+  }
+
+  async register(username, email, password, firstName, lastName) {
+    try {
+      const response = await axios.post('/api/auth/register', { 
+        username, 
+        email, 
+        password,
+        firstName,
+        lastName
+      });
+      
+      if (response.data.success) {
+        const { user } = response.data.data;
+        return { success: true, user };
+      }
+      
+      return { success: false, error: response.data.error };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Registration failed' 
       };
     }
   }
