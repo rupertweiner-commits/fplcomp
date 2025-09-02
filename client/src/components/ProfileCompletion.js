@@ -9,7 +9,6 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     email: '',
     firstName: '',
     lastName: '',
-    phone: '',
     profilePicture: null,
     notificationPreferences: {
       deadlineReminders: true,
@@ -29,17 +28,25 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
 
   const fetchProfile = useCallback(async () => {
     try {
-      // Use Vercel API endpoint
-      const response = await axios.get(`/api/users/profile/${currentUser.id}`);
-      if (response.data.success) {
-        const userProfile = response.data.data;
+      // Use Supabase to fetch user profile
+      const { data: userProfile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+
+      if (error) {
+        console.error('Failed to fetch profile:', error);
+        return;
+      }
+
+      if (userProfile) {
         setProfile({
           email: userProfile.email || '',
-          firstName: userProfile.firstName || '',
-          lastName: userProfile.lastName || '',
-          phone: userProfile.phone || '',
-          profilePicture: userProfile.profilePicture || null,
-          notificationPreferences: userProfile.notificationPreferences || {
+          firstName: userProfile.first_name || '',
+          lastName: userProfile.last_name || '',
+          profilePicture: userProfile.profile_picture || null,
+          notificationPreferences: {
             deadlineReminders: true,
             deadlineSummaries: true,
             transferNotifications: true,

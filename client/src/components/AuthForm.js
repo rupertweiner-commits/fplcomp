@@ -9,6 +9,7 @@ const AuthForm = ({ onLogin, error }) => {
   const [formData, setFormData] = useState({
     username: '',
     email: '',
+    usernameOrEmail: '', // For login - can be either username or email
     password: '',
     confirmPassword: ''
   });
@@ -134,6 +135,7 @@ const AuthForm = ({ onLogin, error }) => {
       setFormData({
         username: '',
         email: '',
+        usernameOrEmail: '',
         password: '',
         confirmPassword: ''
       });
@@ -160,9 +162,28 @@ const AuthForm = ({ onLogin, error }) => {
     setSuccess('');
 
     try {
+      let userEmail = formData.usernameOrEmail;
+      
+      // If the input looks like a username (no @ symbol), look up the email
+      if (!formData.usernameOrEmail.includes('@')) {
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('email')
+          .eq('username', formData.usernameOrEmail)
+          .single();
+
+        if (userError || !userData) {
+          setErrors({ usernameOrEmail: 'Username not found' });
+          setLoading(false);
+          return;
+        }
+        
+        userEmail = userData.email;
+      }
+
       // Try to login with email and password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
+        email: userEmail,
         password: formData.password
       });
 
@@ -292,51 +313,79 @@ const AuthForm = ({ onLogin, error }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Username */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <User className="inline w-4 h-4 mr-2" />
-              Username *
-            </label>
-            <input
-              type="text"
-              value={formData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                errors.username ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your username"
-            />
-            {errors.username && (
-              <p className="mt-1 text-sm text-red-600 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.username}
-              </p>
-            )}
-          </div>
+          {isLogin ? (
+            /* Login: Username or Email */
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <User className="inline w-4 h-4 mr-2" />
+                Username or Email *
+              </label>
+              <input
+                type="text"
+                value={formData.usernameOrEmail}
+                onChange={(e) => handleInputChange('usernameOrEmail', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                  errors.usernameOrEmail ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Enter your username or email"
+              />
+              {errors.usernameOrEmail && (
+                <p className="mt-1 text-sm text-red-600 flex items-center">
+                  <AlertCircle className="w-4 h-4 mr-1" />
+                  {errors.usernameOrEmail}
+                </p>
+              )}
+            </div>
+          ) : (
+            /* Signup: Username and Email */
+            <>
+              {/* Username */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <User className="inline w-4 h-4 mr-2" />
+                  Username *
+                </label>
+                <input
+                  type="text"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    errors.username ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your username"
+                />
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.username}
+                  </p>
+                )}
+              </div>
 
-          {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Mail className="inline w-4 h-4 mr-2" />
-              Email Address *
-            </label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Enter your email address"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600 flex items-center">
-                <AlertCircle className="w-4 h-4 mr-1" />
-                {errors.email}
-              </p>
-            )}
-          </div>
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <Mail className="inline w-4 h-4 mr-2" />
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Enter your email address"
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {errors.email}
+                  </p>
+                )}
+              </div>
+            </>
+          )}
 
           {/* Password */}
           <div>
