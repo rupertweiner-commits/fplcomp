@@ -100,48 +100,27 @@ class AuthService {
   }
 
   async register(username, email, password, firstName, lastName) {
-    try {
-      // For now, registration is disabled - users are pre-created
-      return { 
-        success: false, 
-        error: 'Registration is currently disabled. Please contact an administrator to create an account.' 
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Registration failed' 
-      };
-    }
+    // For now, registration is disabled - users are pre-created
+    return { 
+      success: false, 
+      error: 'Registration is currently disabled. Please contact an administrator to create an account.' 
+    };
   }
 
   async changePassword(currentPassword, newPassword) {
-    try {
-      // Password change functionality disabled for demo
-      return { 
-        success: false, 
-        error: 'Password change is currently disabled in demo mode' 
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Password change failed' 
-      };
-    }
+    // Password change functionality disabled for demo
+    return { 
+      success: false, 
+      error: 'Password change is currently disabled in demo mode' 
+    };
   }
 
   async changeUsername(currentPassword, newUsername) {
-    try {
-      // Username change functionality disabled for demo
-      return { 
-        success: false, 
-        error: 'Username change is currently disabled in demo mode' 
-      };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Username change failed' 
-      };
-    }
+    // Username change functionality disabled for demo
+    return { 
+      success: false, 
+      error: 'Username change is currently disabled in demo mode' 
+    };
   }
 
   logout() {
