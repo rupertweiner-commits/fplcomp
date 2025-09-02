@@ -392,9 +392,10 @@ function LoginForm({ onLogin, error }) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Debug logging
-  console.log('🔐 LoginForm component rendering');
+  console.log('🔐 LoginForm component rendering - v4 with password field');
   console.log('📝 onLogin function:', onLogin);
   console.log('❌ error prop:', error);
+  console.log('🔑 Using password field instead of email');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
