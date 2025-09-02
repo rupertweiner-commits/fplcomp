@@ -27,26 +27,35 @@ const AuthForm = ({ onLogin, error }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.username.trim()) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-    }
+    if (isLogin) {
+      // For login, only require usernameOrEmail and password
+      if (!formData.usernameOrEmail.trim()) {
+        newErrors.usernameOrEmail = 'Username or email is required';
+      }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      }
+    } else {
+      // For signup, require username, email, and password
+      if (!formData.username.trim()) {
+        newErrors.username = 'Username is required';
+      } else if (formData.username.length < 3) {
+        newErrors.username = 'Username must be at least 3 characters';
+      }
 
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
 
-    // Only validate confirm password for signup
-    if (!isLogin) {
+      if (!formData.password) {
+        newErrors.password = 'Password is required';
+      } else if (formData.password.length < 6) {
+        newErrors.password = 'Password must be at least 6 characters';
+      }
+
       if (!formData.confirmPassword) {
         newErrors.confirmPassword = 'Please confirm your password';
       } else if (formData.password !== formData.confirmPassword) {
