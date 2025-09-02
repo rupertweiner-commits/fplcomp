@@ -17,7 +17,7 @@ import { authService } from './services/authService';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-console.log('🚀 App version: v7 - Fixed 404 routing issue - 2024-09-02 20:20');
+console.log('🚀 App version: v8 - Standard Vercel React config - 2024-09-02 20:25');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
