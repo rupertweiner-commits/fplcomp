@@ -26,6 +26,7 @@ import DraftQueue from './DraftQueue.js';
 import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
+import FPLDataSync from './FPLDataSync.js';
 
 function Draft({ wsService }) {
   const [currentUser, setCurrentUser] = useState(null);
@@ -408,14 +409,23 @@ function Draft({ wsService }) {
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900 flex items-center">
               <Activity className="mr-3 h-8 w-8" />
-              User Activity Dashboard
+              Admin Dashboard
             </h2>
             <p className="text-gray-600 mt-2">
-              Monitor all user activity across the platform (Admin only)
+              Admin tools and user activity monitoring
             </p>
           </div>
           
-          <UserActivity userId={currentUser.id} isAdmin={true} />
+          {/* FPL Data Sync */}
+          <div className="mb-8">
+            <FPLDataSync />
+          </div>
+          
+          {/* User Activity */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Activity</h3>
+            <UserActivity userId={currentUser.id} isAdmin={true} />
+          </div>
         </div>
       )}
     </div>
