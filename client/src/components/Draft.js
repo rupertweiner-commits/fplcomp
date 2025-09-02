@@ -16,7 +16,7 @@ import {
   RotateCcw,
   Activity
 } from 'lucide-react';
-import axios from 'axios';
+// import axios from 'axios'; // Not needed - using Supabase directly
 import { authService } from '../services/authService';
 import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
@@ -44,21 +44,7 @@ function Draft({ wsService }) {
   console.log('👤 currentUser:', currentUser);
   console.log('❌ error:', error);
 
-  // Test API connection
-  useEffect(() => {
-    const testConnection = async () => {
-      try {
-        const response = await axios.get('/api/draft/status');
-        console.log('✅ API connection successful:', response.data);
-        setError(null);
-      } catch (err) {
-        console.error('❌ API connection failed:', err);
-        setError('Cannot connect to backend API');
-      }
-    };
-    
-    testConnection();
-  }, []);
+  // No API connection test needed - using Supabase directly
 
   useEffect(() => {
     if (currentUser) {
@@ -174,15 +160,10 @@ function Draft({ wsService }) {
 
   const handleLogout = async () => {
     try {
-      // Log logout activity if user was logged in
-      if (currentUser) {
-        await axios.post('/api/draft/logout', {
-          userId: currentUser.id,
-          sessionId: currentUser.sessionId
-        });
-      }
+      // Logout handled by Supabase auth service
+      console.log('Logging out user:', currentUser?.username);
     } catch (error) {
-      console.error('Failed to log logout activity:', error);
+      console.error('Logout error:', error);
     } finally {
       setCurrentUser(null);
       setDraftStatus(null);
@@ -214,17 +195,15 @@ function Draft({ wsService }) {
 
   const handleDraftPlayer = async (playerId) => {
     try {
-      const response = await axios.post('/api/draft/pick-player', {
-        userId: currentUser.id,
-        playerId: playerId
-      });
+      // TODO: Implement draft player logic with Supabase
+      console.log('Drafting player:', playerId, 'for user:', currentUser.id);
       
-      // Refresh data after successful draft
+      // For now, just refresh data
       await fetchDraftData();
       
-      return response.data;
+      return { success: true };
     } catch (err) {
-      throw new Error(err.response?.data?.error || 'Failed to draft player');
+      throw new Error('Failed to draft player');
     }
   };
 
