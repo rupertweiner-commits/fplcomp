@@ -145,7 +145,6 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
       email: profile.email.trim(),
       firstName: profile.firstName.trim(),
       lastName: profile.lastName.trim(),
-      phone: profile.phone.trim(),
       profilePicture: profile.profilePicture,
       notificationPreferences: profile.notificationPreferences
     };
@@ -163,7 +162,6 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
         .update({
           first_name: formData.firstName,
           last_name: formData.lastName,
-          phone: formData.phone,
           profile_picture: formData.profilePicture,
           updated_at: new Date().toISOString()
         })
@@ -308,19 +306,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
             </div>
           </div>
 
-          {/* Phone (Optional) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number (Optional)
-            </label>
-            <input
-              type="tel"
-              value={profile.phone}
-              onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter your phone number"
-            />
-          </div>
+
 
           {/* Profile Picture */}
           <div>
