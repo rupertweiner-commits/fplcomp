@@ -19,60 +19,65 @@ function PlayerStats() {
     try {
       setLoading(true);
       
-      // Fetch live data from FPL API
-      const [bootstrapResponse, gameweekResponse] = await Promise.all([
-        fetch('https://fantasy.premierleague.com/api/bootstrap-static/'),
-        fetch('https://fantasy.premierleague.com/api/me/')
-      ]);
-      
-      if (!bootstrapResponse.ok || !gameweekResponse.ok) {
-        throw new Error('Failed to fetch from FPL API');
-      }
-      
-      const bootstrap = await bootstrapResponse.json();
-      const gameweekData = await gameweekResponse.json();
-      
-      setCurrentGameweek(bootstrap.current_event || 1);
-      
-      // Filter to show only Chelsea players (team ID = 7)
-      const chelseaPlayers = bootstrap.elements.filter(player => player.team === 7);
-      
-      // Also fetch from Supabase for additional data
+      // Fetch from Supabase database (primary source)
       const { data: supabasePlayers, error: supabaseError } = await supabase
         .from('chelsea_players')
-        .select('*');
+        .select('*')
+        .order('total_points', { ascending: false });
       
       if (supabaseError) {
-        console.warn('Failed to fetch from Supabase:', supabaseError);
+        console.error('Failed to fetch from Supabase:', supabaseError);
+        throw supabaseError;
       }
       
-      // Merge FPL data with Supabase data
-      const mergedPlayers = chelseaPlayers.map(fplPlayer => {
-        const supabasePlayer = supabasePlayers?.find(sp => sp.fpl_id === fplPlayer.id);
-        return {
-          ...fplPlayer,
-          // Override with Supabase data if available
-          ...(supabasePlayer && {
-            name: supabasePlayer.name,
-            web_name: supabasePlayer.web_name || fplPlayer.web_name,
-            first_name: supabasePlayer.first_name || fplPlayer.first_name,
-            second_name: supabasePlayer.second_name || fplPlayer.second_name,
-            total_points: supabasePlayer.total_points || fplPlayer.total_points,
-            form: supabasePlayer.form || fplPlayer.form,
-            news: supabasePlayer.news || fplPlayer.news,
-            chance_of_playing_this_round: supabasePlayer.chance_of_playing_this_round || fplPlayer.chance_of_playing_this_round,
-            chance_of_playing_next_round: supabasePlayer.chance_of_playing_next_round || fplPlayer.chance_of_playing_next_round
-          })
-        };
-      });
+      if (!supabasePlayers || supabasePlayers.length === 0) {
+        throw new Error('No Chelsea players found in database');
+      }
       
-      setPlayers(mergedPlayers);
-      setTeams(bootstrap.teams);
-      setPositions(bootstrap.element_types);
+      // Transform Supabase data to match FPL API format
+      const transformedPlayers = supabasePlayers.map(player => ({
+        id: player.fpl_id || player.id,
+        web_name: player.web_name || player.name,
+        first_name: player.first_name || '',
+        second_name: player.second_name || '',
+        team: 7, // Chelsea team ID
+        element_type: player.position === 'GK' ? 1 : 
+                     player.position === 'DEF' ? 2 : 
+                     player.position === 'MID' ? 3 : 4,
+        now_cost: player.price ? Math.round(player.price * 10) : 0,
+        total_points: player.total_points || 0,
+        form: player.form || '0.0',
+        goals_scored: 0, // These would need to be added to your database
+        assists: 0,
+        clean_sheets: 0,
+        selected_by_percent: player.selected_by_percent || '0.0',
+        status: 'a', // Available by default
+        chance_of_playing_this_round: player.chance_of_playing_this_round || 100,
+        chance_of_playing_next_round: player.chance_of_playing_next_round || 100,
+        news: player.news || '',
+        // Additional fields from your database
+        name: player.name,
+        position: player.position,
+        price: player.price,
+        is_available: player.is_available
+      }));
+      
+      setPlayers(transformedPlayers);
+      setCurrentGameweek(1); // Default gameweek
+      
+      // Set up basic teams and positions data
+      setTeams([{ id: 7, short_name: 'CHE', name: 'Chelsea' }]);
+      setPositions([
+        { id: 1, singular_name_short: 'GK', plural_name: 'Goalkeepers' },
+        { id: 2, singular_name_short: 'DEF', plural_name: 'Defenders' },
+        { id: 3, singular_name_short: 'MID', plural_name: 'Midfielders' },
+        { id: 4, singular_name_short: 'FWD', plural_name: 'Forwards' }
+      ]);
+      
       setError(null);
     } catch (err) {
       console.error('Failed to fetch player data:', err);
-      setError('Failed to load player data from FPL API');
+      setError('Failed to load player data from database');
     } finally {
       setLoading(false);
     }
