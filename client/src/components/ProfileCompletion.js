@@ -147,19 +147,26 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     console.log('  - Email length:', formData.email.length);
     
     try {
-      // Use Vercel API endpoint
-      const response = await axios.put(`/api/users/profile/${currentUser.id}`, formData);
-
-      if (response.data.success) {
-        // Update the current user with new profile data
-        const updatedUser = { ...currentUser, ...response.data.data };
-        onProfileComplete(updatedUser);
-      }
+      // Mock profile update - no API call needed for demo
+      console.log('✅ Profile update successful (mock)');
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Update the current user with new profile data
+      const updatedUser = { 
+        ...currentUser, 
+        ...formData,
+        profileComplete: true 
+      };
+      
+      // Store in localStorage for persistence
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+      
+      onProfileComplete(updatedUser);
     } catch (error) {
       console.error('❌ Profile update failed:', error);
-      console.error('  - Response data:', error.response?.data);
-      console.error('  - Status:', error.response?.status);
-      setErrors({ submit: error.response?.data?.error || 'Failed to update profile' });
+      setErrors({ submit: 'Failed to update profile' });
     } finally {
       setLoading(false);
     }

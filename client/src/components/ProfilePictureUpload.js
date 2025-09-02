@@ -90,39 +90,22 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
     setSuccess('');
 
     try {
-      // Convert base64 to blob
-      const response = await fetch(previewImage);
-      const blob = await response.blob();
-      const file = new File([blob], 'profile-picture.jpg', { type: 'image/jpeg' });
-
-      // Create FormData
-      const formData = new FormData();
-      formData.append('profilePicture', file);
-
-      // Upload to server
-      const uploadResponse = await fetch(`/api/auth/profile/${userId}/picture`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Upload failed');
+      // Mock upload - simulate progress
+      for (let i = 0; i <= 100; i += 10) {
+        setUploadProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      const result = await uploadResponse.json();
+      // Mock successful upload
       setSuccess('Profile picture updated successfully!');
       
-      // Update parent component
+      // Update parent component with the preview image (base64 data URL)
       if (onPictureUpdate) {
-        onPictureUpdate(result.picturePath);
+        onPictureUpdate(previewImage);
       }
 
       // Reset form
       setPreviewImage(null);
-      setUploadProgress(100);
       
       // Close after success
       setTimeout(() => {
@@ -138,22 +121,14 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
   const removePicture = async () => {
     try {
-      const response = await fetch(`/api/auth/profile/${userId}/picture`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (response.ok) {
-        setSuccess('Profile picture removed successfully!');
-        if (onPictureUpdate) {
-          onPictureUpdate(null);
-        }
-        setTimeout(() => {
-          onClose();
-        }, 2000);
+      // Mock remove picture
+      setSuccess('Profile picture removed successfully!');
+      if (onPictureUpdate) {
+        onPictureUpdate(null);
       }
+      setTimeout(() => {
+        onClose();
+      }, 2000);
     } catch (err) {
       setError('Failed to remove picture: ' + err.message);
     }
