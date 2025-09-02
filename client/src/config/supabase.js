@@ -3,8 +3,17 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key'
 
+// Debug logging
+console.log('🔍 Supabase Config Debug:')
+console.log('  REACT_APP_SUPABASE_URL:', process.env.REACT_APP_SUPABASE_URL)
+console.log('  NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL)
+console.log('  Final URL:', supabaseUrl)
+console.log('  Final Key:', supabaseAnonKey.substring(0, 20) + '...')
+
 if (!process.env.REACT_APP_SUPABASE_URL && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
-  console.warn('Missing Supabase environment variables. Using placeholder values.')
+  console.warn('⚠️ Missing Supabase environment variables. Using placeholder values.')
+} else {
+  console.log('✅ Supabase environment variables found!')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
