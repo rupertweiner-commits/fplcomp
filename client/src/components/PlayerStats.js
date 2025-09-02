@@ -19,65 +19,34 @@ function PlayerStats() {
     try {
       setLoading(true);
       
-      // Fetch from Supabase database (primary source)
-      const { data: supabasePlayers, error: supabaseError } = await supabase
-        .from('chelsea_players')
-        .select('*')
-        .order('total_points', { ascending: false });
+      // Use CORS proxy to fetch live data from FPL API
+      const corsProxy = 'https://api.allorigins.win/raw?url=';
+      const fplApiUrl = 'https://fantasy.premierleague.com/api/bootstrap-static/';
       
-      if (supabaseError) {
-        console.error('Failed to fetch from Supabase:', supabaseError);
-        throw supabaseError;
+      const response = await fetch(corsProxy + encodeURIComponent(fplApiUrl));
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      if (!supabasePlayers || supabasePlayers.length === 0) {
-        throw new Error('No Chelsea players found in database');
+      const bootstrap = await response.json();
+      
+      setCurrentGameweek(bootstrap.current_event || 1);
+      
+      // Filter to show only Chelsea players (team ID = 7)
+      const chelseaPlayers = bootstrap.elements.filter(player => player.team === 7);
+      
+      if (chelseaPlayers.length === 0) {
+        throw new Error('No Chelsea players found in FPL API');
       }
       
-      // Transform Supabase data to match FPL API format
-      const transformedPlayers = supabasePlayers.map(player => ({
-        id: player.fpl_id || player.id,
-        web_name: player.web_name || player.name,
-        first_name: player.first_name || '',
-        second_name: player.second_name || '',
-        team: 7, // Chelsea team ID
-        element_type: player.position === 'GK' ? 1 : 
-                     player.position === 'DEF' ? 2 : 
-                     player.position === 'MID' ? 3 : 4,
-        now_cost: player.price ? Math.round(player.price * 10) : 0,
-        total_points: player.total_points || 0,
-        form: player.form || '0.0',
-        goals_scored: 0, // These would need to be added to your database
-        assists: 0,
-        clean_sheets: 0,
-        selected_by_percent: player.selected_by_percent || '0.0',
-        status: 'a', // Available by default
-        chance_of_playing_this_round: player.chance_of_playing_this_round || 100,
-        chance_of_playing_next_round: player.chance_of_playing_next_round || 100,
-        news: player.news || '',
-        // Additional fields from your database
-        name: player.name,
-        position: player.position,
-        price: player.price,
-        is_available: player.is_available
-      }));
-      
-      setPlayers(transformedPlayers);
-      setCurrentGameweek(1); // Default gameweek
-      
-      // Set up basic teams and positions data
-      setTeams([{ id: 7, short_name: 'CHE', name: 'Chelsea' }]);
-      setPositions([
-        { id: 1, singular_name_short: 'GK', plural_name: 'Goalkeepers' },
-        { id: 2, singular_name_short: 'DEF', plural_name: 'Defenders' },
-        { id: 3, singular_name_short: 'MID', plural_name: 'Midfielders' },
-        { id: 4, singular_name_short: 'FWD', plural_name: 'Forwards' }
-      ]);
-      
+      setPlayers(chelseaPlayers);
+      setTeams(bootstrap.teams);
+      setPositions(bootstrap.element_types);
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch player data:', err);
-      setError('Failed to load player data from database');
+      console.error('Failed to fetch player data from FPL API:', err);
+      setError('Failed to load live player data from FPL API');
     } finally {
       setLoading(false);
     }
@@ -190,15 +159,27 @@ function PlayerStats() {
   return (
     <div className="space-y-8">
       {/* Header */}
-              <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+        <div>
           <h1 className="text-3xl font-bold flex items-center space-x-3" style={{color: '#034694'}}>
             <Shield className="w-8 h-8" style={{color: '#034694'}} />
             <span>Chelsea Players</span>
           </h1>
           <p className="text-gray-600 mt-1">
-            KPG's Annual Chelsea Competition - Gameweek {currentGameweek}
+            Live FPL Data - KPG's Annual Chelsea Competition - Gameweek {currentGameweek}
           </p>
         </div>
+        
+        <button 
+          onClick={fetchPlayersData}
+          disabled={loading}
+          className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:opacity-90 text-white disabled:opacity-50"
+          style={{backgroundColor: '#034694'}}
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+          <span>{loading ? 'Loading...' : 'Refresh Live Data'}</span>
+        </button>
+      </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-6">
