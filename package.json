@@ -8,8 +8,7 @@
     "dev:client": "cd client && npm start",
     "dev:server": "node server.js",
     "build": "cd client && npm run build",
-    "start": "node server.js",
-    "vercel-build": "cd client && npm run build"
+    "start": "node server.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.55.0"
