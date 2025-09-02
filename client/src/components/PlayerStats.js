@@ -19,11 +19,8 @@ function PlayerStats() {
     try {
       setLoading(true);
       
-      // Use CORS proxy to fetch live data from FPL API
-      const corsProxy = 'https://api.allorigins.win/raw?url=';
-      const fplApiUrl = 'https://fantasy.premierleague.com/api/bootstrap-static/';
-      
-      const response = await fetch(corsProxy + encodeURIComponent(fplApiUrl));
+      // Fetch live data from FPL API via our Vercel API route
+      const response = await fetch('/api/fpl/bootstrap');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
