@@ -17,7 +17,7 @@ import { authService } from './services/authService';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-console.log('🚀 App version: v14 - Real Supabase authentication enabled - 2024-09-02 21:00');
+console.log('🚀 App version: v15 - Fixed MobileNavigation syntax error - 2024-09-02 21:05');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
