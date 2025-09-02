@@ -25,20 +25,23 @@ WHERE email = 'rupertweiner@gmail.com';
 
 -- Step 3: If user doesn't exist in users table, create them
 -- (This should only run if the user exists in auth.users but not in users)
-INSERT INTO users (id, username, email, is_admin, is_active, created_at, updated_at)
-SELECT 
-  au.id,
-  'rupert',
-  au.email,
-  true,  -- Set as admin
-  true,  -- Set as active
-  NOW(),
-  NOW()
-FROM auth.users au
-WHERE au.email = 'rupertweiner@gmail.com'
-AND NOT EXISTS (
-  SELECT 1 FROM users u WHERE u.email = 'rupertweiner@gmail.com'
-);
+DO $$
+DECLARE
+  auth_user_id UUID;
+BEGIN
+  -- Get the auth user ID
+  SELECT id INTO auth_user_id 
+  FROM auth.users 
+  WHERE email = 'rupertweiner@gmail.com';
+  
+  -- Insert into users table if auth user exists but not in users table
+  IF auth_user_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM users WHERE email = 'rupertweiner@gmail.com'
+  ) THEN
+    INSERT INTO users (id, username, email, is_admin, is_active, created_at, updated_at)
+    VALUES (auth_user_id, 'rupert', 'rupertweiner@gmail.com', true, true, NOW(), NOW());
+  END IF;
+END $$;
 
 -- Step 4: Update existing user to admin if they exist
 UPDATE users 
