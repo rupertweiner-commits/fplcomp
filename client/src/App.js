@@ -17,7 +17,7 @@ import { authService } from './services/authService';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-console.log('🚀 App version: v12 - Added comprehensive signup/login with Supabase - 2024-09-02 20:45');
+console.log('🚀 App version: v13 - Fixed Supabase config import path - 2024-09-02 20:50');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
