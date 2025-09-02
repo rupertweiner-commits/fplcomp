@@ -68,20 +68,11 @@ class AuthService {
 
   async register(username, email, password, firstName, lastName) {
     try {
-      const response = await axios.post('/api/auth/register', { 
-        username, 
-        email, 
-        password,
-        firstName,
-        lastName
-      });
-      
-      if (response.data.success) {
-        const { user } = response.data.data;
-        return { success: true, user };
-      }
-      
-      return { success: false, error: response.data.error };
+      // For now, registration is disabled - users are pre-created
+      return { 
+        success: false, 
+        error: 'Registration is currently disabled. Please contact an administrator to create an account.' 
+      };
     } catch (error) {
       return { 
         success: false, 
@@ -92,16 +83,11 @@ class AuthService {
 
   async changePassword(currentPassword, newPassword) {
     try {
-      const response = await axios.post(`/api/auth/profile/${this.user.id}/password`, {
-        currentPassword,
-        newPassword
-      });
-      
-      if (response.data.success) {
-        return { success: true, message: 'Password changed successfully' };
-      }
-      
-      return { success: false, error: response.data.error };
+      // Password change functionality disabled for demo
+      return { 
+        success: false, 
+        error: 'Password change is currently disabled in demo mode' 
+      };
     } catch (error) {
       return { 
         success: false, 
@@ -112,20 +98,11 @@ class AuthService {
 
   async changeUsername(currentPassword, newUsername) {
     try {
-      const response = await axios.post(`/api/auth/profile/${this.user.id}/username`, {
-        currentPassword,
-        newUsername
-      });
-      
-      if (response.data.success) {
-        // Update local user data
-        this.user.username = newUsername;
-        localStorage.setItem(this.userKey, JSON.stringify(this.user));
-        
-        return { success: true, message: 'Username changed successfully' };
-      }
-      
-      return { success: false, error: response.data.error };
+      // Username change functionality disabled for demo
+      return { 
+        success: false, 
+        error: 'Username change is currently disabled in demo mode' 
+      };
     } catch (error) {
       return { 
         success: false, 

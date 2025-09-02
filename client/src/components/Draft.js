@@ -17,6 +17,7 @@ import {
   Activity
 } from 'lucide-react';
 import axios from 'axios';
+import { authService } from '../services/authService';
 import PlayerStats from './PlayerStats';
 import ProfileManager from './ProfileManager';
 import UserActivity from './UserActivity.js';
@@ -109,17 +110,13 @@ function Draft({ wsService }) {
     }
   };
 
-  const handleLogin = async (username, email) => {
+  const handleLogin = async (username, password) => {
     try {
-      // Use Vercel API endpoint instead of Supabase Edge Function
-      const response = await axios.post('/api/auth/login', { 
-        username, 
-        email: email || `${username}@example.com` 
-      });
+      const result = await authService.login(username, password);
       
-      if (response.data.success) {
+      if (result.success) {
         const user = { 
-          ...response.data.data.user, 
+          ...result.user, 
           sessionId: 'temp-session' 
         };
         setCurrentUser(user);
@@ -128,7 +125,7 @@ function Draft({ wsService }) {
         // Check if user profile is complete
         await checkProfileCompletion(user);
       } else {
-        setError(response.data.error || 'Login failed');
+        setError(result.error || 'Login failed');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -389,7 +386,7 @@ function Draft({ wsService }) {
 
 function LoginForm({ onLogin, error }) {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -403,7 +400,7 @@ function LoginForm({ onLogin, error }) {
     e.preventDefault();
     setLoading(true);
     try {
-              await onLogin(username, email);
+      await onLogin(username, password);
     } finally {
       setLoading(false);
     }
@@ -453,18 +450,18 @@ function LoginForm({ onLogin, error }) {
               />
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
               </label>
               <input
-                id="email"
-                name="email"
-                type="email"
+                id="password"
+                name="password"
+                type="password"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="your.email@example.com"
+                placeholder="Enter your password"
               />
             </div>
           </div>
@@ -503,7 +500,7 @@ function LoginForm({ onLogin, error }) {
           </div>
           
           <div className="text-xs text-gray-500 text-center">
-            Demo: Try "Portia" with any email, or create a new account
+            Demo: Try "Rupert" with password "password123", or "Portia" with password "password123"
           </div>
         </form>
       </div>
