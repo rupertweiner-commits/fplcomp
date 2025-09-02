@@ -90,9 +90,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
       newErrors.lastName = 'Last name is required';
     }
     
-    if (!profile.profilePicture) {
-      newErrors.profilePicture = 'Profile picture is required';
-    }
+    // Profile picture is optional - no validation needed
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -168,11 +166,8 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
   };
 
   const getCompletionPercentage = () => {
-    const fields = ['email', 'firstName', 'lastName', 'profilePicture'];
+    const fields = ['email', 'firstName', 'lastName']; // Removed profilePicture as it's optional
     const completed = fields.filter(field => {
-      if (field === 'profilePicture') {
-        return profile[field] && profile[field].trim() !== '';
-      }
       return profile[field] && profile[field].trim() !== '';
     }).length;
     return Math.round((completed / fields.length) * 100);
@@ -208,28 +203,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
           </div>
         </div>
 
-        {/* Debug Section */}
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="text-sm font-medium text-yellow-800 mb-2">🔍 Debug Information</h3>
-          <div className="text-xs text-yellow-700 space-y-1">
-            <div>Email: "{profile.email}" (length: {profile.email.length})</div>
-            <div>First Name: "{profile.firstName}" (length: {profile.firstName.length})</div>
-            <div>Last Name: "{profile.lastName}" (length: {profile.lastName.length})</div>
-            <div>Profile Picture: {profile.profilePicture ? 'Set' : 'Not set'}</div>
-            <div>Client Validation: {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email) ? '✅ Pass' : '❌ Fail'}</div>
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              console.log('🔍 Current profile state:', profile);
-              console.log('🔍 Current errors:', errors);
-              console.log('🔍 Email validation test:', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email));
-            }}
-            className="mt-2 px-3 py-1 bg-yellow-200 text-yellow-800 text-xs rounded hover:bg-yellow-300"
-          >
-            Log to Console
-          </button>
-        </div>
+
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -319,7 +293,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Camera className="inline w-4 h-4 mr-2" />
-              Profile Picture *
+              Profile Picture (Optional)
             </label>
             
             <div className="text-center">
