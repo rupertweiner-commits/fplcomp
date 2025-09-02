@@ -73,6 +73,14 @@ router.put('/profile/:userId', async (req, res) => {
     const userId = parseInt(req.params.userId);
     const { email, firstName, lastName, phone, profilePicture, notificationPreferences } = req.body;
     
+    // Debug logging
+    console.log('🔍 Profile update request received:');
+    console.log('  - User ID:', userId);
+    console.log('  - Email received:', JSON.stringify(email));
+    console.log('  - Email type:', typeof email);
+    console.log('  - Email length:', email ? email.length : 'undefined');
+    console.log('  - Email trimmed:', email ? email.trim() : 'undefined');
+    
     if (isNaN(userId)) {
       return res.status(400).json({
         success: false,
@@ -82,6 +90,12 @@ router.put('/profile/:userId', async (req, res) => {
 
     // Validate required fields
     if (!email || !firstName || !lastName || !profilePicture) {
+      console.log('❌ Required field validation failed:');
+      console.log('  - Email present:', !!email);
+      console.log('  - First name present:', !!firstName);
+      console.log('  - Last name present:', !!lastName);
+      console.log('  - Profile picture present:', !!profilePicture);
+      
       return res.status(400).json({
         success: false,
         error: 'Email, first name, last name, and profile picture are required'
@@ -90,7 +104,13 @@ router.put('/profile/:userId', async (req, res) => {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    const emailTest = emailRegex.test(email);
+    console.log('🔍 Email validation:');
+    console.log('  - Email to test:', JSON.stringify(email));
+    console.log('  - Regex test result:', emailTest);
+    console.log('  - Regex pattern:', emailRegex.toString());
+    
+    if (!emailTest) {
       return res.status(400).json({
         success: false,
         error: 'Invalid email format'

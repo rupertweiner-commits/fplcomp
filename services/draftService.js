@@ -100,6 +100,35 @@ export class DraftService {
             user.isAdmin = false;
           }
           
+          // Initialize profile fields if they don't exist
+          if (user.email === undefined) {
+            user.email = '';
+          }
+          if (user.firstName === undefined) {
+            user.firstName = '';
+          }
+          if (user.lastName === undefined) {
+            user.lastName = '';
+          }
+          if (user.phone === undefined) {
+            user.phone = '';
+          }
+          if (user.profilePicture === undefined) {
+            user.profilePicture = '';
+          }
+          if (user.notificationPreferences === undefined) {
+            user.notificationPreferences = {
+              deadlineReminders: true,
+              deadlineSummaries: true,
+              transferNotifications: true,
+              chipNotifications: true,
+              liveScoreUpdates: false,
+              weeklyReports: true,
+              emailNotifications: true,
+              pushNotifications: true
+            };
+          }
+          
           // Remove old password fields for security (now handled by user service)
           if (user.password) {
             delete user.password;
@@ -279,10 +308,21 @@ export class DraftService {
 
   // Update user profile with extended fields
   async updateUserProfile(userId, updates) {
+    console.log('🔍 updateUserProfile called with:', { userId, updates });
+    
     const user = this.draftData.users.find(u => u.id === userId);
     if (!user) {
+      console.log('❌ User not found:', userId);
       return null;
     }
+
+    console.log('🔍 Found user:', { 
+      id: user.id, 
+      username: user.username, 
+      currentEmail: user.email,
+      currentFirstName: user.firstName,
+      currentLastName: user.lastName
+    });
 
     // Allow updating profile fields
     const allowedFields = ['email', 'firstName', 'lastName', 'phone', 'profilePicture', 'notificationPreferences'];
@@ -291,11 +331,23 @@ export class DraftService {
     for (const [key, value] of Object.entries(updates)) {
       if (allowedFields.includes(key)) {
         safeUpdates[key] = value;
+        console.log(`✅ Updating ${key}:`, value);
+      } else {
+        console.log(`⚠️ Skipping disallowed field: ${key}`);
       }
     }
 
     // Apply updates
     Object.assign(user, safeUpdates);
+    
+    console.log('🔍 User after update:', { 
+      id: user.id, 
+      username: user.username, 
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName
+    });
+    
     await this.saveDraftData();
 
     return user;

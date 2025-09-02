@@ -40,7 +40,7 @@ class AuthService {
 
   async login(username, email) {
     try {
-      const response = await axios.post('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/auth-login', { 
+      const response = await axios.post('/api/auth/login', { 
         username, 
         email: email || `${username}@example.com` 
       });

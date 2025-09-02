@@ -35,16 +35,21 @@ function Draft({ wsService }) {
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(false);
 
-  // Test Supabase connection
+  // Debug logging
+  console.log('🚀 Draft component rendering');
+  console.log('👤 currentUser:', currentUser);
+  console.log('❌ error:', error);
+
+  // Test API connection
   useEffect(() => {
     const testConnection = async () => {
       try {
-        const response = await axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status');
-        console.log('✅ Supabase connection successful:', response.data);
+        const response = await axios.get('/api/draft/status');
+        console.log('✅ API connection successful:', response.data);
         setError(null);
       } catch (err) {
-        console.error('❌ Supabase connection failed:', err);
-        setError('Cannot connect to Supabase backend');
+        console.error('❌ API connection failed:', err);
+        setError('Cannot connect to backend API');
       }
     };
     
@@ -74,8 +79,8 @@ function Draft({ wsService }) {
     try {
       setLoading(true);
       const [statusResponse, playersResponse] = await Promise.all([
-        axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status'),
-        axios.get('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-chelsea-players')
+        axios.get('/api/draft/status'),
+        axios.get('/api/draft/chelsea-players')
       ]);
       
       setDraftStatus(statusResponse.data.data);
@@ -106,20 +111,27 @@ function Draft({ wsService }) {
 
   const handleLogin = async (username, email) => {
     try {
-      const response = await axios.post('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/auth-login', { 
+      // Use Vercel API endpoint instead of Supabase Edge Function
+      const response = await axios.post('/api/auth/login', { 
         username, 
         email: email || `${username}@example.com` 
       });
-      const user = { 
-        ...response.data.data.user, 
-        sessionId: 'temp-session' 
-      };
-      setCurrentUser(user);
-      setError(null);
       
-      // Check if user profile is complete
-      await checkProfileCompletion(user);
+      if (response.data.success) {
+        const user = { 
+          ...response.data.data.user, 
+          sessionId: 'temp-session' 
+        };
+        setCurrentUser(user);
+        setError(null);
+        
+        // Check if user profile is complete
+        await checkProfileCompletion(user);
+      } else {
+        setError(response.data.error || 'Login failed');
+      }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.error || 'Login failed');
     }
   };
@@ -381,6 +393,11 @@ function LoginForm({ onLogin, error }) {
   const [loading, setLoading] = useState(false);
 
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  // Debug logging
+  console.log('🔐 LoginForm component rendering');
+  console.log('📝 onLogin function:', onLogin);
+  console.log('❌ error prop:', error);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

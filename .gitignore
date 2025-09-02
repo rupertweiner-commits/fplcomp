@@ -110,3 +110,4 @@ uploads/
 # Data files (if you want to exclude them)
 data/*.json
 !data/sample.json
+.vercel

@@ -76,6 +76,15 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/draft-queue', draftQueueRoutes);
 app.use('/api/users', userRoutes);
 
+// Health check endpoint for Railway
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   // Check if we have any cached data to determine service health

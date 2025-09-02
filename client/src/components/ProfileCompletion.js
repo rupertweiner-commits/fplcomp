@@ -28,6 +28,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
 
   const fetchProfile = useCallback(async () => {
     try {
+      // Use Vercel API endpoint
       const response = await axios.get(`/api/users/profile/${currentUser.id}`);
       if (response.data.success) {
         const userProfile = response.data.data;
@@ -130,15 +131,26 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     }
 
     setLoading(true);
+    
+    // Debug logging
+    const formData = {
+      email: profile.email.trim(),
+      firstName: profile.firstName.trim(),
+      lastName: profile.lastName.trim(),
+      phone: profile.phone.trim(),
+      profilePicture: profile.profilePicture,
+      notificationPreferences: profile.notificationPreferences
+    };
+    
+    console.log('🔍 Submitting profile data:');
+    console.log('  - Form data:', formData);
+    console.log('  - Email value:', JSON.stringify(formData.email));
+    console.log('  - Email type:', typeof formData.email);
+    console.log('  - Email length:', formData.email.length);
+    
     try {
-      const response = await axios.put(`/api/users/profile/${currentUser.id}`, {
-        email: profile.email.trim(),
-        firstName: profile.firstName.trim(),
-        lastName: profile.lastName.trim(),
-        phone: profile.phone.trim(),
-        profilePicture: profile.profilePicture,
-        notificationPreferences: profile.notificationPreferences
-      });
+      // Use Vercel API endpoint
+      const response = await axios.put(`/api/users/profile/${currentUser.id}`, formData);
 
       if (response.data.success) {
         // Update the current user with new profile data
@@ -146,7 +158,9 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
         onProfileComplete(updatedUser);
       }
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error('❌ Profile update failed:', error);
+      console.error('  - Response data:', error.response?.data);
+      console.error('  - Status:', error.response?.status);
       setErrors({ submit: error.response?.data?.error || 'Failed to update profile' });
     } finally {
       setLoading(false);
@@ -192,6 +206,29 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
               style={{ width: `${getCompletionPercentage()}%` }}
             ></div>
           </div>
+        </div>
+
+        {/* Debug Section */}
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">🔍 Debug Information</h3>
+          <div className="text-xs text-yellow-700 space-y-1">
+            <div>Email: "{profile.email}" (length: {profile.email.length})</div>
+            <div>First Name: "{profile.firstName}" (length: {profile.firstName.length})</div>
+            <div>Last Name: "{profile.lastName}" (length: {profile.lastName.length})</div>
+            <div>Profile Picture: {profile.profilePicture ? 'Set' : 'Not set'}</div>
+            <div>Client Validation: {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email) ? '✅ Pass' : '❌ Fail'}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              console.log('🔍 Current profile state:', profile);
+              console.log('🔍 Current errors:', errors);
+              console.log('🔍 Email validation test:', /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email));
+            }}
+            className="mt-2 px-3 py-1 bg-yellow-200 text-yellow-800 text-xs rounded hover:bg-yellow-300"
+          >
+            Log to Console
+          </button>
         </div>
 
         {/* Form */}

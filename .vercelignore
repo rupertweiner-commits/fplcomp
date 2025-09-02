@@ -1,35 +1,125 @@
-# Exclude everything except the client directory
-*
-!client/
-!vercel.json
-
-# Exclude client node_modules and build artifacts
+# Dependencies
+node_modules/
 client/node_modules/
+**/.cache/
+**/node_modules/.cache/
+
+# Build outputs
 client/build/
-client/.env*
+client/dist/
 
-# Exclude server files
-server.js
-server.production.js
-routes/
-services/
-middleware/
-config/
+# Environment files
+.env
+.env.local
+.env.production
+env.production
+
+# Database files
+*.db
+data/
 database/
-uploads/
-scripts/
-nginx/
-supabase/
 
-# Exclude other unnecessary files
-*.md
-*.sql
-*.sh
-*.yaml
-*.yml
-Dockerfile
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
 docker-compose.yml
+Dockerfile
+
+# Deployment files
+deploy.sh
 cloudbuild.yaml
 app.yaml
-deploy.sh
-fix-eslint.js
+
+# Documentation
+*.md
+README.md
+DEPLOYMENT_*.md
+PRODUCTION_*.md
+QUICK_DEPLOY.md
+VERCEL_SUPABASE_DEPLOYMENT.md
+RAILWAY_DEPLOYMENT.md
+FREE_PLATFORM_DEPLOYMENT.md
+SUPABASE_SETUP.md
+TEASER_TRAILER.md
+
+# Scripts
+scripts/
+fix-*.js
+
+# Supabase
+supabase/
+supabase-*.sql
+
+# Routes and services (not needed for Vercel)
+routes/
+middleware/
+
+# Server files (not needed for Vercel)
+server.js
+server.production.js
+
+# Nginx
+nginx/
+
+# Uploads
+uploads/
+
+# EXCLUDE MASSIVE FILES - NOT PART OF FPL PROJECT
+Screenshots/
+Mine/
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.JPG
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.pdf

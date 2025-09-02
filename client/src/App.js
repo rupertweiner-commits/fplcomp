@@ -10,7 +10,8 @@ import ProfileManager from './components/ProfileManager';
 
 // Import services
 import { authService } from './services/authService';
-import { pushNotificationService } from './services/pushNotificationService';
+// TEMPORARILY DISABLED - Push notifications causing app to crash
+// import { pushNotificationService } from './services/pushNotificationService';
 
 // Import contexts
 import { ToastProvider } from './contexts/ToastContext';
@@ -18,6 +19,8 @@ import { ToastProvider } from './contexts/ToastContext';
 // Debug: Log which version is running
 console.log('🚀 App version: v3 - Force rebuild with timestamp: 2024-08-21 14:30');
 console.log('🔧 WebSocket should be completely disabled');
+console.log('�� Push notifications completely removed');
+console.log('🔧 Service Worker completely removed');
 
 // KPG FPL Competition - Deployed to Vercel (v2 - Fixed connection status)
 function App() {
@@ -28,6 +31,9 @@ function App() {
   useEffect(() => {
     // For frontend-only deployment, skip WebSocket connection
     // and show connected status based on API availability
+    
+    // SERVICE WORKER COMPLETELY REMOVED - No cleanup needed
+    
     const checkApiConnection = async () => {
       try {
         console.log('🔍 Checking API connection...');
@@ -90,8 +96,8 @@ function App() {
     checkApiConnection();
     const interval = setInterval(checkApiConnection, 30000);
 
-    // Initialize push notifications
-    pushNotificationService.initialize();
+    // TEMPORARILY DISABLED - Push notifications causing app to crash
+    // pushNotificationService.initialize();
 
     return () => {
       clearInterval(interval);
