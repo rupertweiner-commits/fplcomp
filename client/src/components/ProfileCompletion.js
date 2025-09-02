@@ -62,12 +62,14 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     }
   }, [currentUser, fetchProfile]);
 
+  // Check completion whenever profile state changes
+  useEffect(() => {
+    checkCompletion(profile);
+  }, [profile]);
+
   const checkCompletion = (userProfile) => {
-    const required = ['email', 'firstName', 'lastName', 'profilePicture'];
+    const required = ['email', 'firstName', 'lastName']; // Removed profilePicture as it's optional
     const isProfileComplete = required.every(field => {
-      if (field === 'profilePicture') {
-        return userProfile[field] && userProfile[field].trim() !== '';
-      }
       return userProfile[field] && userProfile[field].trim() !== '';
     });
     setIsComplete(isProfileComplete);
