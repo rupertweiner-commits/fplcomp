@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { authService } from '../services/authService';
+import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
 import ProfileManager from './ProfileManager';
 import UserActivity from './UserActivity.js';
@@ -80,16 +81,61 @@ function Draft({ wsService }) {
   const fetchDraftData = async () => {
     try {
       setLoading(true);
-      const [statusResponse, playersResponse] = await Promise.all([
-        axios.get('/api/draft/status'),
-        axios.get('/api/draft/chelsea-players')
-      ]);
       
-      setDraftStatus(statusResponse.data.data);
-      setChelseaPlayers(playersResponse.data.data);
+      // Fetch draft status from Supabase
+      const { data: draftStatusData, error: draftStatusError } = await supabase
+        .from('draft_status')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (draftStatusError) {
+        console.error('Failed to fetch draft status:', draftStatusError);
+        throw draftStatusError;
+      }
+
+      // Fetch Chelsea players from Supabase
+      const { data: playersData, error: playersError } = await supabase
+        .from('chelsea_players')
+        .select('*')
+        .order('position', { ascending: true });
+
+      if (playersError) {
+        console.error('Failed to fetch Chelsea players:', playersError);
+        throw playersError;
+      }
+
+      // Transform draft status data
+      const transformedDraftStatus = {
+        isActive: draftStatusData.is_active,
+        currentRound: draftStatusData.current_round,
+        currentPick: draftStatusData.current_pick,
+        totalRounds: draftStatusData.total_rounds,
+        timePerPick: draftStatusData.time_per_pick,
+        isPaused: draftStatusData.is_paused,
+        currentPlayer: draftStatusData.current_player_id,
+        draftOrder: draftStatusData.draft_order || [],
+        completedPicks: draftStatusData.completed_picks || []
+      };
+
+      // Transform players data
+      const transformedPlayers = playersData.map(player => ({
+        id: player.id,
+        name: player.name,
+        position: player.position,
+        price: parseFloat(player.price),
+        team: player.team,
+        web_name: player.web_name,
+        is_available: player.is_available
+      }));
+      
+      setDraftStatus(transformedDraftStatus);
+      setChelseaPlayers(transformedPlayers);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load draft data');
+      console.error('Failed to fetch draft data:', err);
+      setError('Failed to load draft data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -148,10 +194,10 @@ function Draft({ wsService }) {
   const checkProfileCompletion = async (user) => {
     try {
       setCheckingProfile(true);
-      const response = await axios.get(`/api/users/${user.id}/complete`);
-      if (response.data.success) {
-        setProfileComplete(response.data.data.isComplete);
-      }
+      
+      // Check if user has first_name and last_name in their profile
+      const isComplete = !!(user.firstName && user.lastName);
+      setProfileComplete(isComplete);
     } catch (error) {
       console.error('Failed to check profile completion:', error);
       setProfileComplete(false);
@@ -1500,8 +1546,29 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchAvailablePlayers = async () => {
     try {
-      const response = await axios.get('/api/draft/available-players');
-      setAvailablePlayers(response.data.data);
+      // Fetch available players from Supabase
+      const { data: playersData, error } = await supabase
+        .from('chelsea_players')
+        .select('*')
+        .eq('is_available', true)
+        .order('position', { ascending: true });
+
+      if (error) {
+        console.error('Failed to fetch available players:', error);
+        return;
+      }
+
+      const transformedPlayers = playersData.map(player => ({
+        id: player.id,
+        name: player.name,
+        position: player.position,
+        price: parseFloat(player.price),
+        team: player.team,
+        web_name: player.web_name,
+        is_available: player.is_available
+      }));
+
+      setAvailablePlayers(transformedPlayers);
     } catch (error) {
       console.error('Failed to fetch available players:', error);
     }
@@ -1509,8 +1576,28 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchAllPlayers = async () => {
     try {
-      const response = await axios.get('/api/draft/chelsea-players');
-      setAllPlayers(response.data.data);
+      // Fetch all players from Supabase
+      const { data: playersData, error } = await supabase
+        .from('chelsea_players')
+        .select('*')
+        .order('position', { ascending: true });
+
+      if (error) {
+        console.error('Failed to fetch all players:', error);
+        return;
+      }
+
+      const transformedPlayers = playersData.map(player => ({
+        id: player.id,
+        name: player.name,
+        position: player.position,
+        price: parseFloat(player.price),
+        team: player.team,
+        web_name: player.web_name,
+        is_available: player.is_available
+      }));
+
+      setAllPlayers(transformedPlayers);
     } catch (error) {
       console.error('Failed to fetch all players:', error);
     }
