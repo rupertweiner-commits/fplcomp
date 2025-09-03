@@ -158,8 +158,13 @@ class AuthService {
     try {
       console.log('🔍 Checking Supabase session...');
       
-      // First, try to get the current session
-      const { data: { session }, error } = await supabase.auth.getSession();
+      // Add timeout to prevent hanging
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+      );
+      
+      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
       
       console.log('📡 Session check result:', { 
         hasSession: !!session, 
@@ -171,42 +176,33 @@ class AuthService {
       
       if (error) {
         console.error('❌ Session check error:', error);
-        return false;
+        // Try to restore from localStorage as fallback
+        return this.tryRestoreFromStoredData();
       }
       
       if (!session) {
-        console.log('⚠️ No active session found');
-        return false;
+        console.log('⚠️ No active session found, trying stored data...');
+        return this.tryRestoreFromStoredData();
       }
 
-      // Check if session is expired
-      if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
-        console.log('⚠️ Session expired, attempting refresh...');
-        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-        
-        if (refreshError || !refreshData.session) {
-          console.log('❌ Session refresh failed:', refreshError);
-          return false;
-        }
-        
-        console.log('✅ Session refreshed successfully');
-        // Update session with refreshed data
-        session.access_token = refreshData.session.access_token;
-        session.expires_at = refreshData.session.expires_at;
-      }
-
-      // Session exists and is valid, update our stored data
+      // Session exists, update our stored data
       console.log('✅ Valid session found, updating stored data...');
       this.token = session.access_token;
       localStorage.setItem(this.tokenKey, session.access_token);
 
-      // Get user profile from database
+      // Get user profile from database with timeout
       console.log('🔍 Fetching user profile from database...');
-      const { data: userProfile, error: profileError } = await supabase
+      const profilePromise = supabase
         .from('users')
         .select('*')
         .eq('id', session.user.id)
         .single();
+      
+      const profileTimeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+      );
+      
+      const { data: userProfile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]);
 
       if (!profileError && userProfile) {
         this.user = {
@@ -222,10 +218,38 @@ class AuthService {
         return true;
       } else {
         console.error('❌ Failed to fetch user profile:', profileError);
-        return false;
+        // Try to restore from stored data as fallback
+        return this.tryRestoreFromStoredData();
       }
     } catch (error) {
       console.error('❌ Session check error:', error);
+      // Try to restore from stored data as fallback
+      return this.tryRestoreFromStoredData();
+    }
+  }
+
+  // Fallback method to restore from stored data
+  tryRestoreFromStoredData() {
+    try {
+      console.log('🔄 Attempting to restore from stored data...');
+      
+      const storedUser = localStorage.getItem(this.userKey);
+      const storedToken = localStorage.getItem(this.tokenKey);
+      
+      if (storedUser && storedToken) {
+        console.log('📦 Found stored user data, attempting restoration...');
+        
+        this.user = JSON.parse(storedUser);
+        this.token = storedToken;
+        
+        console.log('✅ Restored user from stored data:', this.user.email);
+        return true;
+      } else {
+        console.log('❌ No stored user data found');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error restoring from stored data:', error);
       return false;
     }
   }
