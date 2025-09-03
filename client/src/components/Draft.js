@@ -65,21 +65,34 @@ function Draft({ wsService }) {
     }
   }, [currentUser, wsService]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Smart sync Chelsea players after authentication (runs once)
+  useEffect(() => {
+    if (currentUser && currentUser.id) {
+      console.log('🔄 User authenticated, triggering smart sync...');
+      
+      // Delay the sync slightly to ensure UI is ready
+      const syncTimer = setTimeout(() => {
+        fetch('/api/sync/smart-sync')
+          .then(response => response.json())
+          .then(result => {
+            if (result.syncNeeded) {
+              console.log('✅ Smart sync completed:', result.message);
+            } else {
+              console.log('ℹ️ Smart sync: data already up to date');
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Smart sync failed (non-critical):', error.message);
+          });
+      }, 1000); // 1 second delay
+
+      return () => clearTimeout(syncTimer);
+    }
+  }, [currentUser?.id]); // Only run when user ID changes
+
   const fetchDraftData = async () => {
     try {
       setLoading(true);
-      
-      // Smart sync Chelsea players if needed (non-blocking)
-      fetch('/api/sync/smart-sync')
-        .then(response => response.json())
-        .then(result => {
-          if (result.syncNeeded) {
-            console.log('✅ Smart sync completed:', result.message);
-          }
-        })
-        .catch(error => {
-          console.warn('⚠️ Smart sync failed (non-critical):', error.message);
-        });
       
       // Fetch draft status from Supabase
       let { data: draftStatusData, error: draftStatusError } = await supabase
