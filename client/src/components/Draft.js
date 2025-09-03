@@ -736,7 +736,7 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
   };
 
   const handleResetDraft = async () => {
-    if (!confirm('Are you sure you want to reset the draft? This will clear all picks and start over.')) {
+    if (!window.confirm('Are you sure you want to reset the draft? This will clear all picks and start over.')) {
       return;
     }
     
@@ -1930,8 +1930,7 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   };
 
   const handleResetSimulation = async () => {
-    // eslint-disable-next-line no-restricted-globals
-    if (confirm('Are you sure you want to reset all simulation data? This cannot be undone.')) {
+    if (window.confirm('Are you sure you want to reset all simulation data? This cannot be undone.')) {
       try {
         setLoading(true);
         console.log('Reset simulation requested for user:', currentUser?.id);
