@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../config/supabase';
 
@@ -13,6 +13,18 @@ const AuthForm = ({ onLogin, error }) => {
   });
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState('');
+
+  // Reset loading when there's an auth state change
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        console.log('🔄 AuthForm: User signed in, resetting loading state');
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -144,33 +156,22 @@ const AuthForm = ({ onLogin, error }) => {
     setSuccess('');
 
     try {
-      console.log('🔄 Starting login process...');
+      console.log('🔄 Starting simple login process...');
       
-      // Add timeout to prevent hanging
-      const loginPromise = supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       });
 
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Login timeout - please try again')), 10000)
-      );
-
-      const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]);
-
       if (authError) {
         console.error('❌ Auth error:', authError);
         setErrors({ submit: authError.message });
+        setLoading(false);
         return;
       }
 
-      console.log('✅ Login successful, waiting for auth state change...');
-      
-      // Wait a moment for auth state to propagate, then reset loading
-      setTimeout(() => {
-        console.log('🔄 Resetting loading state after successful login');
-        setLoading(false);
-      }, 2000);
+      console.log('✅ Login successful, auth state will handle the rest');
+      // Don't manually reset loading - let the auth state change handle it
 
     } catch (error) {
       console.error('❌ Login error:', error);

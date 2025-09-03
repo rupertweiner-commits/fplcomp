@@ -75,21 +75,14 @@ function App() {
       console.log('🔄 Auth state changed:', event, session?.user?.email);
       
       if (event === 'SIGNED_IN' && session) {
+        console.log('🔄 User signed in, fetching profile for:', session.user.email);
+        
         try {
-          console.log('🔄 Fetching user profile for:', session.user.email);
-          
-          // Add timeout to profile fetch
-          const profilePromise = supabase
+          const { data: userProfile, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
-
-          const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
-          );
-
-          const { data: userProfile, error: profileError } = await Promise.race([profilePromise, timeoutPromise]);
 
           if (!profileError && userProfile) {
             const user = {
@@ -101,9 +94,9 @@ function App() {
               profileComplete: !!(userProfile.first_name && userProfile.last_name)
             };
             setCurrentUser(user);
-            console.log('✅ User signed in:', user.email);
+            console.log('✅ User profile loaded:', user.email, 'isAdmin:', user.isAdmin);
           } else {
-            console.error('❌ Profile fetch failed:', profileError);
+            console.warn('⚠️ Profile fetch failed, using basic user:', profileError?.message);
             // Create basic user object from session
             const basicUser = {
               id: session.user.id,
@@ -117,7 +110,7 @@ function App() {
             console.log('⚠️ Using basic user object:', basicUser.email);
           }
         } catch (error) {
-          console.error('❌ Error in auth state change:', error);
+          console.error('❌ Error fetching profile:', error);
           // Fallback to basic user
           const basicUser = {
             id: session.user.id,
