@@ -156,19 +156,37 @@ class AuthService {
   // Check if user has a valid session
   async checkSession() {
     try {
+      console.log('🔍 Checking Supabase session...');
+      
+      // First, try to get the current session
       const { data: { session }, error } = await supabase.auth.getSession();
       
-      if (error || !session) {
-        this.logout();
-        return false;
+      console.log('📡 Session check result:', { 
+        hasSession: !!session, 
+        hasError: !!error, 
+        userId: session?.user?.id,
+        email: session?.user?.email 
+      });
+      
+      if (error) {
+        console.error('❌ Session check error:', error);
+        // Don't logout immediately on error, try to restore from localStorage
+        return this.tryRestoreFromLocalStorage();
+      }
+      
+      if (!session) {
+        console.log('⚠️ No active session found, trying to restore from localStorage...');
+        return this.tryRestoreFromLocalStorage();
       }
 
-      // Update token if session exists
+      // Session exists, update our stored data
+      console.log('✅ Valid session found, updating stored data...');
       this.token = session.access_token;
       localStorage.setItem(this.tokenKey, session.access_token);
 
       // Get user profile if we don't have it
       if (!this.user) {
+        console.log('🔍 Fetching user profile from database...');
         const { data: userProfile, error: profileError } = await supabase
           .from('users')
           .select('*')
@@ -185,12 +203,43 @@ class AuthService {
             profileComplete: !!(userProfile.first_name && userProfile.last_name)
           };
           localStorage.setItem(this.userKey, JSON.stringify(this.user));
+          console.log('✅ User profile restored:', this.user.email);
+        } else {
+          console.error('❌ Failed to fetch user profile:', profileError);
+          return false;
         }
       }
 
       return true;
     } catch (error) {
-      console.error('Session check error:', error);
+      console.error('❌ Session check error:', error);
+      return this.tryRestoreFromLocalStorage();
+    }
+  }
+
+  // Try to restore user from localStorage
+  tryRestoreFromLocalStorage() {
+    try {
+      console.log('🔄 Attempting to restore from localStorage...');
+      
+      const storedUser = localStorage.getItem(this.userKey);
+      const storedToken = localStorage.getItem(this.tokenKey);
+      
+      if (storedUser && storedToken) {
+        console.log('📦 Found stored user data, attempting restoration...');
+        
+        this.user = JSON.parse(storedUser);
+        this.token = storedToken;
+        
+        console.log('✅ Restored user from localStorage:', this.user.email);
+        return true;
+      } else {
+        console.log('❌ No stored user data found');
+        this.logout();
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error restoring from localStorage:', error);
       this.logout();
       return false;
     }

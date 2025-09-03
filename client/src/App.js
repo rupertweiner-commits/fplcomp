@@ -35,6 +35,10 @@ function App() {
     const initializeAuth = async () => {
       try {
         console.log('🔐 Initializing authentication...');
+        
+        // Small delay to ensure Supabase is fully initialized
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const isAuthenticated = await authService.initialize();
         
         if (isAuthenticated) {
@@ -43,7 +47,21 @@ function App() {
           setCurrentUser(user);
         } else {
           console.log('❌ No valid session found');
-          setCurrentUser(null);
+          
+          // Fallback: Check localStorage directly
+          const storedUser = localStorage.getItem('fpl_user_data');
+          if (storedUser) {
+            try {
+              const user = JSON.parse(storedUser);
+              console.log('🔄 Fallback: Found stored user, attempting restoration:', user.email);
+              setCurrentUser(user);
+            } catch (error) {
+              console.error('❌ Error parsing stored user:', error);
+              setCurrentUser(null);
+            }
+          } else {
+            setCurrentUser(null);
+          }
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
