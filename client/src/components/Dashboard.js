@@ -10,7 +10,6 @@ import {
   ChevronRight,
   RefreshCw
 } from 'lucide-react';
-import axios from 'axios';
 
 function Dashboard({ wsService }) {
   const [dashboardData, setDashboardData] = useState(null);
@@ -37,12 +36,19 @@ function Dashboard({ wsService }) {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/fpl/dashboard');
-      setDashboardData(response.data.data);
-      setLastUpdate(new Date());
-      setError(null);
+      const response = await fetch('/api/fpl/dashboard');
+      const data = await response.json();
+      
+      if (data && data.success) {
+        setDashboardData(data.data);
+        setLastUpdate(new Date());
+        setError(null);
+      } else {
+        setError('Failed to load dashboard data');
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load dashboard data');
+      console.error('Error fetching dashboard data:', err);
+      setError(err.message || 'Failed to load dashboard data');
     } finally {
       setLoading(false);
     }

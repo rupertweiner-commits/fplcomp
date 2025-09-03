@@ -9,7 +9,6 @@ import {
   Target,
   Award
 } from 'lucide-react';
-import axios from 'axios';
 
 function LiveTracker({ wsService }) {
   const [gameweekData, setGameweekData] = useState(null);
@@ -43,30 +42,32 @@ function LiveTracker({ wsService }) {
       setLoading(true);
       
       // Get current gameweek
-      const gwResponse = await axios.get('/api/fpl/current-gameweek');
-      const gameweek = gwResponse.data.currentGameweek;
+      const gwResponse = await fetch('/api/fpl/current-gameweek');
+      const gwData = await gwResponse.json();
+      const gameweek = gwData.data || 1;
       setCurrentGameweek(gameweek);
 
       // Fetch gameweek data in parallel
       const [liveResponse, fixturesResponse, performersResponse, bootstrapResponse] = await Promise.all([
-        axios.get(`/api/fpl/gameweek/${gameweek}/live`).catch(() => ({ data: { data: null } })),
-        axios.get(`/api/fpl/fixtures?event=${gameweek}`),
-        axios.get(`/api/fpl/top-performers/${gameweek}?limit=10`).catch(() => ({ data: { data: [] } })),
-        axios.get('/api/fpl/bootstrap')
+        fetch(`/api/fpl/gameweek-live?gameweek=${gameweek}`).then(r => r.json()).catch(() => ({ data: null })),
+        fetch(`/api/fpl/fixtures?event=${gameweek}`).then(r => r.json()),
+        fetch(`/api/fpl/top-performers?gameweek=${gameweek}&limit=10`).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/fpl/bootstrap').then(r => r.json())
       ]);
 
-      setGameweekData(liveResponse.data.data);
-      setFixtures(fixturesResponse.data.data);
-      setTopPerformers(performersResponse.data.data);
-      setTeams(bootstrapResponse.data.data.teams);
+      setGameweekData(liveResponse.data);
+      setFixtures(fixturesResponse.data);
+      setTopPerformers(performersResponse.data);
+      setTeams(bootstrapResponse.data.teams);
       
       // Check if any fixtures are live
-      const liveFixtures = fixturesResponse.data.data.filter(f => f.started && !f.finished);
+      const liveFixtures = fixturesResponse.data.filter(f => f.started && !f.finished);
       setIsLive(liveFixtures.length > 0);
       
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load live data');
+      console.error('Error fetching live data:', err);
+      setError(err.message || 'Failed to load live data');
     } finally {
       setLoading(false);
     }

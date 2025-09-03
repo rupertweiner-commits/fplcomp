@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Play, Pause, Trophy, User, SkipForward, CheckCircle, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import { supabase } from '../config/supabase';
 const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   const [draftStatus, setDraftStatus] = useState(null);
   const [draftProgress, setDraftProgress] = useState(null);
@@ -66,15 +66,29 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
 
   const fetchDraftStatus = async () => {
     try {
-      const [statusRes, progressRes, turnRes] = await Promise.all([
-        axios.get('/api/draft-queue/status'),
-        axios.get('/api/draft-queue/progress'),
-        axios.get('/api/draft-queue/current-turn')
-      ]);
-
-      setDraftStatus(statusRes.data.data);
-      setDraftProgress(progressRes.data.data);
-      setCurrentTurn(turnRes.data.data);
+      // TODO: Implement draft status fetching with Supabase
+      console.log('Draft status fetch requested for user:', currentUser?.id);
+      
+      // Placeholder data for now
+      setDraftStatus({
+        status: 'waiting',
+        currentRound: 1,
+        timePerTurn: 60,
+        isActive: false
+      });
+      
+      setDraftProgress({
+        totalPicks: 20,
+        completedPicks: 0,
+        currentRound: 1
+      });
+      
+      setCurrentTurn({
+        currentPlayer: { id: 1, username: 'Portia' },
+        nextPlayer: { id: 2, username: 'Yasmin' },
+        timeRemaining: 60
+      });
+      
       setError(null);
     } catch (error) {
       console.error('Failed to fetch draft status:', error);
