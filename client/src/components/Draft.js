@@ -161,7 +161,7 @@ function Draft({ wsService }) {
   const handleLogout = async () => {
     try {
       // Logout handled by Supabase auth service
-      console.log('Logging out user:', currentUser?.username);
+      console.log('Logging out user:', currentUser?.email);
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
@@ -255,7 +255,7 @@ function Draft({ wsService }) {
             <span>KPG's Competition</span>
           </h1>
           <p className="text-gray-600 mt-1">
-            Welcome {currentUser.username}! Pick your 5-a-side Chelsea team for the annual competition.
+            Welcome {currentUser.email}! Pick your 5-a-side Chelsea team for the annual competition.
           </p>
         </div>
         
@@ -313,11 +313,11 @@ function Draft({ wsService }) {
           <div className="mt-2 text-sm">
             {currentUser.isAdmin ? (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                👑 Admin: {currentUser.username}
+                👑 Admin: {currentUser.email}
               </span>
             ) : (
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                👤 User: {currentUser.username}
+                👤 User: {currentUser.email}
               </span>
             )}
           </div>

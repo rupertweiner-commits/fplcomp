@@ -35,7 +35,6 @@ class AuthService {
       // Create user object for the app
       const user = {
         id: userProfile.id,
-        username: userProfile.username,
         email: userProfile.email,
         firstName: userProfile.first_name || '',
         lastName: userProfile.last_name || '',
@@ -56,19 +55,8 @@ class AuthService {
     }
   }
 
-  async register(username, email, password, firstName, lastName) {
+  async register(email, password, firstName, lastName) {
     try {
-      // Check if username already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', username)
-        .single();
-
-      if (existingUser) {
-        return { success: false, error: 'Username already exists' };
-      }
-
       // Check if email already exists
       const { data: existingEmail, error: emailError } = await supabase
         .from('users')
@@ -83,12 +71,7 @@ class AuthService {
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: email,
-        password: password,
-        options: {
-          data: {
-            username: username
-          }
-        }
+        password: password
       });
 
       if (authError) {
@@ -100,7 +83,6 @@ class AuthService {
         .from('users')
         .insert({
           id: authData.user.id,
-          username: username,
           email: email,
           first_name: firstName || '',
           last_name: lastName || '',
@@ -144,40 +126,7 @@ class AuthService {
     }
   }
 
-  async changeUsername(currentPassword, newUsername) {
-    try {
-      // Check if username already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', newUsername)
-        .neq('id', this.user.id)
-        .single();
-
-      if (existingUser) {
-        return { success: false, error: 'Username already exists' };
-      }
-
-      // Update username in users table
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({ username: newUsername })
-        .eq('id', this.user.id);
-
-      if (updateError) {
-        return { success: false, error: updateError.message };
-      }
-
-      // Update local user data
-      this.user.username = newUsername;
-      localStorage.setItem(this.userKey, JSON.stringify(this.user));
-
-      return { success: true, message: 'Username updated successfully!' };
-    } catch (error) {
-      console.error('Username change error:', error);
-      return { success: false, error: 'An unexpected error occurred. Please try again.' };
-    }
-  }
+  // Username functionality removed - using email-only authentication
 
   async logout() {
     try {
@@ -229,7 +178,6 @@ class AuthService {
         if (!profileError && userProfile) {
           this.user = {
             id: userProfile.id,
-            username: userProfile.username,
             email: userProfile.email,
             firstName: userProfile.first_name || '',
             lastName: userProfile.last_name || '',

@@ -7,9 +7,7 @@ const AuthForm = ({ onLogin, error }) => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
-    usernameOrEmail: '', // For login - can be either username or email
     password: '',
     confirmPassword: ''
   });
@@ -28,22 +26,18 @@ const AuthForm = ({ onLogin, error }) => {
     const newErrors = {};
 
     if (isLogin) {
-      // For login, only require usernameOrEmail and password
-      if (!formData.usernameOrEmail.trim()) {
-        newErrors.usernameOrEmail = 'Username or email is required';
+      // For login, only require email and password
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
       }
 
       if (!formData.password) {
         newErrors.password = 'Password is required';
       }
     } else {
-      // For signup, require username, email, and password
-      if (!formData.username.trim()) {
-        newErrors.username = 'Username is required';
-      } else if (formData.username.length < 3) {
-        newErrors.username = 'Username must be at least 3 characters';
-      }
-
+      // For signup, require email and password
       if (!formData.email.trim()) {
         newErrors.email = 'Email is required';
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -75,19 +69,6 @@ const AuthForm = ({ onLogin, error }) => {
     setSuccess('');
 
     try {
-      // Check if username already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('username')
-        .eq('username', formData.username)
-        .single();
-
-      if (existingUser) {
-        setErrors({ username: 'Username already exists' });
-        setLoading(false);
-        return;
-      }
-
       // Check if email already exists
       const { data: existingEmail, error: emailError } = await supabase
         .from('users')
@@ -104,12 +85,7 @@ const AuthForm = ({ onLogin, error }) => {
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            username: formData.username
-          }
-        }
+        password: formData.password
       });
 
       if (authError) {
@@ -123,7 +99,6 @@ const AuthForm = ({ onLogin, error }) => {
         .from('users')
         .insert({
           id: authData.user.id,
-          username: formData.username,
           email: formData.email,
           is_active: true,
           created_at: new Date().toISOString()
@@ -142,9 +117,7 @@ const AuthForm = ({ onLogin, error }) => {
       
       // Clear form
       setFormData({
-        username: '',
         email: '',
-        usernameOrEmail: '',
         password: '',
         confirmPassword: ''
       });
@@ -171,28 +144,9 @@ const AuthForm = ({ onLogin, error }) => {
     setSuccess('');
 
     try {
-      let userEmail = formData.usernameOrEmail;
-      
-      // If the input looks like a username (no @ symbol), look up the email
-      if (!formData.usernameOrEmail.includes('@')) {
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('email')
-          .eq('username', formData.usernameOrEmail)
-          .single();
-
-        if (userError || !userData) {
-          setErrors({ usernameOrEmail: 'Username not found' });
-          setLoading(false);
-          return;
-        }
-        
-        userEmail = userData.email;
-      }
-
       // Try to login with email and password
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: userEmail,
+        email: formData.email,
         password: formData.password
       });
 
@@ -219,7 +173,6 @@ const AuthForm = ({ onLogin, error }) => {
       // Create user object for the app
       const user = {
         id: userProfile.id,
-        username: userProfile.username,
         email: userProfile.email,
         firstName: userProfile.first_name || '',
         lastName: userProfile.last_name || '',
@@ -322,79 +275,28 @@ const AuthForm = ({ onLogin, error }) => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isLogin ? (
-            /* Login: Username or Email */
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <User className="inline w-4 h-4 mr-2" />
-                Username or Email *
-              </label>
-              <input
-                type="text"
-                value={formData.usernameOrEmail}
-                onChange={(e) => handleInputChange('usernameOrEmail', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                  errors.usernameOrEmail ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                }`}
-                placeholder="Enter your username or email"
-              />
-              {errors.usernameOrEmail && (
-                <p className="mt-1 text-sm text-red-600 flex items-center">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.usernameOrEmail}
-                </p>
-              )}
-            </div>
-          ) : (
-            /* Signup: Username and Email */
-            <>
-              {/* Username */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <User className="inline w-4 h-4 mr-2" />
-                  Username *
-                </label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.username ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your username"
-                />
-                {errors.username && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    {errors.username}
-                  </p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Mail className="inline w-4 h-4 mr-2" />
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                    errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                  }`}
-                  placeholder="Enter your email address"
-                />
-                {errors.email && (
-                  <p className="mt-1 text-sm text-red-600 flex items-center">
-                    <AlertCircle className="w-4 h-4 mr-1" />
-                    {errors.email}
-                  </p>
-                )}
-              </div>
-            </>
-          )}
+          {/* Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Mail className="inline w-4 h-4 mr-2" />
+              Email Address *
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="Enter your email address"
+            />
+            {errors.email && (
+              <p className="mt-1 text-sm text-red-600 flex items-center">
+                <AlertCircle className="w-4 h-4 mr-1" />
+                {errors.email}
+              </p>
+            )}
+          </div>
 
           {/* Password */}
           <div>

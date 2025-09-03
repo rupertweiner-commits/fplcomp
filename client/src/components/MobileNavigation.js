@@ -74,7 +74,7 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {currentUser.username}
+                        {currentUser.email}
                       </p>
                       {currentUser.isAdmin && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
