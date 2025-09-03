@@ -18,7 +18,7 @@ import { supabase } from './config/supabase';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-  console.log('🚀 App version: v19 - Added timeouts and better fallback for session persistence - 2024-09-02 22:00');
+  console.log('🚀 App version: v20 - Increased timeouts and added last resort session recovery - 2024-09-02 22:15');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
@@ -64,7 +64,7 @@ function App() {
     const timeoutId = setTimeout(() => {
       console.warn('⚠️ Auth initialization timeout - forcing app to load');
       setIsInitializing(false);
-    }, 3000); // 3 second timeout
+    }, 6000); // 6 second timeout (longer than session check)
 
     initializeAuth().finally(() => {
       clearTimeout(timeoutId);

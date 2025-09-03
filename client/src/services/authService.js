@@ -158,10 +158,10 @@ class AuthService {
     try {
       console.log('🔍 Checking Supabase session...');
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging (increased to 5 seconds)
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 3000)
+        setTimeout(() => reject(new Error('Session check timeout')), 5000)
       );
       
       const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
@@ -177,12 +177,12 @@ class AuthService {
       if (error) {
         console.error('❌ Session check error:', error);
         // Try to restore from localStorage as fallback
-        return this.tryRestoreFromStoredData();
+        return await this.tryRestoreFromStoredData();
       }
       
       if (!session) {
         console.log('⚠️ No active session found, trying stored data...');
-        return this.tryRestoreFromStoredData();
+        return await this.tryRestoreFromStoredData();
       }
 
       // Session exists, update our stored data
@@ -199,7 +199,7 @@ class AuthService {
         .single();
       
       const profileTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 2000)
+        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
       );
       
       const { data: userProfile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]);
@@ -219,17 +219,17 @@ class AuthService {
       } else {
         console.error('❌ Failed to fetch user profile:', profileError);
         // Try to restore from stored data as fallback
-        return this.tryRestoreFromStoredData();
+        return await this.tryRestoreFromStoredData();
       }
     } catch (error) {
       console.error('❌ Session check error:', error);
       // Try to restore from stored data as fallback
-      return this.tryRestoreFromStoredData();
+      return await this.tryRestoreFromStoredData();
     }
   }
 
   // Fallback method to restore from stored data
-  tryRestoreFromStoredData() {
+  async tryRestoreFromStoredData() {
     try {
       console.log('🔄 Attempting to restore from stored data...');
       
@@ -246,10 +246,52 @@ class AuthService {
         return true;
       } else {
         console.log('❌ No stored user data found');
-        return false;
+        
+        // Try to get session without timeout as last resort
+        console.log('🔄 Last resort: trying to get session without timeout...');
+        return this.tryGetSessionWithoutTimeout();
       }
     } catch (error) {
       console.error('❌ Error restoring from stored data:', error);
+      return false;
+    }
+  }
+
+  // Last resort: try to get session without timeout
+  async tryGetSessionWithoutTimeout() {
+    try {
+      console.log('🔄 Trying to get session without timeout...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Session check error (no timeout):', error);
+        return false;
+      }
+      
+      if (!session) {
+        console.log('⚠️ No active session found (no timeout)');
+        return false;
+      }
+
+      // Create basic user object from session
+      this.user = {
+        id: session.user.id,
+        email: session.user.email,
+        firstName: session.user.user_metadata?.first_name || '',
+        lastName: session.user.user_metadata?.last_name || '',
+        isAdmin: false, // Default to false, will be updated when profile is fetched
+        profileComplete: false
+      };
+      this.token = session.access_token;
+      
+      // Store the basic user data
+      localStorage.setItem(this.userKey, JSON.stringify(this.user));
+      localStorage.setItem(this.tokenKey, session.access_token);
+      
+      console.log('✅ Created basic user from session:', this.user.email);
+      return true;
+    } catch (error) {
+      console.error('❌ Error getting session without timeout:', error);
       return false;
     }
   }
