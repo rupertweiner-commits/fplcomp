@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { supabase } from '../config/supabase';
 import { Activity, User, TrendingUp, BarChart3, Clock } from 'lucide-react';
 const UserActivity = ({ userId, isAdmin = false }) => {
   const [activityData, setActivityData] = useState(null);
@@ -13,15 +13,12 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(`/api/activity/user/${userId}/summary?days=${selectedPeriod}`);
-      if (response.data && response.data.success) {
-        setActivityData(response.data.data || []);
-      } else {
-        setError('Invalid response format from server');
-      }
+      // TODO: Implement user activity fetching with Supabase
+      console.log('User activity fetch requested for user:', userId, 'days:', selectedPeriod);
+      setActivityData([]);
     } catch (err) {
       console.error('Failed to fetch activity summary:', err);
-      setError(err.response?.data?.error || 'Failed to fetch activity summary');
+      setError('Failed to fetch activity summary');
       setActivityData([]);
     } finally {
       setLoading(false);
@@ -31,12 +28,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const fetchRecentActivity = useCallback(async () => {
     try {
       setError(null);
-      const response = await axios.get(`/api/activity/user/${userId}/recent?limit=20`);
-      if (response.data && response.data.success) {
-        setRecentActivity(response.data.data || []);
-      } else {
-        setRecentActivity([]);
-      }
+      // TODO: Implement recent activity fetching with Supabase
+      console.log('Recent activity fetch requested for user:', userId);
+      setRecentActivity([]);
     } catch (err) {
       console.error('Failed to fetch recent activity:', err);
       setRecentActivity([]);
@@ -46,12 +40,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const fetchStats = useCallback(async () => {
     try {
       setError(null);
-      const response = await axios.get(`/api/activity/stats?days=${selectedPeriod}&userId=${userId}`);
-      if (response.data && response.data.success) {
-        setStats(response.data.data || []);
-      } else {
-        setStats([]);
-      }
+      // TODO: Implement stats fetching with Supabase
+      console.log('Stats fetch requested for user:', userId, 'days:', selectedPeriod);
+      setStats([]);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
       setStats([]);
