@@ -153,148 +153,148 @@ class AuthService {
     return this.token;
   }
 
-  // Check if user has a valid session
+  // Check if user has a valid session (localStorage-first approach)
   async checkSession() {
     try {
-      console.log('🔍 Checking Supabase session...');
+      console.log('🔍 Checking session (localStorage-first approach)...');
       
-      // Add timeout to prevent hanging (increased to 5 seconds)
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Session check timeout')), 5000)
-      );
-      
-      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
-      
-      console.log('📡 Session check result:', { 
-        hasSession: !!session, 
-        hasError: !!error, 
-        userId: session?.user?.id,
-        email: session?.user?.email,
-        expiresAt: session?.expires_at
-      });
-      
-      if (error) {
-        console.error('❌ Session check error:', error);
-        // Try to restore from localStorage as fallback
-        return await this.tryRestoreFromStoredData();
-      }
-      
-      if (!session) {
-        console.log('⚠️ No active session found, trying stored data...');
-        return await this.tryRestoreFromStoredData();
-      }
-
-      // Session exists, update our stored data
-      console.log('✅ Valid session found, updating stored data...');
-      this.token = session.access_token;
-      localStorage.setItem(this.tokenKey, session.access_token);
-
-      // Get user profile from database with timeout
-      console.log('🔍 Fetching user profile from database...');
-      const profilePromise = supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-      
-      const profileTimeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
-      );
-      
-      const { data: userProfile, error: profileError } = await Promise.race([profilePromise, profileTimeoutPromise]);
-
-      if (!profileError && userProfile) {
-        this.user = {
-          id: userProfile.id,
-          email: userProfile.email,
-          firstName: userProfile.first_name || '',
-          lastName: userProfile.last_name || '',
-          isAdmin: userProfile.is_admin || false,
-          profileComplete: !!(userProfile.first_name && userProfile.last_name)
-        };
-        localStorage.setItem(this.userKey, JSON.stringify(this.user));
-        console.log('✅ User profile restored:', this.user.email);
-        return true;
-      } else {
-        console.error('❌ Failed to fetch user profile:', profileError);
-        // Try to restore from stored data as fallback
-        return await this.tryRestoreFromStoredData();
-      }
-    } catch (error) {
-      console.error('❌ Session check error:', error);
-      // Try to restore from stored data as fallback
-      return await this.tryRestoreFromStoredData();
-    }
-  }
-
-  // Fallback method to restore from stored data
-  async tryRestoreFromStoredData() {
-    try {
-      console.log('🔄 Attempting to restore from stored data...');
-      
+      // First, try to restore from localStorage
       const storedUser = localStorage.getItem(this.userKey);
       const storedToken = localStorage.getItem(this.tokenKey);
       
       if (storedUser && storedToken) {
-        console.log('📦 Found stored user data, attempting restoration...');
+        console.log('📦 Found stored user data, restoring...');
         
-        this.user = JSON.parse(storedUser);
-        this.token = storedToken;
-        
-        console.log('✅ Restored user from stored data:', this.user.email);
-        return true;
-      } else {
-        console.log('❌ No stored user data found');
-        
-        // Try to get session without timeout as last resort
-        console.log('🔄 Last resort: trying to get session without timeout...');
-        return this.tryGetSessionWithoutTimeout();
+        try {
+          this.user = JSON.parse(storedUser);
+          this.token = storedToken;
+          
+          console.log('✅ Restored user from localStorage:', this.user.email);
+          
+          // Validate session in background (don't wait for it)
+          this.validateSessionInBackground();
+          
+          return true;
+        } catch (error) {
+          console.error('❌ Error parsing stored user:', error);
+          // Clear invalid data
+          localStorage.removeItem(this.userKey);
+          localStorage.removeItem(this.tokenKey);
+        }
       }
+      
+      // No stored data, try Supabase with short timeout
+      console.log('🔄 No stored data, trying Supabase session...');
+      return await this.trySupabaseSession();
+      
     } catch (error) {
-      console.error('❌ Error restoring from stored data:', error);
+      console.error('❌ Session check error:', error);
       return false;
     }
   }
 
-  // Last resort: try to get session without timeout
-  async tryGetSessionWithoutTimeout() {
+  // Try to get Supabase session with short timeout
+  async trySupabaseSession() {
     try {
-      console.log('🔄 Trying to get session without timeout...');
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Supabase session timeout')), 2000)
+      );
+      
+      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
       
       if (error) {
-        console.error('❌ Session check error (no timeout):', error);
+        console.error('❌ Supabase session error:', error);
         return false;
       }
       
       if (!session) {
-        console.log('⚠️ No active session found (no timeout)');
+        console.log('⚠️ No Supabase session found');
         return false;
       }
 
-      // Create basic user object from session
+      // Session exists, create user object
+      console.log('✅ Supabase session found, creating user object...');
       this.user = {
         id: session.user.id,
         email: session.user.email,
         firstName: session.user.user_metadata?.first_name || '',
         lastName: session.user.user_metadata?.last_name || '',
-        isAdmin: false, // Default to false, will be updated when profile is fetched
+        isAdmin: false, // Will be updated when profile is fetched
         profileComplete: false
       };
       this.token = session.access_token;
       
-      // Store the basic user data
+      // Store the user data
       localStorage.setItem(this.userKey, JSON.stringify(this.user));
       localStorage.setItem(this.tokenKey, session.access_token);
       
-      console.log('✅ Created basic user from session:', this.user.email);
+      // Try to fetch profile in background
+      this.fetchUserProfileInBackground(session.user.id);
+      
       return true;
     } catch (error) {
-      console.error('❌ Error getting session without timeout:', error);
+      console.error('❌ Supabase session check failed:', error);
       return false;
     }
   }
+
+  // Validate session in background (non-blocking)
+  async validateSessionInBackground() {
+    try {
+      console.log('🔄 Validating session in background...');
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        console.log('⚠️ Background validation failed, session may be invalid');
+        return;
+      }
+      
+      // Update token if it changed
+      if (session.access_token !== this.token) {
+        this.token = session.access_token;
+        localStorage.setItem(this.tokenKey, session.access_token);
+        console.log('🔄 Updated token from background validation');
+      }
+      
+      console.log('✅ Background session validation successful');
+    } catch (error) {
+      console.log('⚠️ Background validation error (non-critical):', error);
+    }
+  }
+
+  // Fetch user profile in background (non-blocking)
+  async fetchUserProfileInBackground(userId) {
+    try {
+      console.log('🔄 Fetching user profile in background...');
+      const { data: userProfile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (!error && userProfile) {
+        // Update user object with profile data
+        this.user = {
+          ...this.user,
+          firstName: userProfile.first_name || '',
+          lastName: userProfile.last_name || '',
+          isAdmin: userProfile.is_admin || false,
+          profileComplete: !!(userProfile.first_name && userProfile.last_name)
+        };
+        
+        // Update stored data
+        localStorage.setItem(this.userKey, JSON.stringify(this.user));
+        console.log('✅ User profile updated in background:', this.user.email);
+      } else {
+        console.log('⚠️ Background profile fetch failed (non-critical):', error);
+      }
+    } catch (error) {
+      console.log('⚠️ Background profile fetch error (non-critical):', error);
+    }
+  }
+
+
 
 
 
