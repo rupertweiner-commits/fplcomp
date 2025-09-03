@@ -70,7 +70,7 @@ function Draft({ wsService }) {
       setLoading(true);
       
       // Fetch draft status from Supabase
-      const { data: draftStatusData, error: draftStatusError } = await supabase
+      let { data: draftStatusData, error: draftStatusError } = await supabase
         .from('draft_status')
         .select('*')
         .order('id', { ascending: false })
@@ -85,20 +85,13 @@ function Draft({ wsService }) {
           console.log('Draft status table/record not found, using default values');
           const defaultDraftStatus = {
             id: 1,
-            is_active: false,
             is_draft_active: false,
             is_draft_complete: false,
             simulation_mode: false,
             current_turn: null,
-            current_round: 1,
-            current_pick: 1,
-            total_rounds: 5,
-            time_per_pick: 60,
             is_paused: false,
             active_gameweek: 1,
-            current_gameweek: 1,
-            draft_order: [],
-            completed_picks: []
+            current_gameweek: 1
           };
           
           // Try to insert default record
@@ -108,11 +101,10 @@ function Draft({ wsService }) {
           
           if (insertError) {
             console.error('Failed to create default draft status:', insertError);
-            // Use default values anyway
-            var draftStatusData = defaultDraftStatus;
-          } else {
-            var draftStatusData = defaultDraftStatus;
           }
+          
+          // Use default values
+          draftStatusData = defaultDraftStatus;
         } else {
           throw draftStatusError;
         }
