@@ -29,7 +29,12 @@ CREATE INDEX IF NOT EXISTS idx_user_activity_created_at ON public.user_activity(
 -- Step 4: Enable RLS on user_activity
 ALTER TABLE public.user_activity ENABLE ROW LEVEL SECURITY;
 
--- Step 5: Create RLS policies for user_activity
+-- Step 5: Drop existing policies on user_activity if they exist
+DROP POLICY IF EXISTS "Users can view own activity" ON public.user_activity;
+DROP POLICY IF EXISTS "Users can insert own activity" ON public.user_activity;
+DROP POLICY IF EXISTS "Admins can view all activity" ON public.user_activity;
+
+-- Step 6: Create RLS policies for user_activity
 CREATE POLICY "Users can view own activity" ON public.user_activity
   FOR SELECT USING (auth.uid() = user_id);
 
@@ -43,7 +48,7 @@ CREATE POLICY "Admins can view all activity" ON public.user_activity
     )
   );
 
--- Step 6: Create draft_queue table for draft management
+-- Step 7: Create draft_queue table for draft management
 CREATE TABLE IF NOT EXISTS public.draft_queue (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   status VARCHAR(20) DEFAULT 'waiting' CHECK (status IN ('waiting', 'active', 'paused', 'completed')),
@@ -58,7 +63,11 @@ CREATE TABLE IF NOT EXISTS public.draft_queue (
 -- Step 7: Enable RLS on draft_queue
 ALTER TABLE public.draft_queue ENABLE ROW LEVEL SECURITY;
 
--- Step 8: Create RLS policies for draft_queue
+-- Step 8: Drop existing policies on draft_queue if they exist
+DROP POLICY IF EXISTS "Everyone can view draft queue" ON public.draft_queue;
+DROP POLICY IF EXISTS "Admins can manage draft queue" ON public.draft_queue;
+
+-- Step 9: Create RLS policies for draft_queue
 CREATE POLICY "Everyone can view draft queue" ON public.draft_queue
   FOR SELECT USING (true);
 
@@ -69,7 +78,7 @@ CREATE POLICY "Admins can manage draft queue" ON public.draft_queue
     )
   );
 
--- Step 9: Create draft_picks table for tracking picks
+-- Step 10: Create draft_picks table for tracking picks
 CREATE TABLE IF NOT EXISTS public.draft_picks (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   draft_queue_id UUID REFERENCES public.draft_queue(id) ON DELETE CASCADE,
@@ -85,14 +94,18 @@ CREATE TABLE IF NOT EXISTS public.draft_picks (
 -- Step 10: Enable RLS on draft_picks
 ALTER TABLE public.draft_picks ENABLE ROW LEVEL SECURITY;
 
--- Step 11: Create RLS policies for draft_picks
+-- Step 11: Drop existing policies on draft_picks if they exist
+DROP POLICY IF EXISTS "Everyone can view draft picks" ON public.draft_picks;
+DROP POLICY IF EXISTS "Users can insert their own picks" ON public.draft_picks;
+
+-- Step 12: Create RLS policies for draft_picks
 CREATE POLICY "Everyone can view draft picks" ON public.draft_picks
   FOR SELECT USING (true);
 
 CREATE POLICY "Users can insert their own picks" ON public.draft_picks
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Step 12: Create a function to log user activity
+-- Step 13: Create a function to log user activity
 CREATE OR REPLACE FUNCTION log_user_activity(
   p_user_id UUID,
   p_action_type VARCHAR(50),
@@ -122,7 +135,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Step 13: Create a function to get user activity summary
+-- Step 14: Create a function to get user activity summary
 CREATE OR REPLACE FUNCTION get_user_activity_summary(
   p_user_id UUID,
   p_days INTEGER DEFAULT 30
@@ -146,7 +159,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Step 14: Create a function to get recent user activity
+-- Step 15: Create a function to get recent user activity
 CREATE OR REPLACE FUNCTION get_recent_user_activity(
   p_user_id UUID,
   p_limit INTEGER DEFAULT 20
@@ -171,7 +184,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Step 15: Verify the new tables and functions
+-- Step 16: Verify the new tables and functions
 SELECT 
   'New tables created:' as info,
   table_name
