@@ -18,7 +18,7 @@ import { supabase } from './config/supabase';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-  console.log('🚀 App version: v23 - Fixed simulation mode toggle and draft system - 2024-09-02 23:00');
+  console.log('🚀 App version: v24 - Fixed sign in hanging with timeouts - 2024-09-02 23:30');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
