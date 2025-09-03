@@ -156,36 +156,11 @@ const AuthForm = ({ onLogin, error }) => {
         return;
       }
 
-      // Get user profile from users table
-      const { data: userProfile, error: profileError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (profileError) {
-        console.error('Error fetching user profile:', profileError);
-        setErrors({ submit: 'Login successful but profile not found. Please contact support.' });
-        setLoading(false);
-        return;
-      }
-
-      // Create user object for the app
-      const user = {
-        id: userProfile.id,
-        email: userProfile.email,
-        firstName: userProfile.first_name || '',
-        lastName: userProfile.last_name || '',
-        isAdmin: userProfile.is_admin || false,
-        profileComplete: !!(userProfile.first_name && userProfile.last_name)
-      };
-
-      // Store in localStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('token', authData.session.access_token);
-
-      // Call the onLogin callback
-      onLogin(user);
+      // Login successful - let the App.js onAuthStateChange handle the rest
+      console.log('✅ Login successful, letting App.js handle user setup');
+      
+      // Don't call onLogin here - let the global auth state change handler do it
+      // This prevents duplicate user setup and race conditions
 
     } catch (error) {
       console.error('Login error:', error);

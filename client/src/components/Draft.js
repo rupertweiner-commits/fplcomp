@@ -65,28 +65,28 @@ function Draft({ wsService }) {
     }
   }, [currentUser, wsService]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Smart sync Chelsea players after authentication (runs once)
+  // Smart sync Chelsea players after authentication (TEMPORARILY DISABLED)
   useEffect(() => {
     if (currentUser && currentUser.id) {
-      console.log('🔄 User authenticated, triggering smart sync...');
+      console.log('🔄 User authenticated - smart sync temporarily disabled for debugging');
       
-      // Delay the sync slightly to ensure UI is ready
-      const syncTimer = setTimeout(() => {
-        fetch('/api/sync/smart-sync')
-          .then(response => response.json())
-          .then(result => {
-            if (result.syncNeeded) {
-              console.log('✅ Smart sync completed:', result.message);
-            } else {
-              console.log('ℹ️ Smart sync: data already up to date');
-            }
-          })
-          .catch(error => {
-            console.warn('⚠️ Smart sync failed (non-critical):', error.message);
-          });
-      }, 1000); // 1 second delay
+      // TODO: Re-enable smart sync after fixing sign in issue
+      // const syncTimer = setTimeout(() => {
+      //   fetch('/api/sync/smart-sync')
+      //     .then(response => response.json())
+      //     .then(result => {
+      //       if (result.syncNeeded) {
+      //         console.log('✅ Smart sync completed:', result.message);
+      //       } else {
+      //         console.log('ℹ️ Smart sync: data already up to date');
+      //       }
+      //     })
+      //     .catch(error => {
+      //       console.warn('⚠️ Smart sync failed (non-critical):', error.message);
+      //     });
+      // }, 1000); // 1 second delay
 
-      return () => clearTimeout(syncTimer);
+      // return () => clearTimeout(syncTimer);
     }
   }, [currentUser?.id]); // Only run when user ID changes
 
