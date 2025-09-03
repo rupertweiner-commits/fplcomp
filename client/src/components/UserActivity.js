@@ -9,15 +9,6 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
-  // Safety check for userId
-  if (!userId) {
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-        <p className="text-yellow-800">No user ID provided for activity tracking.</p>
-      </div>
-    );
-  }
-
   const fetchUserActivity = useCallback(async () => {
     try {
       setLoading(true);
@@ -161,6 +152,15 @@ const UserActivity = ({ userId, isAdmin = false }) => {
       console.error('Error changing period:', err);
     }
   };
+
+  // Safety check for userId - must be after all hooks
+  if (!userId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">No user ID provided for activity tracking.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
