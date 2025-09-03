@@ -10,6 +10,7 @@ import ProfileManager from './components/ProfileManager';
 
 // Import services
 import { authService } from './services/authService';
+import { supabase } from './config/supabase';
 // TEMPORARILY DISABLED - Push notifications causing app to crash
 // import { pushNotificationService } from './services/pushNotificationService';
 
@@ -26,7 +27,73 @@ console.log('🔧 Service Worker completely removed');
 function App() {
   const [isConnected, setIsConnected] = useState(true);
   const [connectionStatus, setConnectionStatus] = useState('Connected');
-  const [currentUser, setCurrentUser] = useState(authService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Initialize authentication on app start
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        console.log('🔐 Initializing authentication...');
+        const isAuthenticated = await authService.initialize();
+        
+        if (isAuthenticated) {
+          const user = authService.getCurrentUser();
+          console.log('✅ User authenticated:', user?.email);
+          setCurrentUser(user);
+        } else {
+          console.log('❌ No valid session found');
+          setCurrentUser(null);
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        setCurrentUser(null);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event, session?.user?.email);
+      
+      if (event === 'SIGNED_IN' && session) {
+        // User signed in - get their profile
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (!profileError && userProfile) {
+          const user = {
+            id: userProfile.id,
+            email: userProfile.email,
+            firstName: userProfile.first_name || '',
+            lastName: userProfile.last_name || '',
+            isAdmin: userProfile.is_admin || false,
+            profileComplete: !!(userProfile.first_name && userProfile.last_name)
+          };
+          setCurrentUser(user);
+          console.log('✅ User signed in:', user.email);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // User signed out
+        setCurrentUser(null);
+        console.log('👋 User signed out');
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Token refreshed - update stored token
+        localStorage.setItem('fpl_auth_token', session.access_token);
+        console.log('🔄 Token refreshed');
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     // For frontend-only deployment, skip WebSocket connection
@@ -108,6 +175,18 @@ function App() {
     authService.logout();
     setCurrentUser(null);
   };
+
+  // Show loading screen while initializing
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ToastProvider>
