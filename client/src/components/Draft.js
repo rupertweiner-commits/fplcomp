@@ -2024,56 +2024,67 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   const handleToggleSimulationMode = async () => {
     try {
       setLoading(true);
+      console.log('🎮 Toggle simulation mode button clicked');
+      console.log('Current user:', currentUser);
+      console.log('Current draft status:', draftStatus);
+      
       const currentMode = draftStatus?.simulationMode || false;
       const newMode = !currentMode;
       
-      console.log('Toggle simulation mode requested:', newMode, 'for user:', currentUser?.id);
+      console.log('🔄 Toggle simulation mode requested:', currentMode, '→', newMode, 'for user:', currentUser?.email);
+      
+      // Check if user is admin
+      if (!currentUser?.isAdmin) {
+        alert('Only admins can toggle simulation mode');
+        return;
+      }
       
       // First, try to update existing record
-      const { error: updateError } = await supabase
+      console.log('🔄 Attempting to update draft_status table...');
+      const { data: updateData, error: updateError } = await supabase
         .from('draft_status')
         .update({ simulation_mode: newMode })
-        .eq('id', 1);
+        .eq('id', 1)
+        .select();
       
       if (updateError) {
-        console.log('Update failed, trying to insert new record:', updateError);
+        console.error('❌ Update failed:', updateError);
+        console.log('🔄 Trying to insert new record...');
         
         // If update fails, try to insert a new record
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('draft_status')
           .insert({
             id: 1,
-            is_active: false,
             is_draft_active: false,
             is_draft_complete: false,
             simulation_mode: newMode,
             current_turn: null,
-            current_round: 1,
-            current_pick: 1,
-            total_rounds: 5,
-            time_per_pick: 60,
             is_paused: false,
             active_gameweek: 1,
-            current_gameweek: 1,
-            draft_order: [],
-            completed_picks: []
-          });
+            current_gameweek: 1
+          })
+          .select();
         
         if (insertError) {
-          console.error('Error inserting draft status:', insertError);
+          console.error('❌ Insert failed:', insertError);
           alert(`Failed to toggle simulation mode: ${insertError.message}`);
           return;
         }
         
-        console.log('✅ Draft status record created successfully');
+        console.log('✅ Draft status record created:', insertData);
       } else {
-        console.log('✅ Simulation mode updated successfully');
+        console.log('✅ Simulation mode updated:', updateData);
       }
       
+      // Refresh data
+      console.log('🔄 Refreshing data...');
       await onRefresh();
       await fetchSimulationData();
+      
+      alert(`Simulation mode ${newMode ? 'enabled' : 'disabled'} successfully!`);
     } catch (error) {
-      console.error('Error toggling simulation mode:', error);
+      console.error('❌ Error toggling simulation mode:', error);
       alert(`Failed to toggle simulation mode: ${error.message}`);
     } finally {
       setLoading(false);
