@@ -1156,10 +1156,83 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchSimulationData = useCallback(async () => {
     try {
-      // TODO: Implement simulation data fetching with Supabase
       console.log('Simulation data fetch requested for user:', currentUser?.id);
-      setSimulationData(null);
-      setGameweekHistory([]);
+      
+      // Get draft status
+      const { data: draftStatusData, error: statusError } = await supabase
+        .from('draft_status')
+        .select('*')
+        .eq('id', 1)
+        .single();
+      
+      if (statusError) {
+        console.error('Error fetching draft status:', statusError);
+        return;
+      }
+      
+      // Get gameweek history
+      const { data: gameweekData, error: gameweekError } = await supabase
+        .from('draft_picks')
+        .select(`
+          *,
+          users!inner(email)
+        `)
+        .order('gameweek', { ascending: true });
+      
+      if (gameweekError) {
+        console.error('Error fetching gameweek data:', gameweekError);
+      }
+      
+      // Process gameweek history
+      const gameweekHistory = [];
+      if (gameweekData) {
+        const gameweeks = {};
+        
+        gameweekData.forEach(pick => {
+          if (!gameweeks[pick.gameweek]) {
+            gameweeks[pick.gameweek] = {
+              gameweek: pick.gameweek,
+              userScores: [],
+              timestamp: pick.created_at
+            };
+          }
+          
+          gameweeks[pick.gameweek].userScores.push({
+            userId: pick.user_id,
+            username: pick.users?.email || 'Unknown',
+            totalScore: pick.total_score || 0
+          });
+        });
+        
+        gameweekHistory.push(...Object.values(gameweeks));
+      }
+      
+      // Get user teams
+      const { data: userTeams, error: teamsError } = await supabase
+        .from('user_teams')
+        .select(`
+          *,
+          users!inner(email),
+          chelsea_players!inner(web_name, position)
+        `);
+      
+      if (teamsError) {
+        console.error('Error fetching user teams:', teamsError);
+      }
+      
+      const simulationData = {
+        currentGameweek: draftStatusData?.current_gameweek || 1,
+        activeGameweek: draftStatusData?.active_gameweek || 1,
+        isDraftComplete: draftStatusData?.is_draft_complete || false,
+        simulationMode: draftStatusData?.simulation_mode || false,
+        gameweekHistory,
+        userTeams: userTeams || []
+      };
+      
+      setSimulationData(simulationData);
+      setGameweekHistory(gameweekHistory);
+      
+      console.log('✅ Simulation data fetched successfully:', simulationData);
     } catch (error) {
       console.error('Failed to fetch simulation data:', error);
     }
@@ -1167,9 +1240,52 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
 
   const fetchLeaderboard = useCallback(async () => {
     try {
-      // TODO: Implement leaderboard fetching with Supabase
       console.log('Leaderboard fetch requested for user:', currentUser?.id);
-      setLeaderboard([]);
+      
+      // Get all users with their total scores
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (usersError) {
+        console.error('Error fetching users for leaderboard:', usersError);
+        return;
+      }
+      
+      // Get total scores for each user
+      const { data: scores, error: scoresError } = await supabase
+        .from('draft_picks')
+        .select('user_id, total_score');
+      
+      if (scoresError) {
+        console.error('Error fetching scores for leaderboard:', scoresError);
+        return;
+      }
+      
+      // Calculate total scores for each user
+      const userTotals = {};
+      users.forEach(user => {
+        userTotals[user.id] = {
+          userId: user.id,
+          username: user.email,
+          totalPoints: 0,
+          gameweeksPlayed: 0
+        };
+      });
+      
+      scores.forEach(score => {
+        if (userTotals[score.user_id]) {
+          userTotals[score.user_id].totalPoints += score.total_score || 0;
+          userTotals[score.user_id].gameweeksPlayed += 1;
+        }
+      });
+      
+      // Sort by total points
+      const leaderboard = Object.values(userTotals).sort((a, b) => b.totalPoints - a.totalPoints);
+      
+      setLeaderboard(leaderboard);
+      console.log('✅ Leaderboard fetched successfully:', leaderboard);
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
     }
@@ -1185,12 +1301,89 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   const handleRandomizeTeams = async () => {
     try {
       setLoading(true);
-      // TODO: Implement team randomization with Supabase
       console.log('Randomize teams requested for user:', currentUser?.id);
+      
+      // Get all active users
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        alert('Failed to fetch users for team randomization');
+        return;
+      }
+      
+      // Get Chelsea players
+      const { data: chelseaPlayers, error: playersError } = await supabase
+        .from('chelsea_players')
+        .select('*');
+      
+      if (playersError) {
+        console.error('Error fetching Chelsea players:', playersError);
+        alert('Failed to fetch Chelsea players for team randomization');
+        return;
+      }
+      
+      if (chelseaPlayers.length < users.length * 5) {
+        alert('Not enough Chelsea players for team randomization');
+        return;
+      }
+      
+      // Shuffle players
+      const shuffledPlayers = [...chelseaPlayers].sort(() => Math.random() - 0.5);
+      
+      // Assign 5 players to each user
+      const teamAssignments = [];
+      let playerIndex = 0;
+      
+      for (const user of users) {
+        const userTeam = shuffledPlayers.slice(playerIndex, playerIndex + 5);
+        
+        // Insert team assignment
+        for (const player of userTeam) {
+          teamAssignments.push({
+            user_id: user.id,
+            player_id: player.id,
+            gameweek: 1,
+            is_active: true,
+            created_at: new Date().toISOString()
+          });
+        }
+        
+        playerIndex += 5;
+        console.log(`👥 ${user.email}: ${userTeam.map(p => p.web_name).join(', ')}`);
+      }
+      
+      // Insert all team assignments
+      const { error: insertError } = await supabase
+        .from('user_teams')
+        .insert(teamAssignments);
+      
+      if (insertError) {
+        console.error('Error inserting team assignments:', insertError);
+        alert('Failed to save team assignments');
+        return;
+      }
+      
+      // Mark draft as complete
+      const { error: updateError } = await supabase
+        .from('draft_status')
+        .update({ is_draft_complete: true })
+        .eq('id', 1);
+      
+      if (updateError) {
+        console.error('Error updating draft status:', updateError);
+        // Don't fail the whole operation for this
+      }
+      
+      console.log('✅ Teams randomized successfully');
       await onRefresh();
       await fetchSimulationData();
       alert('Teams randomized successfully! Each user now has a balanced 5-player team.');
     } catch (error) {
+      console.error('Error randomizing teams:', error);
       alert('Failed to randomize teams');
     } finally {
       setLoading(false);
@@ -1201,13 +1394,80 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     try {
       setLoading(true);
       const currentGameweek = draftStatus?.activeGameweek || draftStatus?.currentGameweek || 1;
-      // TODO: Implement gameweek simulation with Supabase
+      
       console.log('Simulate gameweek requested:', currentGameweek, 'for user:', currentUser?.id);
+      
+      // Get all users for simulation
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        alert('Failed to fetch users for simulation');
+        return;
+      }
+      
+      // Get Chelsea players for simulation
+      const { data: chelseaPlayers, error: playersError } = await supabase
+        .from('chelsea_players')
+        .select('*');
+      
+      if (playersError) {
+        console.error('Error fetching Chelsea players:', playersError);
+        alert('Failed to fetch Chelsea players for simulation');
+        return;
+      }
+      
+      // Generate random scores for each user
+      const gameweekResults = [];
+      
+      for (const user of users) {
+        // Generate random team score (simulate 5 players)
+        const teamScore = Math.floor(Math.random() * 50) + 20; // 20-70 points
+        
+        gameweekResults.push({
+          user_id: user.id,
+          gameweek: currentGameweek,
+          total_score: teamScore,
+          created_at: new Date().toISOString()
+        });
+      }
+      
+      // Insert simulation results
+      const { error: insertError } = await supabase
+        .from('draft_picks')
+        .insert(gameweekResults);
+      
+      if (insertError) {
+        console.error('Error inserting simulation results:', insertError);
+        alert('Failed to save simulation results');
+        return;
+      }
+      
+      // Advance gameweek
+      const nextGameweek = currentGameweek + 1;
+      const { error: updateError } = await supabase
+        .from('draft_status')
+        .update({ 
+          active_gameweek: nextGameweek,
+          current_gameweek: nextGameweek 
+        })
+        .eq('id', 1);
+      
+      if (updateError) {
+        console.error('Error advancing gameweek:', updateError);
+        // Don't fail the whole operation for this
+      }
+      
+      console.log('✅ Gameweek simulation completed successfully');
       await onRefresh();
       await fetchSimulationData();
       await fetchLeaderboard();
-      alert(`Gameweek ${currentGameweek} simulated successfully!`);
+      alert(`Gameweek ${currentGameweek} simulated successfully! Advanced to Gameweek ${nextGameweek}`);
     } catch (error) {
+      console.error('Error simulating gameweek:', error);
       alert('Failed to simulate gameweek');
     } finally {
       setLoading(false);
@@ -1220,11 +1480,25 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
       const currentMode = draftStatus?.simulationMode || false;
       const newMode = !currentMode;
       
-      // TODO: Implement simulation mode toggle with Supabase
       console.log('Toggle simulation mode requested:', newMode, 'for user:', currentUser?.id);
+      
+      // Update simulation mode in Supabase
+      const { error } = await supabase
+        .from('draft_status')
+        .update({ simulation_mode: newMode })
+        .eq('id', 1); // Assuming single draft status record
+      
+      if (error) {
+        console.error('Error updating simulation mode:', error);
+        alert('Failed to toggle simulation mode');
+        return;
+      }
+      
+      console.log('✅ Simulation mode updated successfully');
       await onRefresh();
       await fetchSimulationData();
     } catch (error) {
+      console.error('Error toggling simulation mode:', error);
       alert('Failed to toggle simulation mode');
     } finally {
       setLoading(false);
@@ -1236,13 +1510,49 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     if (confirm('Are you sure you want to reset all simulation data? This cannot be undone.')) {
       try {
         setLoading(true);
-        // TODO: Implement simulation reset with Supabase
         console.log('Reset simulation requested for user:', currentUser?.id);
+        
+        // Clear all simulation data
+        const { error: clearPicksError } = await supabase
+          .from('draft_picks')
+          .delete()
+          .neq('id', 0); // Delete all records
+        
+        if (clearPicksError) {
+          console.error('Error clearing draft picks:', clearPicksError);
+        }
+        
+        const { error: clearTeamsError } = await supabase
+          .from('user_teams')
+          .delete()
+          .neq('id', 0); // Delete all records
+        
+        if (clearTeamsError) {
+          console.error('Error clearing user teams:', clearTeamsError);
+        }
+        
+        // Reset draft status
+        const { error: resetStatusError } = await supabase
+          .from('draft_status')
+          .update({ 
+            is_draft_complete: false,
+            simulation_mode: false,
+            active_gameweek: 1,
+            current_gameweek: 1
+          })
+          .eq('id', 1);
+        
+        if (resetStatusError) {
+          console.error('Error resetting draft status:', resetStatusError);
+        }
+        
+        console.log('✅ Simulation reset successfully');
         await onRefresh();
         await fetchSimulationData();
         await fetchLeaderboard();
         alert('Simulation reset successfully!');
       } catch (error) {
+        console.error('Error resetting simulation:', error);
         alert('Failed to reset simulation');
       } finally {
         setLoading(false);

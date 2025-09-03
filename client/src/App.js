@@ -18,7 +18,7 @@ import { supabase } from './config/supabase';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-  console.log('🚀 App version: v21 - localStorage-first approach with background validation - 2024-09-02 22:30');
+  console.log('🚀 App version: v22 - Fixed simulation system functionality - 2024-09-02 22:45');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
