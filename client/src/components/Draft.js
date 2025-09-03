@@ -69,6 +69,18 @@ function Draft({ wsService }) {
     try {
       setLoading(true);
       
+      // Smart sync Chelsea players if needed (non-blocking)
+      fetch('/api/sync/smart-sync')
+        .then(response => response.json())
+        .then(result => {
+          if (result.syncNeeded) {
+            console.log('✅ Smart sync completed:', result.message);
+          }
+        })
+        .catch(error => {
+          console.warn('⚠️ Smart sync failed (non-critical):', error.message);
+        });
+      
       // Fetch draft status from Supabase
       let { data: draftStatusData, error: draftStatusError } = await supabase
         .from('draft_status')
