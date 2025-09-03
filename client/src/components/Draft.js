@@ -2038,6 +2038,25 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
         alert('Only admins can toggle simulation mode');
         return;
       }
+
+      // Check if required tables exist by testing a simple query
+      try {
+        console.log('🔍 Checking if required tables exist...');
+        const { error: testError } = await supabase
+          .from('draft_status')
+          .select('id')
+          .limit(1);
+        
+        if (testError) {
+          console.error('❌ Database tables not set up:', testError);
+          alert('Database tables not set up. Please run the database setup script first.');
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Database connection error:', error);
+        alert('Database connection error. Please check your connection.');
+        return;
+      }
       
       // First, try to update existing record
       console.log('🔄 Attempting to update draft_status table...');
