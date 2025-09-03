@@ -75,24 +75,59 @@ function App() {
       console.log('🔄 Auth state changed:', event, session?.user?.email);
       
       if (event === 'SIGNED_IN' && session) {
-        // User signed in - get their profile
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+        try {
+          console.log('🔄 Fetching user profile for:', session.user.email);
+          
+          // Add timeout to profile fetch
+          const profilePromise = supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
 
-        if (!profileError && userProfile) {
-          const user = {
-            id: userProfile.id,
-            email: userProfile.email,
-            firstName: userProfile.first_name || '',
-            lastName: userProfile.last_name || '',
-            isAdmin: userProfile.is_admin || false,
-            profileComplete: !!(userProfile.first_name && userProfile.last_name)
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+          );
+
+          const { data: userProfile, error: profileError } = await Promise.race([profilePromise, timeoutPromise]);
+
+          if (!profileError && userProfile) {
+            const user = {
+              id: userProfile.id,
+              email: userProfile.email,
+              firstName: userProfile.first_name || '',
+              lastName: userProfile.last_name || '',
+              isAdmin: userProfile.is_admin || false,
+              profileComplete: !!(userProfile.first_name && userProfile.last_name)
+            };
+            setCurrentUser(user);
+            console.log('✅ User signed in:', user.email);
+          } else {
+            console.error('❌ Profile fetch failed:', profileError);
+            // Create basic user object from session
+            const basicUser = {
+              id: session.user.id,
+              email: session.user.email,
+              firstName: '',
+              lastName: '',
+              isAdmin: false,
+              profileComplete: false
+            };
+            setCurrentUser(basicUser);
+            console.log('⚠️ Using basic user object:', basicUser.email);
+          }
+        } catch (error) {
+          console.error('❌ Error in auth state change:', error);
+          // Fallback to basic user
+          const basicUser = {
+            id: session.user.id,
+            email: session.user.email,
+            firstName: '',
+            lastName: '',
+            isAdmin: false,
+            profileComplete: false
           };
-          setCurrentUser(user);
-          console.log('✅ User signed in:', user.email);
+          setCurrentUser(basicUser);
         }
       } else if (event === 'SIGNED_OUT') {
         // User signed out

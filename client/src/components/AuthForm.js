@@ -144,28 +144,37 @@ const AuthForm = ({ onLogin, error }) => {
     setSuccess('');
 
     try {
-      // Try to login with email and password
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      console.log('🔄 Starting login process...');
+      
+      // Add timeout to prevent hanging
+      const loginPromise = supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       });
 
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Login timeout - please try again')), 10000)
+      );
+
+      const { data: authData, error: authError } = await Promise.race([loginPromise, timeoutPromise]);
+
       if (authError) {
+        console.error('❌ Auth error:', authError);
         setErrors({ submit: authError.message });
-        setLoading(false);
         return;
       }
 
-      // Login successful - let the App.js onAuthStateChange handle the rest
-      console.log('✅ Login successful, letting App.js handle user setup');
+      console.log('✅ Login successful, waiting for auth state change...');
       
-      // Don't call onLogin here - let the global auth state change handler do it
-      // This prevents duplicate user setup and race conditions
+      // Wait a moment for auth state to propagate, then reset loading
+      setTimeout(() => {
+        console.log('🔄 Resetting loading state after successful login');
+        setLoading(false);
+      }, 2000);
 
     } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ submit: 'An unexpected error occurred. Please try again.' });
-    } finally {
+      console.error('❌ Login error:', error);
+      setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
       setLoading(false);
     }
   };
