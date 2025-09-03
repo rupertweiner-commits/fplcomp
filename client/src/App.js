@@ -18,7 +18,7 @@ import { supabase } from './config/supabase';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-  console.log('🚀 App version: v16 - Added Supabase debug logging - 2024-09-02 21:15');
+  console.log('🚀 App version: v17 - Fixed infinite loading loop - 2024-09-02 21:30');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
@@ -39,6 +39,21 @@ function App() {
         // Small delay to ensure Supabase is fully initialized
         await new Promise(resolve => setTimeout(resolve, 100));
         
+        // Check if we have a stored user first
+        const storedUser = localStorage.getItem('fpl_user_data');
+        if (storedUser) {
+          try {
+            const user = JSON.parse(storedUser);
+            console.log('🔄 Found stored user:', user.email);
+            setCurrentUser(user);
+            setIsInitializing(false);
+            return; // Exit early if we have a stored user
+          } catch (error) {
+            console.error('❌ Error parsing stored user:', error);
+          }
+        }
+        
+        // If no stored user, try to initialize with Supabase
         const isAuthenticated = await authService.initialize();
         
         if (isAuthenticated) {
@@ -47,21 +62,7 @@ function App() {
           setCurrentUser(user);
         } else {
           console.log('❌ No valid session found');
-          
-          // Fallback: Check localStorage directly
-          const storedUser = localStorage.getItem('fpl_user_data');
-          if (storedUser) {
-            try {
-              const user = JSON.parse(storedUser);
-              console.log('🔄 Fallback: Found stored user, attempting restoration:', user.email);
-              setCurrentUser(user);
-            } catch (error) {
-              console.error('❌ Error parsing stored user:', error);
-              setCurrentUser(null);
-            }
-          } else {
-            setCurrentUser(null);
-          }
+          setCurrentUser(null);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
@@ -71,7 +72,15 @@ function App() {
       }
     };
 
-    initializeAuth();
+    // Add a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Auth initialization timeout - forcing app to load');
+      setIsInitializing(false);
+    }, 5000); // 5 second timeout
+
+    initializeAuth().finally(() => {
+      clearTimeout(timeoutId);
+    });
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
