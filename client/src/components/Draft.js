@@ -65,30 +65,37 @@ function Draft({ wsService }) {
     }
   }, [currentUser, wsService]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Smart sync Chelsea players after authentication (TEMPORARILY DISABLED)
+  // Smart sync Chelsea players after authentication (safe, delayed)
   useEffect(() => {
-    if (currentUser && currentUser.id) {
-      console.log('🔄 User authenticated - smart sync temporarily disabled for debugging');
+    if (currentUser && currentUser.id && !loading) {
+      console.log('🔄 User authenticated and UI ready - starting smart sync...');
       
-      // TODO: Re-enable smart sync after fixing sign in issue
-      // const syncTimer = setTimeout(() => {
-      //   fetch('/api/sync/smart-sync')
-      //     .then(response => response.json())
-      //     .then(result => {
-      //       if (result.syncNeeded) {
-      //         console.log('✅ Smart sync completed:', result.message);
-      //       } else {
-      //         console.log('ℹ️ Smart sync: data already up to date');
-      //       }
-      //     })
-      //     .catch(error => {
-      //       console.warn('⚠️ Smart sync failed (non-critical):', error.message);
-      //     });
-      // }, 1000); // 1 second delay
+      // Longer delay to ensure authentication flow is completely finished
+      const syncTimer = setTimeout(() => {
+        console.log('🔄 Triggering smart sync...');
+        
+        fetch('/api/sync/smart-sync')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}`);
+            }
+            return response.json();
+          })
+          .then(result => {
+            if (result.syncNeeded) {
+              console.log('✅ Smart sync completed:', result.message);
+            } else {
+              console.log('ℹ️ Smart sync: data already up to date');
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Smart sync failed (non-critical):', error.message);
+          });
+      }, 3000); // 3 second delay to ensure auth is completely done
 
-      // return () => clearTimeout(syncTimer);
+      return () => clearTimeout(syncTimer);
     }
-  }, [currentUser?.id]); // Only run when user ID changes
+  }, [currentUser?.id, loading]); // Only run when user ID changes and not loading
 
   const fetchDraftData = async () => {
     try {
