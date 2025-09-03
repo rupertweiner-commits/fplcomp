@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { User, TrendingUp, Trophy, Calendar, RefreshCw, Award, Target } from 'lucide-react';
-import axios from 'axios';
 
 function ManagerAnalysis() {
   const { managerId } = useParams();
