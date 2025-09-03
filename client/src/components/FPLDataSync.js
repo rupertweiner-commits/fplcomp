@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { RefreshCw, CheckCircle, AlertCircle, Database, ExternalLink } from 'lucide-react';
-import fplApiService from '../services/fplApiService';
 
 const FPLDataSync = () => {
   const [loading, setLoading] = useState(false);
@@ -14,11 +13,23 @@ const FPLDataSync = () => {
     setStatus('');
 
     try {
-      setStatus('Fetching Chelsea players from FPL API...');
+      setStatus('Syncing Chelsea players from FPL API to database...');
       
-      const players = await fplApiService.syncChelseaPlayersToDatabase();
+      const response = await fetch('/api/sync/chelsea-players', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || `HTTP ${response.status}`);
+      }
+
+      const result = await response.json();
       
-      setStatus(`✅ Successfully synced ${players.length} Chelsea players!`);
+      setStatus(`✅ Successfully synced ${result.playersCount} Chelsea players to database!`);
       setLastSync(new Date().toLocaleString());
       
     } catch (err) {
@@ -37,9 +48,16 @@ const FPLDataSync = () => {
     try {
       setStatus('Testing FPL API connection...');
       
-      const players = await fplApiService.fetchChelseaPlayers();
+      const response = await fetch('/api/fpl/bootstrap');
       
-      setStatus(`✅ FPL API connection successful! Found ${players.length} Chelsea players.`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const chelseaPlayers = data.elements.filter(player => player.team === 7);
+      
+      setStatus(`✅ FPL API connection successful! Found ${chelseaPlayers.length} Chelsea players.`);
       
     } catch (err) {
       console.error('Connection test failed:', err);
