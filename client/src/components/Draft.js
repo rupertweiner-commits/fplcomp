@@ -1818,6 +1818,125 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     }
   };
 
+  // Transfer system for testing
+  const handleMakeTransfer = async (userTeam, playerOut, playerIn) => {
+    try {
+      console.log('🔄 Making transfer:', playerOut.name, '→', playerIn.name);
+      
+      const currentGameweek = draftStatus?.activeGameweek || 1;
+      
+      // Check if user has free transfers
+      const { data: userHistory } = await supabase
+        .from('user_gameweek_history')
+        .select('transfers_made')
+        .eq('user_id', currentUser.id)
+        .eq('gameweek', currentGameweek)
+        .single();
+      
+      const transfersMade = userHistory?.transfers_made || 0;
+      const isFreeTransfer = transfersMade === 0;
+      const transferCost = isFreeTransfer ? 0 : 4;
+      
+      // Record the transfer
+      const { error: transferError } = await supabase
+        .from('user_transfers')
+        .insert({
+          user_id: currentUser.id,
+          gameweek: currentGameweek,
+          player_out_id: playerOut.id,
+          player_out_name: playerOut.name,
+          player_in_id: playerIn.id,
+          player_in_name: playerIn.name,
+          transfer_cost: transferCost,
+          is_free_transfer: isFreeTransfer
+        });
+      
+      if (transferError) {
+        console.error('Transfer error:', transferError);
+        return { success: false, error: transferError.message };
+      }
+      
+      // Update user team
+      const { error: teamError } = await supabase
+        .from('user_teams')
+        .update({
+          player_id: playerIn.id,
+          player_name: playerIn.name,
+          position: playerIn.position,
+          purchase_price: playerIn.price,
+          current_price: playerIn.price
+        })
+        .eq('user_id', currentUser.id)
+        .eq('player_id', playerOut.id);
+      
+      if (teamError) {
+        console.error('Team update error:', teamError);
+        return { success: false, error: teamError.message };
+      }
+      
+      console.log('✅ Transfer completed successfully');
+      return { success: true, transferCost };
+    } catch (error) {
+      console.error('Transfer error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Chip system for testing
+  const handleUseChip = async (chipType) => {
+    try {
+      console.log('🎯 Using chip:', chipType);
+      
+      const currentGameweek = draftStatus?.activeGameweek || 1;
+      
+      // Check if chip is available
+      const { data: chipData, error: chipError } = await supabase
+        .from('user_chips')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .eq('chip_type', chipType)
+        .eq('is_available', true)
+        .single();
+      
+      if (chipError || !chipData) {
+        return { success: false, error: 'Chip not available or already used' };
+      }
+      
+      // Mark chip as used
+      const { error: updateError } = await supabase
+        .from('user_chips')
+        .update({
+          is_available: false,
+          gameweek_used: currentGameweek
+        })
+        .eq('id', chipData.id);
+      
+      if (updateError) {
+        console.error('Chip update error:', updateError);
+        return { success: false, error: updateError.message };
+      }
+      
+      // Update user gameweek history to record chip usage
+      const { error: historyError } = await supabase
+        .from('user_gameweek_history')
+        .upsert({
+          user_id: currentUser.id,
+          gameweek: currentGameweek,
+          chip_used: chipType
+        }, { onConflict: 'user_id,gameweek' });
+      
+      if (historyError) {
+        console.error('History update error:', historyError);
+      }
+      
+      console.log('✅ Chip activated successfully');
+      return { success: true, chipType, gameweek: currentGameweek };
+    } catch (error) {
+      console.error('Chip error:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const handleSimulateGameweek = async () => {
     try {
       setLoading(true);
@@ -2158,6 +2277,57 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                 Reset All
               </button>
+            </div>
+
+            {/* Transfer Testing Section */}
+            {simulationMode && (
+              <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                <h3 className="text-lg font-semibold mb-3" style={{color: '#034694'}}>
+                  🔄 Transfer System Testing
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => alert('Transfer functionality - select players to swap')}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Test Transfer
+                  </button>
+                  <div className="text-sm text-gray-600">
+                    <p><strong>Free Transfers:</strong> 1 per gameweek</p>
+                    <p><strong>Extra Transfers:</strong> -4 points each</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Chips Testing Section */}
+            {simulationMode && (
+              <div className="bg-gray-50 rounded-lg p-4 mt-4">
+                <h3 className="text-lg font-semibold mb-3" style={{color: '#034694'}}>
+                  🎯 Chips System Testing
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {['wildcard', 'free_hit', 'bench_boost', 'triple_captain'].map(chip => (
+                    <button
+                      key={chip}
+                      onClick={() => handleUseChip(chip)}
+                      disabled={loading}
+                      className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50 capitalize"
+                    >
+                      {chip.replace('_', ' ')}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-600 mt-2">
+                  <p><strong>Wildcard:</strong> Free unlimited transfers</p>
+                  <p><strong>Free Hit:</strong> One-week team change</p>
+                  <p><strong>Bench Boost:</strong> All 15 players score</p>
+                  <p><strong>Triple Captain:</strong> Captain gets 3x points</p>
+                </div>
+              </div>
+            )}
             </>
           )}
         </div>
