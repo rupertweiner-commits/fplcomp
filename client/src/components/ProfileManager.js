@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import { supabase } from '../config/supabase';
 import { User, Edit3, Camera, Save, Lock, Activity } from 'lucide-react';
 import UserActivity from './UserActivity.js';
 import ProfilePictureUpload from './ProfilePictureUpload.js';
@@ -29,12 +29,22 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/auth/profile/${userId}`);
-      setProfile(response.data.data);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setProfile(data);
     } catch (error) {
+      console.error('Error fetching profile:', error);
       setMessage({
         type: 'error',
-        text: error.response?.data?.error || 'Failed to fetch profile'
+        text: error.message || 'Failed to fetch profile'
       });
     } finally {
       setLoading(false);
@@ -50,23 +60,38 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
   const handleProfileUpdate = async (updates) => {
     try {
       setLoading(true);
-      const response = await axios.put(`/api/auth/profile/${userId}`, updates);
       
-      if (response.data.success) {
-        setMessage({
-          type: 'success',
-          text: 'Profile updated successfully!'
-        });
-        setEditing(false);
-        await fetchProfile();
-        if (onProfileUpdate) {
-          onProfileUpdate();
-        }
+      // Add updated_at timestamp
+      const updatesWithTimestamp = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from('users')
+        .update(updatesWithTimestamp)
+        .eq('id', userId)
+        .select()
+        .single();
+      
+      if (error) {
+        throw error;
+      }
+
+      setMessage({
+        type: 'success',
+        text: 'Profile updated successfully!'
+      });
+      setEditing(false);
+      await fetchProfile();
+      if (onProfileUpdate) {
+        onProfileUpdate();
       }
     } catch (error) {
+      console.error('Error updating profile:', error);
       setMessage({
         type: 'error',
-        text: error.response?.data?.error || 'Failed to update profile'
+        text: error.message || 'Failed to update profile'
       });
     } finally {
       setLoading(false);
