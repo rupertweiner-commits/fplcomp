@@ -165,85 +165,72 @@ class AuthService {
         hasSession: !!session, 
         hasError: !!error, 
         userId: session?.user?.id,
-        email: session?.user?.email 
+        email: session?.user?.email,
+        expiresAt: session?.expires_at
       });
       
       if (error) {
         console.error('❌ Session check error:', error);
-        // Don't logout immediately on error, try to restore from localStorage
-        return this.tryRestoreFromLocalStorage();
+        return false;
       }
       
       if (!session) {
-        console.log('⚠️ No active session found, trying to restore from localStorage...');
-        return this.tryRestoreFromLocalStorage();
+        console.log('⚠️ No active session found');
+        return false;
       }
 
-      // Session exists, update our stored data
+      // Check if session is expired
+      if (session.expires_at && new Date(session.expires_at * 1000) < new Date()) {
+        console.log('⚠️ Session expired, attempting refresh...');
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshError || !refreshData.session) {
+          console.log('❌ Session refresh failed:', refreshError);
+          return false;
+        }
+        
+        console.log('✅ Session refreshed successfully');
+        // Update session with refreshed data
+        session.access_token = refreshData.session.access_token;
+        session.expires_at = refreshData.session.expires_at;
+      }
+
+      // Session exists and is valid, update our stored data
       console.log('✅ Valid session found, updating stored data...');
       this.token = session.access_token;
       localStorage.setItem(this.tokenKey, session.access_token);
 
-      // Get user profile if we don't have it
-      if (!this.user) {
-        console.log('🔍 Fetching user profile from database...');
-        const { data: userProfile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
+      // Get user profile from database
+      console.log('🔍 Fetching user profile from database...');
+      const { data: userProfile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-        if (!profileError && userProfile) {
-          this.user = {
-            id: userProfile.id,
-            email: userProfile.email,
-            firstName: userProfile.first_name || '',
-            lastName: userProfile.last_name || '',
-            isAdmin: userProfile.is_admin || false,
-            profileComplete: !!(userProfile.first_name && userProfile.last_name)
-          };
-          localStorage.setItem(this.userKey, JSON.stringify(this.user));
-          console.log('✅ User profile restored:', this.user.email);
-        } else {
-          console.error('❌ Failed to fetch user profile:', profileError);
-          return false;
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('❌ Session check error:', error);
-      return this.tryRestoreFromLocalStorage();
-    }
-  }
-
-  // Try to restore user from localStorage
-  tryRestoreFromLocalStorage() {
-    try {
-      console.log('🔄 Attempting to restore from localStorage...');
-      
-      const storedUser = localStorage.getItem(this.userKey);
-      const storedToken = localStorage.getItem(this.tokenKey);
-      
-      if (storedUser && storedToken) {
-        console.log('📦 Found stored user data, attempting restoration...');
-        
-        this.user = JSON.parse(storedUser);
-        this.token = storedToken;
-        
-        console.log('✅ Restored user from localStorage:', this.user.email);
+      if (!profileError && userProfile) {
+        this.user = {
+          id: userProfile.id,
+          email: userProfile.email,
+          firstName: userProfile.first_name || '',
+          lastName: userProfile.last_name || '',
+          isAdmin: userProfile.is_admin || false,
+          profileComplete: !!(userProfile.first_name && userProfile.last_name)
+        };
+        localStorage.setItem(this.userKey, JSON.stringify(this.user));
+        console.log('✅ User profile restored:', this.user.email);
         return true;
       } else {
-        console.log('❌ No stored user data found');
-        this.logout();
+        console.error('❌ Failed to fetch user profile:', profileError);
         return false;
       }
     } catch (error) {
-      console.error('❌ Error restoring from localStorage:', error);
-      this.logout();
+      console.error('❌ Session check error:', error);
       return false;
     }
   }
+
+
 
   // Initialize auth state on app start
   async initialize() {
