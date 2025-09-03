@@ -403,7 +403,13 @@ function Draft({ wsService }) {
           {/* User Activity */}
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">User Activity</h3>
-            <UserActivity userId={currentUser.id} isAdmin={true} />
+            {currentUser ? (
+              <UserActivity userId={currentUser.id} isAdmin={currentUser.isAdmin} />
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>Please log in to view user activity.</p>
+              </div>
+            )}
           </div>
         </div>
       )}

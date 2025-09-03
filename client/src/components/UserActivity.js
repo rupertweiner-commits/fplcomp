@@ -9,12 +9,30 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
+  // Safety check for userId
+  if (!userId) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <p className="text-yellow-800">No user ID provided for activity tracking.</p>
+      </div>
+    );
+  }
+
   const fetchUserActivity = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
+      
+      if (!userId) {
+        console.warn('No userId provided for activity fetch');
+        setActivityData([]);
+        return;
+      }
+      
       // TODO: Implement user activity fetching with Supabase
       console.log('User activity fetch requested for user:', userId, 'days:', selectedPeriod);
+      
+      // Placeholder data for now
       setActivityData([]);
     } catch (err) {
       console.error('Failed to fetch activity summary:', err);
@@ -28,6 +46,13 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const fetchRecentActivity = useCallback(async () => {
     try {
       setError(null);
+      
+      if (!userId) {
+        console.warn('No userId provided for recent activity fetch');
+        setRecentActivity([]);
+        return;
+      }
+      
       // TODO: Implement recent activity fetching with Supabase
       console.log('Recent activity fetch requested for user:', userId);
       setRecentActivity([]);
@@ -40,6 +65,13 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const fetchStats = useCallback(async () => {
     try {
       setError(null);
+      
+      if (!userId) {
+        console.warn('No userId provided for stats fetch');
+        setStats([]);
+        return;
+      }
+      
       // TODO: Implement stats fetching with Supabase
       console.log('Stats fetch requested for user:', userId, 'days:', selectedPeriod);
       setStats([]);
@@ -152,8 +184,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     );
   }
 
-  return (
-    <div className="space-y-6">
+  try {
+    return (
+      <div className="space-y-6">
       {/* Period Selector */}
       <div className="flex items-center space-x-4">
         <label className="text-sm font-medium text-gray-700">Activity Period:</label>
@@ -266,8 +299,17 @@ const UserActivity = ({ userId, isAdmin = false }) => {
           </div>
         </div>
       )}
-    </div>
-  );
+      </div>
+    );
+  } catch (error) {
+    console.error('UserActivity component error:', error);
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-800">An error occurred while loading user activity.</p>
+        <p className="text-red-600 text-sm mt-1">Error: {error.message}</p>
+      </div>
+    );
+  }
 };
 
 export default UserActivity;
