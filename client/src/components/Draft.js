@@ -79,7 +79,43 @@ function Draft({ wsService }) {
 
       if (draftStatusError) {
         console.error('Failed to fetch draft status:', draftStatusError);
-        throw draftStatusError;
+        
+        // If table doesn't exist or no records, create default data
+        if (draftStatusError.code === 'PGRST116' || draftStatusError.message.includes('relation "draft_status" does not exist')) {
+          console.log('Draft status table/record not found, using default values');
+          const defaultDraftStatus = {
+            id: 1,
+            is_active: false,
+            is_draft_active: false,
+            is_draft_complete: false,
+            simulation_mode: false,
+            current_turn: null,
+            current_round: 1,
+            current_pick: 1,
+            total_rounds: 5,
+            time_per_pick: 60,
+            is_paused: false,
+            active_gameweek: 1,
+            current_gameweek: 1,
+            draft_order: [],
+            completed_picks: []
+          };
+          
+          // Try to insert default record
+          const { error: insertError } = await supabase
+            .from('draft_status')
+            .insert(defaultDraftStatus);
+          
+          if (insertError) {
+            console.error('Failed to create default draft status:', insertError);
+            // Use default values anyway
+            var draftStatusData = defaultDraftStatus;
+          } else {
+            var draftStatusData = defaultDraftStatus;
+          }
+        } else {
+          throw draftStatusError;
+        }
       }
 
       // Fetch Chelsea players from Supabase
@@ -93,9 +129,48 @@ function Draft({ wsService }) {
         throw playersError;
       }
 
+      // Fetch all users for draft
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true)
+        .order('id');
+
+      if (usersError) {
+        console.error('Failed to fetch users:', usersError);
+        throw usersError;
+      }
+
+      // Fetch draft picks to calculate team sizes
+      const { data: draftPicks, error: picksError } = await supabase
+        .from('draft_picks')
+        .select('user_id, player_id');
+
+      if (picksError) {
+        console.error('Failed to fetch draft picks:', picksError);
+        throw picksError;
+      }
+
+      // Calculate team sizes for each user
+      const userTeamSizes = {};
+      draftPicks.forEach(pick => {
+        userTeamSizes[pick.user_id] = (userTeamSizes[pick.user_id] || 0) + 1;
+      });
+
+      // Transform users with team sizes
+      const usersWithTeams = usersData.map(user => ({
+        id: user.id,
+        username: user.email,
+        teamSize: userTeamSizes[user.id] || 0,
+        team: [] // Will be populated if needed
+      }));
+
       // Transform draft status data
       const transformedDraftStatus = {
         isActive: draftStatusData.is_active,
+        isDraftActive: draftStatusData.is_draft_active,
+        isDraftComplete: draftStatusData.is_draft_complete,
+        currentTurn: draftStatusData.current_turn,
         currentRound: draftStatusData.current_round,
         currentPick: draftStatusData.current_pick,
         totalRounds: draftStatusData.total_rounds,
@@ -103,7 +178,8 @@ function Draft({ wsService }) {
         isPaused: draftStatusData.is_paused,
         currentPlayer: draftStatusData.current_player_id,
         draftOrder: draftStatusData.draft_order || [],
-        completedPicks: draftStatusData.completed_picks || []
+        completedPicks: draftStatusData.completed_picks || [],
+        users: usersWithTeams
       };
 
       // Transform players data
@@ -195,15 +271,144 @@ function Draft({ wsService }) {
 
   const handleDraftPlayer = async (playerId) => {
     try {
-      // TODO: Implement draft player logic with Supabase
       console.log('Drafting player:', playerId, 'for user:', currentUser.id);
       
-      // For now, just refresh data
+      // Check if it's the user's turn
+      if (draftStatus?.currentTurn !== currentUser.id) {
+        throw new Error('It\'s not your turn to draft!');
+      }
+      
+      // Check if draft is active
+      if (!draftStatus?.isDraftActive) {
+        throw new Error('Draft is not currently active!');
+      }
+      
+      // Check if player is already drafted
+      const { data: existingPick, error: checkError } = await supabase
+        .from('draft_picks')
+        .select('*')
+        .eq('player_id', playerId)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') { // PGRST116 = no rows found
+        console.error('Error checking if player is drafted:', checkError);
+        throw new Error('Failed to check player availability');
+      }
+      
+      if (existingPick) {
+        throw new Error('This player has already been drafted!');
+      }
+      
+      // Check if user already has 5 players
+      const { data: userPicks, error: userPicksError } = await supabase
+        .from('draft_picks')
+        .select('*')
+        .eq('user_id', currentUser.id);
+      
+      if (userPicksError) {
+        console.error('Error checking user picks:', userPicksError);
+        throw new Error('Failed to check user team size');
+      }
+      
+      if (userPicks && userPicks.length >= 5) {
+        throw new Error('You already have 5 players!');
+      }
+      
+      // Draft the player
+      const { error: draftError } = await supabase
+        .from('draft_picks')
+        .insert({
+          user_id: currentUser.id,
+          player_id: playerId,
+          gameweek: 1,
+          is_active: true,
+          created_at: new Date().toISOString()
+        });
+      
+      if (draftError) {
+        console.error('Error drafting player:', draftError);
+        throw new Error('Failed to draft player');
+      }
+      
+      // Update user's team in user_teams table
+      const { error: teamError } = await supabase
+        .from('user_teams')
+        .insert({
+          user_id: currentUser.id,
+          player_id: playerId,
+          gameweek: 1,
+          is_active: true,
+          created_at: new Date().toISOString()
+        });
+      
+      if (teamError) {
+        console.error('Error updating user team:', teamError);
+        // Don't fail the whole operation for this
+      }
+      
+      // Determine next turn
+      const { data: allUsers, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true)
+        .order('id');
+      
+      if (usersError) {
+        console.error('Error fetching users for next turn:', usersError);
+        throw new Error('Failed to determine next turn');
+      }
+      
+      const currentUserIndex = allUsers.findIndex(u => u.id === currentUser.id);
+      const nextUserIndex = (currentUserIndex + 1) % allUsers.length;
+      const nextUserId = allUsers[nextUserIndex].id;
+      
+      // Check if draft is complete (all users have 5 players)
+      const { data: allPicks, error: allPicksError } = await supabase
+        .from('draft_picks')
+        .select('user_id');
+      
+      if (allPicksError) {
+        console.error('Error checking draft completion:', allPicksError);
+        throw new Error('Failed to check draft completion');
+      }
+      
+      const userPickCounts = {};
+      allPicks.forEach(pick => {
+        userPickCounts[pick.user_id] = (userPickCounts[pick.user_id] || 0) + 1;
+      });
+      
+      const allUsersHave5Players = allUsers.every(user => userPickCounts[user.id] >= 5);
+      
+      // Update draft status
+      const updateData = {
+        current_turn: allUsersHave5Players ? null : nextUserId,
+        is_draft_complete: allUsersHave5Players,
+        is_draft_active: !allUsersHave5Players
+      };
+      
+      const { error: statusError } = await supabase
+        .from('draft_status')
+        .update(updateData)
+        .eq('id', 1);
+      
+      if (statusError) {
+        console.error('Error updating draft status:', statusError);
+        throw new Error('Failed to update draft status');
+      }
+      
+      console.log('✅ Player drafted successfully');
       await fetchDraftData();
+      
+      if (allUsersHave5Players) {
+        alert('🎉 Draft Complete! All users now have 5 players each.');
+      } else {
+        alert(`✅ Player drafted! Next turn: ${allUsers[nextUserIndex].email}`);
+      }
       
       return { success: true };
     } catch (err) {
-      throw new Error('Failed to draft player');
+      console.error('Error drafting player:', err);
+      throw new Error(err.message || 'Failed to draft player');
     }
   };
 
@@ -423,6 +628,7 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [drafting, setDrafting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleDraft = async (playerId) => {
     setDrafting(true);
@@ -433,6 +639,162 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
       alert(err.message);
     } finally {
       setDrafting(false);
+    }
+  };
+
+  const handleStartDraft = async () => {
+    try {
+      setLoading(true);
+      
+      // Get all active users
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true)
+        .order('id');
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        alert('Failed to fetch users');
+        return;
+      }
+      
+      if (users.length < 2) {
+        alert('Need at least 2 users to start a draft!');
+        return;
+      }
+      
+      // Set first user as current turn
+      const firstUserId = users[0].id;
+      
+      const { error: updateError } = await supabase
+        .from('draft_status')
+        .update({
+          is_draft_active: true,
+          current_turn: firstUserId,
+          is_draft_complete: false,
+          is_paused: false
+        })
+        .eq('id', 1);
+      
+      if (updateError) {
+        console.error('Error starting draft:', updateError);
+        alert('Failed to start draft');
+        return;
+      }
+      
+      alert(`🚀 Draft started! First turn: ${users[0].email}`);
+      window.location.reload(); // Refresh to update UI
+    } catch (error) {
+      console.error('Error starting draft:', error);
+      alert('Failed to start draft');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePauseDraft = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('draft_status')
+        .update({ is_paused: true })
+        .eq('id', 1);
+      
+      if (error) {
+        console.error('Error pausing draft:', error);
+        alert('Failed to pause draft');
+        return;
+      }
+      
+      alert('⏸️ Draft paused');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error pausing draft:', error);
+      alert('Failed to pause draft');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResumeDraft = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from('draft_status')
+        .update({ is_paused: false })
+        .eq('id', 1);
+      
+      if (error) {
+        console.error('Error resuming draft:', error);
+        alert('Failed to resume draft');
+        return;
+      }
+      
+      alert('▶️ Draft resumed');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resuming draft:', error);
+      alert('Failed to resume draft');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetDraft = async () => {
+    if (!confirm('Are you sure you want to reset the draft? This will clear all picks and start over.')) {
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      // Clear all draft picks
+      const { error: clearPicksError } = await supabase
+        .from('draft_picks')
+        .delete()
+        .neq('id', 0);
+      
+      if (clearPicksError) {
+        console.error('Error clearing draft picks:', clearPicksError);
+      }
+      
+      // Clear user teams
+      const { error: clearTeamsError } = await supabase
+        .from('user_teams')
+        .delete()
+        .neq('id', 0);
+      
+      if (clearTeamsError) {
+        console.error('Error clearing user teams:', clearTeamsError);
+      }
+      
+      // Reset draft status
+      const { error: resetError } = await supabase
+        .from('draft_status')
+        .update({
+          is_draft_active: false,
+          is_draft_complete: false,
+          current_turn: null,
+          is_paused: false
+        })
+        .eq('id', 1);
+      
+      if (resetError) {
+        console.error('Error resetting draft status:', resetError);
+        alert('Failed to reset draft status');
+        return;
+      }
+      
+      alert('🔄 Draft reset successfully!');
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting draft:', error);
+      alert('Failed to reset draft');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -511,6 +873,48 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
             </div>
           ))}
         </div>
+
+        {/* Admin Controls */}
+        {currentUser?.isAdmin && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-lg font-semibold text-yellow-900 mb-3">👑 Admin Controls</h3>
+            <div className="flex flex-wrap gap-3">
+              {!draftStatus?.isDraftActive && !draftStatus?.isDraftComplete && (
+                <button
+                  onClick={handleStartDraft}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  🚀 Start Draft
+                </button>
+              )}
+              
+              {draftStatus?.isDraftActive && (
+                <button
+                  onClick={handlePauseDraft}
+                  className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  ⏸️ Pause Draft
+                </button>
+              )}
+              
+              {draftStatus?.isDraftActive && draftStatus?.isPaused && (
+                <button
+                  onClick={handleResumeDraft}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ▶️ Resume Draft
+                </button>
+              )}
+              
+              <button
+                onClick={handleResetDraft}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                🔄 Reset Draft
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Selected User Team Details */}
         {selectedUser && selectedUser.teamSize > 0 && (
@@ -1482,24 +1886,52 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
       
       console.log('Toggle simulation mode requested:', newMode, 'for user:', currentUser?.id);
       
-      // Update simulation mode in Supabase
-      const { error } = await supabase
+      // First, try to update existing record
+      const { error: updateError } = await supabase
         .from('draft_status')
         .update({ simulation_mode: newMode })
-        .eq('id', 1); // Assuming single draft status record
+        .eq('id', 1);
       
-      if (error) {
-        console.error('Error updating simulation mode:', error);
-        alert('Failed to toggle simulation mode');
-        return;
+      if (updateError) {
+        console.log('Update failed, trying to insert new record:', updateError);
+        
+        // If update fails, try to insert a new record
+        const { error: insertError } = await supabase
+          .from('draft_status')
+          .insert({
+            id: 1,
+            is_active: false,
+            is_draft_active: false,
+            is_draft_complete: false,
+            simulation_mode: newMode,
+            current_turn: null,
+            current_round: 1,
+            current_pick: 1,
+            total_rounds: 5,
+            time_per_pick: 60,
+            is_paused: false,
+            active_gameweek: 1,
+            current_gameweek: 1,
+            draft_order: [],
+            completed_picks: []
+          });
+        
+        if (insertError) {
+          console.error('Error inserting draft status:', insertError);
+          alert(`Failed to toggle simulation mode: ${insertError.message}`);
+          return;
+        }
+        
+        console.log('✅ Draft status record created successfully');
+      } else {
+        console.log('✅ Simulation mode updated successfully');
       }
       
-      console.log('✅ Simulation mode updated successfully');
       await onRefresh();
       await fetchSimulationData();
     } catch (error) {
       console.error('Error toggling simulation mode:', error);
-      alert('Failed to toggle simulation mode');
+      alert(`Failed to toggle simulation mode: ${error.message}`);
     } finally {
       setLoading(false);
     }
