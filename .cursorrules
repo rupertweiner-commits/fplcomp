@@ -1,0 +1,117 @@
+# FPL Competition - Cursor AI Context Rules
+
+## PROJECT ARCHITECTURE
+- **Frontend**: React app deployed on Vercel (client/build)
+- **Backend**: Vercel serverless functions in /api directory
+- **Database**: Supabase PostgreSQL
+- **Authentication**: Supabase Auth (NOT custom auth)
+- **Deployment**: Vercel auto-deploys from GitHub main branch
+
+## CRITICAL ARCHITECTURAL CONSTRAINTS
+
+### Authentication Flow
+- **NEVER** create custom authentication logic
+- **ALWAYS** use Supabase Auth (`supabase.auth.signInWithPassword`, `supabase.auth.signUp`)
+- **Authentication state** is managed in App.js, passed as props to components
+- **NEVER** duplicate authentication state in child components
+- **User profiles** are stored in custom `users` table, synced via database triggers
+
+### API Endpoints
+- **ALL API calls** must go to Vercel serverless functions in `/api` directory
+- **NEVER** call Supabase Edge Functions (they don't exist in this project)
+- **NEVER** use axios - use fetch() for all API calls
+- **API functions** must be in `/api` directory with proper exports
+
+### State Management
+- **currentUser** state is managed ONLY in App.js
+- **Pass currentUser as props** to child components
+- **NEVER** create duplicate currentUser state in child components
+- **Profile completion** is handled by App.js authentication flow
+
+### Database Integration
+- **Direct Supabase calls** for auth and user data
+- **Vercel API functions** for FPL data and complex operations
+- **Database triggers** handle user synchronization between auth.users and public.users
+
+## COMMON MISTAKES TO AVOID
+
+### Legacy Code References
+- **NEVER** reference deleted components (SupabaseLoginForm, LoginForm)
+- **NEVER** use removed services (pushNotificationService, service workers)
+- **ALWAYS** check for unused imports after making changes
+- **NEVER** reference setCurrentUser in components that don't manage auth state
+
+### Build and Deployment Issues
+- **ALWAYS** test builds locally with `cd client && npm run build`
+- **NEVER** commit code that doesn't build successfully
+- **ALWAYS** check for ESLint errors before committing
+- **NEVER** reference undefined variables or functions
+
+### Supabase Integration
+- **NEVER** assume Edge Functions exist (they don't in this project)
+- **ALWAYS** use direct Supabase client calls for auth
+- **NEVER** use custom SMTP unless specifically configured
+- **ALWAYS** check if user profiles exist in both auth.users and public.users
+
+## FILE STRUCTURE RULES
+
+### Components
+- **AuthForm.js**: Main login/signup component (NOT SupabaseLoginForm)
+- **Draft.js**: Main app component (receives currentUser as prop)
+- **App.js**: Manages authentication state and routing
+- **NEVER** create duplicate authentication components
+
+### API Functions
+- **ALL** in `/api` directory
+- **Export default** function with proper request/response handling
+- **NEVER** create API functions outside /api directory
+- **ALWAYS** use proper error handling
+
+### Database
+- **Users table**: Custom table synced with auth.users via triggers
+- **NEVER** assume tables exist without checking
+- **ALWAYS** handle missing tables gracefully
+
+## DEBUGGING CHECKLIST
+
+Before making changes:
+1. **Check if component exists** before referencing it
+2. **Verify authentication flow** is handled in App.js
+3. **Test build locally** before committing
+4. **Check for unused imports** and variables
+5. **Verify API endpoints** exist in /api directory
+6. **Check database tables** exist in Supabase
+
+## DEPLOYMENT WORKFLOW
+1. **Make changes locally**
+2. **Test build**: `cd client && npm run build`
+3. **Commit and push** to GitHub
+4. **Vercel auto-deploys** from main branch
+5. **Test deployed app** at Vercel URL
+
+## ENVIRONMENT VARIABLES
+- **SUPABASE_URL**: Set in Vercel dashboard
+- **SUPABASE_ANON_KEY**: Set in Vercel dashboard
+- **NEVER** hardcode Supabase credentials
+- **ALWAYS** use environment variables for sensitive data
+
+## COMMON ERROR PATTERNS
+- **"Module not found"**: Check if file exists and imports are correct
+- **"setCurrentUser is not defined"**: Component shouldn't manage auth state
+- **"API endpoint not found"**: Check if function exists in /api directory
+- **"Profile fetch failed"**: Check if user exists in both auth.users and public.users
+- **"Build failed"**: Check for ESLint errors and undefined references
+
+## WHEN TO ASK FOR HELP
+- **Authentication issues**: Check App.js auth flow first
+- **API errors**: Verify endpoint exists in /api directory
+- **Build failures**: Check for undefined references and unused imports
+- **Database errors**: Check if tables exist and user sync is working
+- **Deployment issues**: Check Vercel logs and environment variables
+
+## SUCCESS PATTERNS
+- **Authentication works**: User can sign in and access main app
+- **Profile sync works**: User data exists in both auth.users and public.users
+- **API calls work**: Functions in /api directory respond correctly
+- **Build succeeds**: No ESLint errors or undefined references
+- **Deployment works**: Vercel auto-deploys without errors
