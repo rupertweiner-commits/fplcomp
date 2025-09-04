@@ -30,6 +30,8 @@ function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
   const [chelseaPlayers, setChelseaPlayers] = useState([]);
   const [liveScores, setLiveScores] = useState(null);
+  const [simulationStatus, setSimulationStatus] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = useState('team-management');
@@ -54,6 +56,8 @@ function Draft({ wsService, currentUser }) {
   useEffect(() => {
     if (currentUser) {
       fetchDraftData();
+      fetchSimulationStatus();
+      fetchLeaderboard();
       
       // Subscribe to WebSocket updates for live scores if available
       if (wsService) {
@@ -230,6 +234,91 @@ function Draft({ wsService, currentUser }) {
       setError('Failed to load draft data. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSimulationStatus = async () => {
+    try {
+      const response = await fetch('/api/simulation/status');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSimulationStatus(data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch simulation status:', err);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await fetch('/api/simulation/leaderboard');
+      const data = await response.json();
+      
+      if (data.success) {
+        setLeaderboard(data.leaderboard);
+      }
+    } catch (err) {
+      console.error('Failed to fetch leaderboard:', err);
+    }
+  };
+
+  const startSimulation = async () => {
+    if (!currentUser?.isAdmin) {
+      alert('Only admins can start simulation');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/simulation/start', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Simulation started successfully!');
+        fetchSimulationStatus();
+      } else {
+        alert(`Failed to start simulation: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Failed to start simulation:', err);
+      alert('Failed to start simulation');
+    }
+  };
+
+  const simulateGameweek = async (gameweek) => {
+    if (!currentUser?.isAdmin) {
+      alert('Only admins can simulate gameweeks');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/simulation/simulate', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ gameweek })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Gameweek ${gameweek} simulated successfully!`);
+        fetchLeaderboard();
+      } else {
+        alert(`Failed to simulate gameweek: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Failed to simulate gameweek:', err);
+      alert('Failed to simulate gameweek');
     }
   };
 
@@ -553,7 +642,12 @@ function Draft({ wsService, currentUser }) {
         <SimulationTab 
           currentUser={currentUser}
           draftStatus={draftStatus}
+          simulationStatus={simulationStatus}
+          leaderboard={leaderboard}
           onRefresh={fetchDraftData}
+          onStartSimulation={startSimulation}
+          onSimulateGameweek={simulateGameweek}
+          onRefreshLeaderboard={fetchLeaderboard}
         />
       )}
       
@@ -657,7 +751,7 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
 
   const handleStartDraft = async () => {
     try {
-      setLoading(true);
+    setLoading(true);
       
       // Get all active users
       const { data: users, error: usersError } = await supabase
@@ -1551,11 +1645,20 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
 
 // PreviewTab removed - functionality moved to Stats tab
 
-function SimulationTab({ currentUser, draftStatus, onRefresh }) {
+function SimulationTab({ 
+  currentUser, 
+  draftStatus, 
+  simulationStatus, 
+  leaderboard, 
+  onRefresh, 
+  onStartSimulation, 
+  onSimulateGameweek, 
+  onRefreshLeaderboard 
+}) {
   const [loading, setLoading] = useState(false);
   const [leaderboard, setLeaderboard] = useState([]);
   const [gameweekHistory, setGameweekHistory] = useState([]);
-  const [simulationMode, setSimulationMode] = useState(false);
+  const simulationMode = simulationStatus?.is_simulation_mode || false;
   const [simulationData, setSimulationData] = useState(null);
 
   // Utility function to safely extract values from potentially malformed data
@@ -1927,81 +2030,18 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   };
 
   const handleSimulateGameweek = async () => {
+    if (!currentUser?.isAdmin) {
+      alert('Only admins can simulate gameweeks');
+      return;
+    }
+
     try {
       setLoading(true);
-      const currentGameweek = draftStatus?.activeGameweek || draftStatus?.currentGameweek || 1;
+      const currentGameweek = simulationStatus?.current_gameweek || 1;
       
       console.log('Simulate gameweek requested:', currentGameweek, 'for user:', currentUser?.id);
       
-      // Get all users for simulation
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('is_active', true);
-      
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        alert('Failed to fetch users for simulation');
-        return;
-      }
-      
-      // Get Chelsea players for simulation
-      const { data: chelseaPlayers, error: playersError } = await supabase
-        .from('chelsea_players')
-        .select('*');
-      
-      if (playersError) {
-        console.error('Error fetching Chelsea players:', playersError);
-        alert('Failed to fetch Chelsea players for simulation');
-        return;
-      }
-      
-      // Generate random scores for each user
-      const gameweekResults = [];
-      
-      for (const user of users) {
-        // Generate random team score (simulate 5 players)
-        const teamScore = Math.floor(Math.random() * 50) + 20; // 20-70 points
-        
-        gameweekResults.push({
-          user_id: user.id,
-          gameweek: currentGameweek,
-          total_score: teamScore,
-          created_at: new Date().toISOString()
-        });
-      }
-      
-      // Insert simulation results
-      const { error: insertError } = await supabase
-        .from('draft_picks')
-        .insert(gameweekResults);
-      
-      if (insertError) {
-        console.error('Error inserting simulation results:', insertError);
-        alert('Failed to save simulation results');
-        return;
-      }
-      
-      // Advance gameweek
-      const nextGameweek = currentGameweek + 1;
-      const { error: updateError } = await supabase
-        .from('draft_status')
-        .update({ 
-          active_gameweek: nextGameweek,
-          current_gameweek: nextGameweek 
-        })
-        .eq('id', 1);
-      
-      if (updateError) {
-        console.error('Error advancing gameweek:', updateError);
-        // Don't fail the whole operation for this
-      }
-      
-      console.log('✅ Gameweek simulation completed successfully');
-      await onRefresh();
-      await fetchSimulationData();
-      await fetchLeaderboard();
-      alert(`Gameweek ${currentGameweek} simulated successfully! Advanced to Gameweek ${nextGameweek}`);
+      await onSimulateGameweek(currentGameweek);
     } catch (error) {
       console.error('Error simulating gameweek:', error);
       alert('Failed to simulate gameweek');
@@ -2011,86 +2051,21 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
   };
 
   const handleToggleSimulationMode = async () => {
+    if (!currentUser?.isAdmin) {
+      alert('Only admins can toggle simulation mode');
+      return;
+    }
+
     try {
       setLoading(true);
-      console.log('🎮 Toggle simulation mode button clicked');
-      console.log('Current user:', currentUser);
-      console.log('Current draft status:', draftStatus);
       
-      const currentMode = draftStatus?.simulationMode || false;
-      const newMode = !currentMode;
-      
-      console.log('🔄 Toggle simulation mode requested:', currentMode, '→', newMode, 'for user:', currentUser?.email);
-      
-      // Check if user is admin
-      if (!currentUser?.isAdmin) {
-        alert('Only admins can toggle simulation mode');
-        return;
-      }
-
-      // Check if required tables exist by testing a simple query
-      try {
-        console.log('🔍 Checking if required tables exist...');
-        const { error: testError } = await supabase
-          .from('draft_status')
-          .select('id')
-          .limit(1);
-        
-        if (testError) {
-          console.error('❌ Database tables not set up:', testError);
-          alert('Database tables not set up. Please run the database setup script first.');
-          return;
-        }
-      } catch (error) {
-        console.error('❌ Database connection error:', error);
-        alert('Database connection error. Please check your connection.');
-        return;
-      }
-      
-      // First, try to update existing record
-      console.log('🔄 Attempting to update draft_status table...');
-      const { data: updateData, error: updateError } = await supabase
-        .from('draft_status')
-        .update({ simulation_mode: newMode })
-        .eq('id', 1)
-        .select();
-      
-      if (updateError) {
-        console.error('❌ Update failed:', updateError);
-        console.log('🔄 Trying to insert new record...');
-        
-        // If update fails, try to insert a new record
-        const { data: insertData, error: insertError } = await supabase
-          .from('draft_status')
-          .insert({
-            id: 1,
-            is_draft_active: false,
-            is_draft_complete: false,
-            simulation_mode: newMode,
-            current_turn: null,
-            is_paused: false,
-            active_gameweek: 1,
-            current_gameweek: 1
-          })
-          .select();
-        
-        if (insertError) {
-          console.error('❌ Insert failed:', insertError);
-          alert(`Failed to toggle simulation mode: ${insertError.message}`);
-          return;
-        }
-        
-        console.log('✅ Draft status record created:', insertData);
+      if (!simulationStatus?.is_simulation_mode) {
+        // Start simulation
+        await onStartSimulation();
       } else {
-        console.log('✅ Simulation mode updated:', updateData);
+        // Exit simulation - for now just show a message
+        alert('To exit simulation mode, please contact the admin or restart the system.');
       }
-      
-      // Refresh data
-      console.log('🔄 Refreshing data...');
-      await onRefresh();
-      await fetchSimulationData();
-      
-      alert(`Simulation mode ${newMode ? 'enabled' : 'disabled'} successfully!`);
     } catch (error) {
       console.error('❌ Error toggling simulation mode:', error);
       alert(`Failed to toggle simulation mode: ${error.message}`);
@@ -2153,8 +2128,8 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
     }
   };
 
-  const currentGameweek = simulationData?.currentGameweek || 1;
-  const isDraftComplete = simulationData?.isDraftComplete || false;
+  const currentGameweek = simulationStatus?.current_gameweek || 1;
+  const isDraftComplete = simulationStatus?.is_draft_complete || false;
 
   return (
     <div className="space-y-8">
