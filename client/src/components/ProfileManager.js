@@ -119,8 +119,15 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
     try {
       setLoading(true);
-      // TODO: Implement password change with Supabase auth.updateUser
-      console.log('Password change requested for user:', userId);
+      // Update password using Supabase auth
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: passwordForm.newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
       const response = { data: { success: true, message: 'Password updated successfully!' } };
 
       if (response.data.success) {
@@ -174,8 +181,19 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
     try {
       setLoading(true);
-      // TODO: Implement username change with Supabase (if needed)
-      console.log('Username change requested for user:', userId, 'new username:', usernameForm.newUsername);
+      // Update username in the users table
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ 
+          username: usernameForm.newUsername,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
       const response = { data: { success: true, message: 'Username updated successfully!' } };
 
       if (response.data.success) {
@@ -224,8 +242,15 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
     try {
       setLoading(true);
-      // TODO: Implement initial password setup with Supabase auth.updateUser
-      console.log('Initial password setup requested for user:', userId);
+      // Set initial password using Supabase auth
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: initialPasswordForm.newPassword
+      });
+
+      if (updateError) {
+        throw updateError;
+      }
+
       const response = { data: { success: true, message: 'Password set successfully!' } };
 
       if (response.data.success) {
