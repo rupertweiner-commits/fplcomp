@@ -24,6 +24,7 @@ import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
 import FPLDataSync from './FPLDataSync.js';
+import TeamAssignment from './TeamAssignment.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -505,7 +506,7 @@ function Draft({ wsService, currentUser }) {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {(() => {
-            const baseTabs = ['simulation', 'draft', 'team-management', 'stats', 'profile'];
+            const baseTabs = ['simulation', 'teams', 'team-management', 'stats', 'profile'];
             // Add admin-only tab
             if (currentUser?.isAdmin) {
               baseTabs.push('user-activity');
@@ -556,14 +557,8 @@ function Draft({ wsService, currentUser }) {
         />
       )}
       
-      {selectedTab === 'draft' && (
-        <DraftTab 
-          draftStatus={draftStatus}
-          chelseaPlayers={chelseaPlayers}
-          currentUser={currentUser}
-          onDraftPlayer={handleDraftPlayer}
-          error={error}
-        />
+      {selectedTab === 'teams' && (
+        <TeamAssignment currentUser={currentUser} />
       )}
       
       {selectedTab === 'team-management' && (
