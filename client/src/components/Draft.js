@@ -2317,7 +2317,7 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                 Reset All
               </button>
-            </div>
+            </>
 
             {/* Transfer Testing Section */}
             {simulationMode && (
