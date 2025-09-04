@@ -1662,7 +1662,6 @@ function SimulationTab({
   onRefreshLeaderboard 
 }) {
   const [loading, setLoading] = useState(false);
-  const [leaderboard, setLeaderboard] = useState([]);
   const [gameweekHistory, setGameweekHistory] = useState([]);
   const simulationMode = simulationStatus?.is_simulation_mode || false;
   const [simulationData, setSimulationData] = useState(null);
@@ -1810,7 +1809,6 @@ function SimulationTab({
       // Sort by total points
       const leaderboard = Object.values(userTotals).sort((a, b) => b.totalPoints - a.totalPoints);
       
-      setLeaderboard(leaderboard);
       console.log('✅ Leaderboard fetched successfully:', leaderboard);
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
@@ -1820,8 +1818,6 @@ function SimulationTab({
   useEffect(() => {
     fetchLeaderboard();
     fetchSimulationData();
-    // Set simulation mode from draft status
-    setSimulationMode(draftStatus?.simulationMode || false);
   }, [draftStatus?.simulationMode, fetchLeaderboard, fetchSimulationData]);
 
   const handleRandomizeTeams = async () => {
