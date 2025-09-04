@@ -2370,7 +2370,6 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
                 </div>
               </div>
             )}
-            </>
           )}
         </div>
 

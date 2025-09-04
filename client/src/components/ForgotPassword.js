@@ -57,16 +57,15 @@ const ForgotPassword = ({ onBackToLogin }) => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.post('/api/auth/reset-password', {
-        token: resetToken,
-        newPassword
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
       });
       
-      if (response.data.success) {
-        setMessage({ type: 'success', text: response.data.message });
-        setStep('success');
+      if (error) {
+        setMessage({ type: 'error', text: error.message });
       } else {
-        setMessage({ type: 'error', text: response.data.error });
+        setMessage({ type: 'success', text: 'Password updated successfully!' });
+        setStep('success');
       }
     } catch (error) {
       setMessage({ 
