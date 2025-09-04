@@ -1979,7 +1979,7 @@ function SimulationTab({
     try {
       console.log('🎯 Using chip:', chipType);
       
-      const currentGameweek = draftStatus?.activeGameweek || 1;
+      const currentGameweek = simulationStatus?.current_gameweek || 1;
       
       // Check if chip is available
       const { data: chipData, error: chipError } = await supabase
@@ -2543,11 +2543,32 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const handleTransfer = async (playerOutId, playerInId) => {
     try {
       setLoading(true);
-      // TODO: Implement transfer logic with Supabase
-      console.log('Transfer requested:', playerOutId, 'out,', playerInId, 'in for user:', currentUser.id);
-      await onRefresh();
-      await fetchAvailablePlayers();
+      
+      const response = await fetch('/api/teams/transfer', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          playerOutId: playerOutId,
+          playerInId: playerInId,
+          gameweek: currentGameweek
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`Transfer successful! ${data.data.playerOut.name} → ${data.data.playerIn.name}`);
+        await onRefresh();
+        await fetchAvailablePlayers();
+      } else {
+        alert(`Transfer failed: ${data.error}`);
+      }
     } catch (error) {
+      console.error('Transfer error:', error);
       alert('Transfer failed');
     } finally {
       setLoading(false);
@@ -2559,12 +2580,28 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   // Helper function to automatically save team changes
   const autoSaveTeam = async (newActivePlayers, newBenchedPlayer, newCaptain) => {
     try {
-      // TODO: Implement team save logic with Supabase
-      console.log('Auto-save team requested for user:', currentUser.id, {
-        activePlayers: newActivePlayers,
-        benchedPlayer: newBenchedPlayer,
-        captain: newCaptain
+      const response = await fetch('/api/teams/save', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          activePlayers: newActivePlayers,
+          benchedPlayer: newBenchedPlayer,
+          captain: newCaptain,
+          gameweek: currentGameweek
+        })
       });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to save team');
+      }
+
+      console.log('✅ Team saved successfully');
       await onRefresh();
     } catch (error) {
       console.error('Failed to auto-save team:', error);
@@ -2643,10 +2680,30 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
 
     try {
       setLoading(true);
-      // TODO: Implement chip usage logic with Supabase
-      console.log('Use chip requested:', chipName, chipId, 'for user:', currentUser.id, 'target:', targetUserId);
-      await onRefresh();
-      alert(`${chipName} used successfully!`);
+      
+      const response = await fetch('/api/chips/use', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: currentUser.id,
+          chipId: chipId,
+          chipName: chipName,
+          targetUserId: targetUserId,
+          gameweek: currentGameweek
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`${chipName} used successfully!`);
+        await onRefresh();
+      } else {
+        alert(`Failed to use chip: ${data.error}`);
+      }
     } catch (error) {
       alert('Failed to use chip');
     } finally {
