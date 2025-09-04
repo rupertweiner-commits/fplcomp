@@ -19,7 +19,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
         return;
       }
       
-      const response = await fetch(`/api/activity/user/${userId}?days=${selectedPeriod}`);
+      const response = await fetch(`/api/activity?action=user&userId=${userId}&days=${selectedPeriod}`);
       const data = await response.json();
       
       if (data.success) {
@@ -47,7 +47,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
         return;
       }
       
-      const response = await fetch('/api/activity/recent?limit=10');
+      const response = await fetch('/api/activity?action=recent&limit=10');
       const data = await response.json();
       
       if (data.success) {

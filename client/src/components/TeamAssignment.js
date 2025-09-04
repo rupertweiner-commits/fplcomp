@@ -20,7 +20,7 @@ const TeamAssignment = ({ currentUser }) => {
 
   const fetchUserTeam = async () => {
     try {
-      const response = await fetch(`/api/teams/user/${currentUser.id}`);
+      const response = await fetch(`/api/teams?action=user&userId=${currentUser.id}`);
       const data = await response.json();
       
       if (response.ok) {
@@ -35,7 +35,7 @@ const TeamAssignment = ({ currentUser }) => {
 
   const fetchAllTeams = async () => {
     try {
-      const response = await fetch('/api/teams/all');
+      const response = await fetch('/api/teams?action=all');
       const data = await response.json();
       
       if (response.ok) {
@@ -48,7 +48,7 @@ const TeamAssignment = ({ currentUser }) => {
 
   const fetchAllocations = async () => {
     try {
-      const response = await fetch('/api/admin/allocations', {
+      const response = await fetch('/api/admin?action=allocations', {
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
@@ -74,7 +74,7 @@ const TeamAssignment = ({ currentUser }) => {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/teams/assign', {
+      const response = await fetch('/api/teams?action=assign', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

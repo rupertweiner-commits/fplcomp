@@ -240,7 +240,7 @@ function Draft({ wsService, currentUser }) {
 
   const fetchSimulationStatus = async () => {
     try {
-      const response = await fetch('/api/simulation/status');
+      const response = await fetch('/api/simulation?action=status');
       const data = await response.json();
       
       if (data.success) {
@@ -253,7 +253,7 @@ function Draft({ wsService, currentUser }) {
 
   const fetchLeaderboard = async () => {
     try {
-      const response = await fetch('/api/simulation/leaderboard');
+      const response = await fetch('/api/simulation?action=leaderboard');
       const data = await response.json();
       
       if (data.success) {
@@ -271,7 +271,7 @@ function Draft({ wsService, currentUser }) {
     }
 
     try {
-      const response = await fetch('/api/simulation/start', {
+      const response = await fetch('/api/simulation?action=start', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -300,7 +300,7 @@ function Draft({ wsService, currentUser }) {
     }
 
     try {
-      const response = await fetch('/api/simulation/simulate', {
+      const response = await fetch('/api/simulation?action=simulate', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -2546,7 +2546,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/teams/transfer', {
+      const response = await fetch('/api/teams?action=transfer', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -2582,7 +2582,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   // Helper function to automatically save team changes
   const autoSaveTeam = async (newActivePlayers, newBenchedPlayer, newCaptain) => {
     try {
-      const response = await fetch('/api/teams/save', {
+      const response = await fetch('/api/teams?action=save', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -2683,7 +2683,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     try {
       setLoading(true);
       
-      const response = await fetch('/api/chips/use', {
+      const response = await fetch('/api/chips?action=use', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
