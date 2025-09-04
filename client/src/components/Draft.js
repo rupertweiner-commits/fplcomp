@@ -3,7 +3,6 @@ import {
   Users, 
   User, 
   Shield, 
-  LogIn,
   LogOut,
   RefreshCw,
   Clock,
@@ -16,8 +15,6 @@ import {
   RotateCcw,
   Activity
 } from 'lucide-react';
-// import axios from 'axios'; // Not needed - using Supabase directly
-import { authService } from '../services/authService';
 import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
 import ProfileManager from './ProfileManager';

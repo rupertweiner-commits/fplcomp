@@ -11,3 +11,5 @@ ORDER BY ordinal_position;
 
 -- Check if there's any data in draft_status
 SELECT * FROM draft_status LIMIT 5;
+
+

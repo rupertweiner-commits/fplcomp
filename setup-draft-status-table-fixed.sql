@@ -25,15 +25,21 @@ INSERT INTO draft_status (id, is_active, is_draft_active, is_draft_complete, sim
 SELECT 1, false, false, false, false
 WHERE NOT EXISTS (SELECT 1 FROM draft_status WHERE id = 1);
 
--- Create RLS policies for draft_status
+-- Enable RLS on draft_status table
 ALTER TABLE draft_status ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (to avoid conflicts)
+DROP POLICY IF EXISTS "draft_status_select_all" ON draft_status;
+DROP POLICY IF EXISTS "draft_status_update_admin" ON draft_status;
+DROP POLICY IF EXISTS "draft_status_insert_admin" ON draft_status;
+
+-- Create RLS policies for draft_status
 -- Allow all authenticated users to read draft status
-CREATE POLICY IF NOT EXISTS "draft_status_select_all" ON draft_status
+CREATE POLICY "draft_status_select_all" ON draft_status
     FOR SELECT USING (true);
 
 -- Allow admins to update draft status
-CREATE POLICY IF NOT EXISTS "draft_status_update_admin" ON draft_status
+CREATE POLICY "draft_status_update_admin" ON draft_status
     FOR UPDATE USING (
         EXISTS (
             SELECT 1 FROM users 
@@ -43,7 +49,7 @@ CREATE POLICY IF NOT EXISTS "draft_status_update_admin" ON draft_status
     );
 
 -- Allow admins to insert draft status
-CREATE POLICY IF NOT EXISTS "draft_status_insert_admin" ON draft_status
+CREATE POLICY "draft_status_insert_admin" ON draft_status
     FOR INSERT WITH CHECK (
         EXISTS (
             SELECT 1 FROM users 
@@ -52,7 +58,7 @@ CREATE POLICY IF NOT EXISTS "draft_status_insert_admin" ON draft_status
         )
     );
 
--- Update the updated_at timestamp on changes
+-- Create function for updating timestamp
 CREATE OR REPLACE FUNCTION update_draft_status_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -61,7 +67,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS draft_status_updated_at
+-- Drop existing trigger if it exists
+DROP TRIGGER IF EXISTS draft_status_updated_at ON draft_status;
+
+-- Create trigger for updating timestamp
+CREATE TRIGGER draft_status_updated_at
     BEFORE UPDATE ON draft_status
     FOR EACH ROW
     EXECUTE FUNCTION update_draft_status_updated_at();

@@ -6,7 +6,6 @@ const ForgotPassword = ({ onBackToLogin }) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState('request'); // 'request', 'reset', 'success'
@@ -227,13 +226,6 @@ const ForgotPassword = ({ onBackToLogin }) => {
         {step === 'success' && renderSuccess()}
 
         {/* Development info */}
-        {process.env.NODE_ENV === 'development' && step === 'reset' && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-xs text-yellow-800">
-              <strong>Development Mode:</strong> Reset token: {resetToken}
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

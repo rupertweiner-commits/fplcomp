@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { User, Mail, AlertCircle, Camera, CheckCircle, Save } from 'lucide-react';
-import axios from 'axios';
 import { supabase } from '../config/supabase';
 import ProfilePictureUpload from './ProfilePictureUpload';
 

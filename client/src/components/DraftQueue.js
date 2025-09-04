@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Play, Pause, Trophy, User, SkipForward, CheckCircle, AlertCircle } from 'lucide-react';
-import { supabase } from '../config/supabase';
 const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   const [draftStatus, setDraftStatus] = useState(null);
   const [draftProgress, setDraftProgress] = useState(null);

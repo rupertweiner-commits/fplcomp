@@ -149,21 +149,18 @@ function App() {
         console.log('🔍 Checking API connection...');
         console.log('🔧 WebSocket service should be disabled in this version');
         
-        // Test connection to Supabase Edge Function
-        const response = await fetch('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-status', {
+        // Test connection to our Vercel API
+        const response = await fetch('/api/fpl/bootstrap', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
-          // Add mode: 'cors' to ensure CORS is handled properly
-          mode: 'cors',
         });
         
         console.log('📡 API response status:', response.status);
         console.log('📡 API response ok:', response.ok);
         
-        if (response.ok || response.status === 401 || response.status === 403) {
-          // API is accessible (even if we get auth errors, the connection works)
+        if (response.ok) {
           console.log('✅ API connection successful');
           setIsConnected(true);
           setConnectionStatus('Connected');
@@ -172,33 +169,9 @@ function App() {
           throw new Error(`API responded with status: ${response.status}`);
         }
       } catch (error) {
-        console.error('❌ Primary API connection failed:', error);
-        
-        // Try fallback endpoint
-        try {
-          console.log('🔄 Trying fallback endpoint...');
-          const fallbackResponse = await fetch('https://lhkurlcdrzuncibcehfp.supabase.co/functions/v1/draft-chelsea-players', {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            mode: 'cors',
-          });
-          
-          console.log('🔄 Fallback response status:', fallbackResponse.status);
-          
-          if (fallbackResponse.ok || fallbackResponse.status === 401 || fallbackResponse.status === 403) {
-            console.log('✅ Fallback API connection successful');
-            setIsConnected(true);
-            setConnectionStatus('Connected');
-          } else {
-            throw new Error(`Fallback API responded with status: ${fallbackResponse.status}`);
-          }
-        } catch (fallbackError) {
-          console.error('❌ Fallback API connection also failed:', fallbackError);
-          setIsConnected(false);
-          setConnectionStatus('API Unavailable');
-        }
+        console.error('❌ API connection failed:', error);
+        setIsConnected(false);
+        setConnectionStatus('API Unavailable');
       }
     };
 

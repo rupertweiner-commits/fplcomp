@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../config/supabase';
 import { Activity, User, TrendingUp, BarChart3, Clock } from 'lucide-react';
 const UserActivity = ({ userId, isAdmin = false }) => {
   const [activityData, setActivityData] = useState(null);

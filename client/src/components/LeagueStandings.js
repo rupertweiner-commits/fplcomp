@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Users, Search, RefreshCw, TrendingUp, ChevronDown, ChevronUp } from 'lucide-react';
-import axios from 'axios';
 
 function LeagueStandings() {
   const [leagueId, setLeagueId] = useState('');
@@ -34,8 +33,9 @@ function LeagueStandings() {
       setLoading(true);
       setError(null);
       
-      const response = await axios.get(`/api/fpl/league/${id.trim()}?page=${page}`);
-      setLeagueData(response.data.data);
+      const response = await fetch(`/api/fpl/league/${id.trim()}?page=${page}`);
+      const data = await response.json();
+      setLeagueData(data.data);
       setCurrentPage(page);
       
       // Add to search history

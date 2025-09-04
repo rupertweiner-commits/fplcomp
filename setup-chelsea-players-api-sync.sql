@@ -132,3 +132,5 @@ CREATE INDEX idx_chelsea_players_position ON chelsea_players(element_type);
 CREATE INDEX idx_chelsea_players_total_points ON chelsea_players(total_points DESC);
 CREATE INDEX idx_chelsea_players_form ON chelsea_players(form DESC);
 CREATE INDEX idx_chelsea_players_synced_at ON chelsea_players(synced_at DESC);
+
+

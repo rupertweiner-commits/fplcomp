@@ -145,3 +145,5 @@ CREATE INDEX IF NOT EXISTS idx_user_chips_user_id ON user_chips(user_id);
 CREATE INDEX IF NOT EXISTS idx_gameweek_fixtures_gameweek ON gameweek_fixtures(gameweek);
 CREATE INDEX IF NOT EXISTS idx_user_gameweek_history_user_gameweek ON user_gameweek_history(user_id, gameweek);
 CREATE INDEX IF NOT EXISTS idx_user_formations_user_gameweek ON user_formations(user_id, gameweek);
+
+

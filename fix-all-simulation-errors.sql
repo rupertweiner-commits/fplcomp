@@ -121,3 +121,5 @@ CREATE INDEX idx_draft_picks_user_id ON draft_picks(user_id);
 CREATE INDEX idx_draft_picks_gameweek ON draft_picks(gameweek);
 CREATE INDEX idx_draft_queue_user_id ON draft_queue(user_id);
 CREATE INDEX idx_user_gameweek_history_user_gameweek ON user_gameweek_history(user_id, gameweek);
+
+

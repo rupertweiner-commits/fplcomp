@@ -75,3 +75,5 @@ CREATE POLICY "draft_picks_select_all" ON draft_picks FOR SELECT USING (true);
 CREATE POLICY "draft_picks_insert_admin" ON draft_picks FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM users WHERE users.id = auth.uid() AND users.is_admin = true)
 );
+
+

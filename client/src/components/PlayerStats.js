@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
-import { supabase } from '../config/supabase';
 
 function PlayerStats() {
   const [players, setPlayers] = useState([]);
