@@ -99,18 +99,52 @@ function App() {
             setCurrentUser(user);
             console.log('✅ User profile loaded:', user.email, 'isAdmin:', user.isAdmin);
           } else {
-            console.warn('⚠️ Profile fetch failed, using basic user:', profileError?.message);
-            // Create basic user object from session
-            const basicUser = {
-              id: session.user.id,
-              email: session.user.email,
-              firstName: '',
-              lastName: '',
-              isAdmin: false,
-              profileComplete: false
-            };
-            setCurrentUser(basicUser);
-            console.log('⚠️ Using basic user object:', basicUser.email);
+            console.warn('⚠️ Profile fetch failed, creating user profile:', profileError?.message);
+            
+            // Try to create user profile if it doesn't exist
+            try {
+              const { data: newUserProfile, error: createError } = await supabase
+                .from('users')
+                .insert({
+                  id: session.user.id,
+                  email: session.user.email,
+                  first_name: session.user.user_metadata?.first_name || '',
+                  last_name: session.user.user_metadata?.last_name || '',
+                  is_active: true,
+                  is_admin: false,
+                  created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+              if (!createError && newUserProfile) {
+                const user = {
+                  id: newUserProfile.id,
+                  email: newUserProfile.email,
+                  firstName: newUserProfile.first_name || '',
+                  lastName: newUserProfile.last_name || '',
+                  isAdmin: newUserProfile.is_admin || false,
+                  profileComplete: !!(newUserProfile.first_name && newUserProfile.last_name)
+                };
+                setCurrentUser(user);
+                console.log('✅ Created and loaded new user profile:', user.email);
+              } else {
+                throw createError;
+              }
+            } catch (createError) {
+              console.error('❌ Failed to create user profile:', createError);
+              // Fallback to basic user
+              const basicUser = {
+                id: session.user.id,
+                email: session.user.email,
+                firstName: '',
+                lastName: '',
+                isAdmin: false,
+                profileComplete: false
+              };
+              setCurrentUser(basicUser);
+              console.log('⚠️ Using fallback user object:', basicUser.email);
+            }
           }
         } catch (error) {
           console.error('❌ Error fetching profile:', error);

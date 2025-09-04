@@ -193,15 +193,11 @@ class AuthService {
     }
   }
 
-  // Try to get Supabase session with short timeout
+  // Try to get Supabase session without timeout
   async trySupabaseSession() {
     try {
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Supabase session timeout')), 2000)
-      );
-      
-      const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]);
+      console.log('🔄 Checking Supabase session...');
+      const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
         console.error('❌ Supabase session error:', error);
