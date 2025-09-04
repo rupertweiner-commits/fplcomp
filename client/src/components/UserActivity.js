@@ -19,11 +19,15 @@ const UserActivity = ({ userId, isAdmin = false }) => {
         return;
       }
       
-      // TODO: Implement user activity fetching with Supabase
-      console.log('User activity fetch requested for user:', userId, 'days:', selectedPeriod);
+      const response = await fetch(`/api/activity/user/${userId}?days=${selectedPeriod}`);
+      const data = await response.json();
       
-      // Placeholder data for now
-      setActivityData([]);
+      if (data.success) {
+        setActivityData(data.data.activities);
+        setStats(data.data.stats);
+      } else {
+        throw new Error(data.error || 'Failed to fetch activity data');
+      }
     } catch (err) {
       console.error('Failed to fetch activity summary:', err);
       setError('Failed to fetch activity summary');
@@ -43,9 +47,14 @@ const UserActivity = ({ userId, isAdmin = false }) => {
         return;
       }
       
-      // TODO: Implement recent activity fetching with Supabase
-      console.log('Recent activity fetch requested for user:', userId);
-      setRecentActivity([]);
+      const response = await fetch('/api/activity/recent?limit=10');
+      const data = await response.json();
+      
+      if (data.success) {
+        setRecentActivity(data.data.activities);
+      } else {
+        throw new Error(data.error || 'Failed to fetch recent activity');
+      }
     } catch (err) {
       console.error('Failed to fetch recent activity:', err);
       setRecentActivity([]);
