@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trophy, RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
+import { supabase } from '../config/supabase';
 
 const TeamAssignment = ({ currentUser }) => {
   const [userTeam, setUserTeam] = useState(null);
   const [allTeams, setAllTeams] = useState([]);
+  const [allocations, setAllocations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState('');
@@ -12,6 +14,7 @@ const TeamAssignment = ({ currentUser }) => {
     if (currentUser) {
       fetchUserTeam();
       fetchAllTeams();
+      fetchAllocations();
     }
   }, [currentUser]);
 
@@ -40,6 +43,23 @@ const TeamAssignment = ({ currentUser }) => {
       }
     } catch (error) {
       console.error('Failed to fetch all teams:', error);
+    }
+  };
+
+  const fetchAllocations = async () => {
+    try {
+      const response = await fetch('/api/admin/allocations', {
+        headers: {
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        }
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setAllocations(data.data.allocations);
+      }
+    } catch (error) {
+      console.error('Failed to fetch allocations:', error);
     }
   };
 
@@ -103,54 +123,27 @@ const TeamAssignment = ({ currentUser }) => {
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           <Trophy className="inline w-8 h-8 mr-2" style={{color: '#034694'}} />
-          Team Assignment
+          Draft Allocations
         </h2>
         <p className="text-gray-600">
-          Each user gets 5 players: 2 defenders + 3 attackers
+          View current player allocations from the offline draft
         </p>
       </div>
 
-      {/* Admin Controls */}
+      {/* Admin Notice */}
       {currentUser?.isAdmin && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h3 className="text-lg font-semibold text-yellow-900 mb-3">
-            👑 Admin Controls
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">
+            👑 Admin Notice
           </h3>
-          
-          {success && (
-            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center">
-                <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
-                <span className="text-green-700">{success}</span>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-                <span className="text-red-700">{error}</span>
-              </div>
-            </div>
-          )}
-
-          <button
-            onClick={assignTeams}
-            disabled={loading}
-            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg ${
-              loading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            {loading ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Users className="w-4 h-4" />
-            )}
-            {loading ? 'Assigning Teams...' : 'Assign Teams to All Users'}
-          </button>
+          <p className="text-blue-800 mb-3">
+            Use the "Admin Allocation" tab to manually allocate players to users from the offline draft.
+          </p>
+          <div className="text-sm text-blue-700">
+            <p>• Each user should have exactly 5 players</p>
+            <p>• Allocations are tracked in the database with transfer/chip support</p>
+            <p>• Players can be moved between users via transfers and chips</p>
+          </div>
         </div>
       )}
 
@@ -179,34 +172,50 @@ const TeamAssignment = ({ currentUser }) => {
         </div>
       )}
 
-      {/* All Teams */}
-      {allTeams.length > 0 && (
+      {/* Draft Allocations */}
+      {allocations.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-semibold mb-4">All Teams</h3>
+          <h3 className="text-xl font-semibold mb-4">Draft Allocations</h3>
           
           <div className="space-y-4">
-            {allTeams.map((team, index) => (
-              <div key={team.user.id} className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">{team.user.name}</h4>
-                  <span className="text-sm text-gray-600">
-                    Total Value: {team.totalValue}M
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                  {team.team.map((player) => (
-                    <div key={player.id} className="text-center">
-                      <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
-                        {getPositionIcon(player.position)} {player.position}
+            {Object.entries(
+              allocations.reduce((acc, allocation) => {
+                const userId = allocation.target_user_id;
+                if (!acc[userId]) {
+                  acc[userId] = {
+                    user: allocation.target_user,
+                    allocations: []
+                  };
+                }
+                acc[userId].allocations.push(allocation);
+                return acc;
+              }, {})
+            ).map(([userId, userData]) => {
+              const totalValue = userData.allocations.reduce((sum, a) => sum + parseFloat(a.player_price), 0);
+              return (
+                <div key={userId} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">{userData.user.first_name} {userData.user.last_name}</h4>
+                    <span className="text-sm text-gray-600">
+                      {userData.allocations.length}/5 players • Total Value: {totalValue.toFixed(1)}M
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+                    {userData.allocations.map((allocation) => (
+                      <div key={allocation.id} className="text-center">
+                        <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(allocation.player_position)}`}>
+                          {getPositionIcon(allocation.player_position)} {allocation.player_position}
+                        </div>
+                        <div className="text-sm font-medium mt-1">{allocation.player_name}</div>
+                        <div className="text-xs text-gray-600">{allocation.player_price}M</div>
+                        <div className="text-xs text-gray-500">R{allocation.allocation_round}</div>
                       </div>
-                      <div className="text-sm font-medium mt-1">{player.name}</div>
-                      <div className="text-xs text-gray-600">{player.price}M</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}

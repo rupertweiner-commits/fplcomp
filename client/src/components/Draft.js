@@ -25,6 +25,7 @@ import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
 import FPLDataSync from './FPLDataSync.js';
 import TeamAssignment from './TeamAssignment.js';
+import AdminPlayerAllocation from './AdminPlayerAllocation.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -596,8 +597,9 @@ function Draft({ wsService, currentUser }) {
         <nav className="flex space-x-8">
           {(() => {
             const baseTabs = ['simulation', 'teams', 'team-management', 'stats', 'profile'];
-            // Add admin-only tab
+            // Add admin-only tabs
             if (currentUser?.isAdmin) {
+              baseTabs.push('admin-allocation');
               baseTabs.push('user-activity');
             }
             return baseTabs;
@@ -653,6 +655,10 @@ function Draft({ wsService, currentUser }) {
       
       {selectedTab === 'teams' && (
         <TeamAssignment currentUser={currentUser} />
+      )}
+      
+      {selectedTab === 'admin-allocation' && (
+        <AdminPlayerAllocation currentUser={currentUser} />
       )}
       
       {selectedTab === 'team-management' && (
