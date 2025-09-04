@@ -373,7 +373,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
           </button>
         </form>
 
-        {/* Forgot Password Link */}
+        {/* Forgot Password Link - Updated */}
         {isLogin && onForgotPassword && (
           <div className="mt-4 text-center">
             <button
