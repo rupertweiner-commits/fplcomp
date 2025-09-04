@@ -2317,10 +2317,12 @@ function SimulationTab({ currentUser, draftStatus, onRefresh }) {
                 {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
                 Reset All
               </button>
+              
+              {/* Transfer Testing Section */}
             </>
-
-            {/* Transfer Testing Section */}
-            {simulationMode && (
+          )}
+          
+          {simulationMode && (
               <div className="bg-gray-50 rounded-lg p-4 mt-4">
                 <h3 className="text-lg font-semibold mb-3" style={{color: '#034694'}}>
                   🔄 Transfer System Testing
