@@ -110,3 +110,47 @@ Before deploying:
 - User sync depends on database triggers
 - Manual profile creation may be needed for existing users
 - RLS policies must be properly configured
+
+## Supabase SQL Migration Guide
+
+### ⚠️ IMPORTANT: Avoiding "Unable to find snippet" Errors
+
+**Problem**: When trying to run SQL migrations, you may see "Unable to find snippet with ID..." errors.
+
+**Cause**: The SQL files in `/supabase/migrations/` are local project files, NOT Supabase snippets.
+
+**Solution**: 
+1. **DO NOT** look for snippets in Supabase Dashboard
+2. **DO** copy SQL directly from the migration files
+3. **DO** paste into Supabase SQL Editor manually
+
+### How to Run SQL Migrations Properly
+
+1. **Open Supabase Dashboard** → **SQL Editor**
+2. **Click "New Query"**
+3. **Copy SQL from migration files** (e.g., `supabase/migrations/006a_basic_auth_sync.sql`)
+4. **Paste directly into SQL Editor**
+5. **Click "Run"** (or Ctrl+Enter)
+
+### Migration Files Available
+- `006a_basic_auth_sync.sql` - Basic user sync triggers
+- `006b_sync_existing_users.sql` - Sync existing users
+- `006c_sync_status_checker.sql` - Check sync status
+- `005_player_ownership_system.sql` - Player ownership tables
+- `manual-sync-users.sql` - Manual sync script
+
+### Testing Migrations
+After running migrations, test with:
+```sql
+-- Check if trigger exists
+SELECT trigger_name FROM information_schema.triggers 
+WHERE trigger_name = 'on_auth_user_created';
+
+-- Check sync status
+SELECT * FROM public.check_user_sync_status();
+```
+
+### Common Migration Issues
+- **Permission errors**: Ensure using service_role key for admin operations
+- **Function not found**: Run migrations in correct order
+- **Trigger not working**: Check if function was created successfully

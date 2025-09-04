@@ -53,6 +53,13 @@
 - **NEVER** use custom SMTP unless specifically configured
 - **ALWAYS** check if user profiles exist in both auth.users and public.users
 
+### Supabase SQL Migrations
+- **NEVER** look for "snippets" in Supabase Dashboard (they don't exist)
+- **ALWAYS** copy SQL directly from migration files in `/supabase/migrations/`
+- **ALWAYS** paste SQL into Supabase SQL Editor manually
+- **NEVER** assume migration files are automatically available as snippets
+- **ALWAYS** run migrations in correct order (check file numbers)
+
 ## FILE STRUCTURE RULES
 
 ### Components
@@ -101,6 +108,7 @@ Before making changes:
 - **"API endpoint not found"**: Check if function exists in /api directory
 - **"Profile fetch failed"**: Check if user exists in both auth.users and public.users
 - **"Build failed"**: Check for ESLint errors and undefined references
+- **"Unable to find snippet with ID"**: SQL files are local, not Supabase snippets - copy/paste manually
 
 ## WHEN TO ASK FOR HELP
 - **Authentication issues**: Check App.js auth flow first
