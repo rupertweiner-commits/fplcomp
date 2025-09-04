@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import { supabase } from '../lib/supabase';
 
 const ForgotPassword = ({ onBackToLogin }) => {
   const [email, setEmail] = useState('');
@@ -17,28 +17,23 @@ const ForgotPassword = ({ onBackToLogin }) => {
     setMessage({ type: '', text: '' });
 
     try {
-      const response = await axios.post('/api/auth/forgot-password', { email });
-      
-      if (response.data.success) {
-        setMessage({ type: 'success', text: response.data.message });
-        
-        // In development, show the token for testing
-        if (response.data.resetToken) {
-          setResetToken(response.data.resetToken);
-          setStep('reset');
-        } else {
-          setMessage({ 
-            type: 'info', 
-            text: 'Please check your email for the password reset link.' 
-          });
-        }
+      // Use Supabase's built-in password reset
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        setMessage({ type: 'error', text: error.message });
       } else {
-        setMessage({ type: 'error', text: response.data.error });
+        setMessage({ 
+          type: 'success', 
+          text: 'Password reset email sent! Please check your email and click the link to reset your password.' 
+        });
       }
     } catch (error) {
       setMessage({ 
         type: 'error', 
-        text: error.response?.data?.error || 'Failed to request password reset' 
+        text: 'Failed to send password reset email. Please try again.' 
       });
     } finally {
       setIsLoading(false);

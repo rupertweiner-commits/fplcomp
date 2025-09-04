@@ -38,6 +38,7 @@ function Draft({ wsService }) {
   const [selectedTab, setSelectedTab] = useState('team-management');
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Debug logging
   console.log('🚀 Draft component rendering');
@@ -439,7 +440,16 @@ function Draft({ wsService }) {
 
 
   if (!currentUser) {
-    return <AuthForm onLogin={handleLogin} error={error} />;
+    if (showForgotPassword) {
+      return <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
+    }
+    return (
+      <SupabaseLoginForm 
+        onLogin={handleLogin} 
+        error={error} 
+        onForgotPassword={() => setShowForgotPassword(true)}
+      />
+    );
   }
 
   // Check if profile is complete

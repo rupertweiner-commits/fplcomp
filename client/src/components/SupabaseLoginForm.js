@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LogIn, User, Lock, Mail } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-function SupabaseLoginForm({ onLogin, error }) {
+function SupabaseLoginForm({ onLogin, error, onForgotPassword }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +31,7 @@ function SupabaseLoginForm({ onLogin, error }) {
         if (error) {
           onLogin(null, error.message);
         } else {
-          onLogin(data.user, 'Please check your email to confirm your account.');
+          onLogin(data.user, 'Account created successfully! You can now sign in.');
         }
       } else {
         // Sign in
@@ -222,7 +222,7 @@ function SupabaseLoginForm({ onLogin, error }) {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <button
               type="button"
               onClick={() => setIsSignUp(!isSignUp)}
@@ -230,6 +230,18 @@ function SupabaseLoginForm({ onLogin, error }) {
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
+            
+            {!isSignUp && onForgotPassword && (
+              <div>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  className="text-sm text-gray-600 hover:text-gray-500 hover:underline"
+                >
+                  Forgot your password?
+                </button>
+              </div>
+            )}
           </div>
         </form>
       </div>
