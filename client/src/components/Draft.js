@@ -274,7 +274,7 @@ function Draft({ wsService, currentUser }) {
   };
 
   const handleProfileComplete = (updatedUser) => {
-    setCurrentUser(updatedUser);
+    // Profile completion is now handled by App.js
     setProfileComplete(true);
   };
 
