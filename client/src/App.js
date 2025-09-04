@@ -261,8 +261,8 @@ function App() {
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
-            <Route path="/" element={<Draft wsService={null} />} />
-            <Route path="/draft" element={<Draft wsService={null} />} />
+            <Route path="/" element={<Draft wsService={null} currentUser={currentUser} />} />
+            <Route path="/draft" element={<Draft wsService={null} currentUser={currentUser} />} />
             <Route path="/profile" element={
               currentUser ? (
                 <ProfileManager userId={currentUser.id} onProfileUpdate={() => {}} />

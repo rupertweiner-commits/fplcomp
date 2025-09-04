@@ -25,8 +25,7 @@ import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
 import FPLDataSync from './FPLDataSync.js';
 
-function Draft({ wsService }) {
-  const [currentUser, setCurrentUser] = useState(null);
+function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
   const [chelseaPlayers, setChelseaPlayers] = useState([]);
   const [liveScores, setLiveScores] = useState(null);
@@ -41,6 +40,13 @@ function Draft({ wsService }) {
   console.log('🚀 Draft component rendering');
   console.log('👤 currentUser:', currentUser);
   console.log('❌ error:', error);
+
+  // Check profile completion when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      checkProfileCompletion(currentUser);
+    }
+  }, [currentUser]);
 
   // No API connection test needed - using Supabase directly
 
@@ -242,32 +248,13 @@ function Draft({ wsService }) {
     }
   };
 
-  const handleLogin = async (user) => {
-    try {
-      // The AuthForm now handles the login and passes the user object directly
-      setCurrentUser(user);
-      setError(null);
-      
-      // Check if user profile is complete
-      await checkProfileCompletion(user);
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Login failed. Please try again.');
-    }
-  };
-
   const handleLogout = async () => {
     try {
       // Logout handled by Supabase auth service
       console.log('Logging out user:', currentUser?.email);
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
-      setCurrentUser(null);
-      setDraftStatus(null);
-      setChelseaPlayers([]);
-      setLiveScores(null);
-      setProfileComplete(false);
     }
   };
 
@@ -442,7 +429,7 @@ function Draft({ wsService }) {
     }
     return (
       <AuthForm 
-        onLogin={handleLogin} 
+        onLogin={() => {}} 
         error={error} 
         onForgotPassword={() => setShowForgotPassword(true)}
       />
