@@ -78,12 +78,15 @@ function App() {
         console.log('🔄 User signed in, fetching profile for:', session.user.email);
         
         try {
+          console.log('🔍 Fetching profile for user ID:', session.user.id);
           const { data: userProfile, error: profileError } = await supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
+          console.log('🔍 Profile fetch result:', { userProfile, profileError });
+          
           if (!profileError && userProfile) {
             const user = {
               id: userProfile.id,
