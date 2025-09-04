@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, LogIn, UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../config/supabase';
 
-const AuthForm = ({ onLogin, error }) => {
+const AuthForm = ({ onLogin, error, onForgotPassword }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -373,13 +373,19 @@ const AuthForm = ({ onLogin, error }) => {
           </button>
         </form>
 
-        {/* Demo Info */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">Demo Credentials</h3>
-          <p className="text-xs text-blue-700">
-            For testing: <strong>demo@example.com</strong> / <strong>password123</strong>
-          </p>
-        </div>
+        {/* Forgot Password Link */}
+        {isLogin && onForgotPassword && (
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
+            >
+              Forgot your password?
+            </button>
+          </div>
+        )}
+
       </div>
     </div>
   );

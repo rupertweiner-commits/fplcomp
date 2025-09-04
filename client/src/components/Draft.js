@@ -444,7 +444,7 @@ function Draft({ wsService }) {
       return <ForgotPassword onBackToLogin={() => setShowForgotPassword(false)} />;
     }
     return (
-      <SupabaseLoginForm 
+      <AuthForm 
         onLogin={handleLogin} 
         error={error} 
         onForgotPassword={() => setShowForgotPassword(true)}
