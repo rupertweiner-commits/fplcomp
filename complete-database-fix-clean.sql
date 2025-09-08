@@ -252,22 +252,22 @@ INSERT INTO public.users (
   updated_at = NOW();
 
 -- Step 8: Create sample Chelsea players to fix "Error fetching chelsea players"
-INSERT INTO public.chelsea_players (name, position, price, is_available) VALUES
-('Reece James', 'DEF', 5.5, true),
-('Thiago Silva', 'DEF', 5.0, true),
-('Ben Chilwell', 'DEF', 5.5, true),
-('Marc Cucurella', 'DEF', 5.0, true),
-('Wesley Fofana', 'DEF', 4.5, true),
-('Enzo Fernández', 'MID', 6.5, true),
-('Moises Caicedo', 'MID', 6.0, true),
-('Conor Gallagher', 'MID', 5.5, true),
-('Carney Chukwuemeka', 'MID', 5.0, true),
-('Mykhailo Mudryk', 'MID', 6.0, true),
-('Raheem Sterling', 'FWD', 7.0, true),
-('Nicolas Jackson', 'FWD', 6.5, true),
-('Christopher Nkunku', 'FWD', 7.5, true),
-('Armando Broja', 'FWD', 5.5, true),
-('Cole Palmer', 'FWD', 6.0, true);
+INSERT INTO public.chelsea_players (fpl_id, name, position, price, is_available) VALUES
+(1001, 'Reece James', 'DEF', 5.5, true),
+(1002, 'Thiago Silva', 'DEF', 5.0, true),
+(1003, 'Ben Chilwell', 'DEF', 5.5, true),
+(1004, 'Marc Cucurella', 'DEF', 5.0, true),
+(1005, 'Wesley Fofana', 'DEF', 4.5, true),
+(1006, 'Enzo Fernández', 'MID', 6.5, true),
+(1007, 'Moises Caicedo', 'MID', 6.0, true),
+(1008, 'Conor Gallagher', 'MID', 5.5, true),
+(1009, 'Carney Chukwuemeka', 'MID', 5.0, true),
+(1010, 'Mykhailo Mudryk', 'MID', 6.0, true),
+(1011, 'Raheem Sterling', 'FWD', 7.0, true),
+(1012, 'Nicolas Jackson', 'FWD', 6.5, true),
+(1013, 'Christopher Nkunku', 'FWD', 7.5, true),
+(1014, 'Armando Broja', 'FWD', 5.5, true),
+(1015, 'Cole Palmer', 'FWD', 6.0, true);
 
 -- Step 9: Create sample gameweek results to fix "Error fetching gameweek data"
 INSERT INTO public.gameweek_results (user_id, gameweek, total_points, captain_points, bench_points)
