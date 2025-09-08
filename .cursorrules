@@ -131,3 +131,95 @@ Before making changes:
 - **API calls work**: Functions in /api directory respond correctly
 - **Build succeeds**: No ESLint errors or undefined references
 - **Deployment works**: Vercel auto-deploys without errors
+
+## CRITICAL: CONTEXT MAINTENANCE RULE
+**ANY changes to the codebase MUST be documented in this context file:**
+
+1. **Database Changes**: Update schema section below
+2. **API Changes**: Update endpoints section
+3. **Component Changes**: Update architecture section
+4. **New Features**: Add to key features section
+5. **Bug Fixes**: Document in troubleshooting section
+
+## COMPLETE DATABASE SCHEMA (Current State)
+
+### Core Tables
+- **`users`** - Main user table (synced with auth.users)
+  - `id` (uuid, primary key), `email` (varchar, NOT NULL)
+  - `first_name`, `last_name` (varchar, nullable)
+  - `is_admin` (boolean, default false), `is_active` (boolean, default true)
+
+- **`user_profiles`** - Extended user profiles (referenced by user_activity)
+  - `id` (uuid, primary key), `username` (varchar, NOT NULL)
+  - `email` (varchar, NOT NULL), `first_name`, `last_name` (varchar, nullable)
+  - `is_admin` (boolean, default false)
+
+- **`user_activity`** - User activity tracking (WORKING - has sample data)
+  - `id` (uuid, primary key), `user_id` (uuid, nullable) - references user_profiles
+  - `username` (varchar, NOT NULL), `action_type` (varchar, NOT NULL)
+  - `action_details` (jsonb, nullable), `created_at` (timestamp, default now())
+
+### FPL Data Tables
+- **`chelsea_players`** - Chelsea squad players
+  - `id` (integer, primary key), `fpl_id` (integer, NOT NULL)
+  - `name` (varchar, NOT NULL), `position` (varchar, NOT NULL)
+  - `price` (numeric, default 0.0), `is_available` (boolean, default true)
+
+- **`draft_picks`** - Player draft selections (HAS total_score column)
+  - `id` (integer, primary key), `user_id` (uuid, NOT NULL)
+  - `player_id` (integer, nullable), `player_name` (text, nullable)
+  - `total_score` (numeric, default 0.0), `gameweek_score` (numeric, default 0.0)
+  - `is_captain` (boolean, default false), `is_vice_captain` (boolean, default false)
+
+- **`user_teams`** - User team compositions (HAS all required columns)
+  - `id` (integer, primary key), `user_id` (uuid, NOT NULL)
+  - `player_id` (integer, nullable), `player_name` (text, nullable)
+  - `position` (text, nullable), `price` (numeric, default 0.0)
+  - `is_captain` (boolean, default false), `is_vice_captain` (boolean, default false)
+
+### Simulation Tables
+- **`draft_status`** - Draft state management (HAS total_picks column)
+  - `id` (integer, primary key, default 1)
+  - `is_draft_active` (boolean, default false)
+  - `is_draft_complete` (boolean, default false)
+  - `simulation_mode` (boolean, default false)
+  - `current_gameweek` (integer, default 1)
+  - `total_picks` (integer, default 0)
+
+- **`simulation_status`** - Simulation state
+  - `id` (integer, primary key)
+  - `is_simulation_mode` (boolean, default false)
+  - `current_gameweek` (integer, default 1)
+  - `is_draft_complete` (boolean, default false)
+
+### Notification Tables (All exist and functional)
+- **`user_notification_preferences`** - User notification settings
+- **`push_subscriptions`** - Push notification subscriptions
+- **`notification_logs`** - Notification delivery tracking
+
+### Additional Tables (All exist)
+- **`chips`**, **`chip_history`**, **`player_ownership`**, **`player_transfers`**
+- **`user_chips`**, **`user_transfers`**, **`fpl_cache`**, **`fpl_api_cache`**
+- **`fpl_sync_log`**, **`gameweek_results`**, **`gameweek_scores`**
+- **`user_gameweek_history`**, **`user_limit_monitor`**
+- **`user_push_subscriptions`**, **`user_teams_weekly`**, **`user_total_points`**
+- **`transfers`**, **`draft_allocations`**, **`draft_queue`**
+
+## CURRENT STATUS (All Issues Resolved)
+- ✅ **User Activity**: Working with sample data (2 users with login activities)
+- ✅ **Database Schema**: All tables exist with correct columns
+- ✅ **RLS Policies**: Fixed and non-recursive
+- ✅ **Admin Access**: Working for rupertweiner@gmail.com
+- ✅ **API Endpoints**: Consolidated and functional
+- ✅ **Console Errors**: All resolved (no more null errors, 404s, or permission denied)
+- ✅ **Foreign Key Constraints**: All resolved
+- ✅ **Missing Columns**: All added (total_score, price, is_captain, etc.)
+
+## RECENT FIXES COMPLETED
+- Fixed user_activity table foreign key constraints
+- Added missing columns to draft_picks and user_teams
+- Resolved RLS infinite recursion issues
+- Fixed smart sync 404 errors
+- Added comprehensive error logging
+- Created sample user activity data
+- Fixed all console errors and internal server errors
