@@ -42,7 +42,11 @@ ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 ALTER TABLE public.draft_status 
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
--- Step 3: Create all missing tables
+-- Step 3: Add missing columns to existing tables first
+ALTER TABLE public.user_teams 
+ADD COLUMN IF NOT EXISTS price DECIMAL(4,1) DEFAULT 0.0;
+
+-- Step 4: Create all missing tables
 CREATE TABLE IF NOT EXISTS public.chelsea_players (
   id SERIAL PRIMARY KEY,
   fpl_id INTEGER UNIQUE,
@@ -107,7 +111,7 @@ CREATE TABLE IF NOT EXISTS public.user_chips (
   UNIQUE(user_id, chip_type)
 );
 
--- Step 4: Enable RLS on all tables
+-- Step 5: Enable RLS on all tables
 ALTER TABLE public.draft_status ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chelsea_players ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.draft_picks ENABLE ROW LEVEL SECURITY;
@@ -116,7 +120,7 @@ ALTER TABLE public.gameweek_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_chips ENABLE ROW LEVEL SECURITY;
 
--- Step 5: Create simple, non-recursive RLS policies
+-- Step 6: Create simple, non-recursive RLS policies
 CREATE POLICY "Anyone can read draft status" ON public.draft_status
   FOR SELECT USING (true);
 
@@ -173,7 +177,7 @@ CREATE POLICY "Admins can manage all chips" ON public.user_chips
     auth.uid() = (SELECT id FROM auth.users WHERE email = 'rupertweiner@gmail.com' LIMIT 1)
   );
 
--- Step 6: Insert/update initial data
+-- Step 7: Insert/update initial data
 INSERT INTO public.draft_status (
   id,
   is_draft_active,
@@ -214,7 +218,7 @@ INSERT INTO public.simulation_status (
   0
 ) ON CONFLICT DO NOTHING;
 
--- Step 7: Ensure your user exists and is admin
+-- Step 8: Ensure your user exists and is admin
 INSERT INTO public.users (
   id,
   email,
@@ -244,7 +248,7 @@ INSERT INTO public.users (
   is_active = EXCLUDED.is_active,
   updated_at = NOW();
 
--- Step 8: Create sample Chelsea players
+-- Step 9: Create sample Chelsea players
 INSERT INTO public.chelsea_players (fpl_id, name, position, price, is_available) VALUES
 (1001, 'Reece James', 'DEF', 5.5, true),
 (1002, 'Thiago Silva', 'DEF', 5.0, true),
@@ -262,7 +266,7 @@ INSERT INTO public.chelsea_players (fpl_id, name, position, price, is_available)
 (1014, 'Armando Broja', 'FWD', 5.5, true),
 (1015, 'Cole Palmer', 'FWD', 6.0, true);
 
--- Step 9: Create sample gameweek results
+-- Step 10: Create sample gameweek results
 INSERT INTO public.gameweek_results (user_id, gameweek, total_points, captain_points, bench_points)
 SELECT 
   u.id,
@@ -273,7 +277,7 @@ SELECT
 FROM public.users u
 WHERE u.is_active = true;
 
--- Step 10: Create sample user teams
+-- Step 11: Create sample user teams
 INSERT INTO public.user_teams (user_id, player_id, player_name, position, price, is_captain, is_vice_captain)
 SELECT 
   u.id,
@@ -288,7 +292,7 @@ CROSS JOIN public.chelsea_players cp
 WHERE u.is_active = true
 AND cp.id <= 5;
 
--- Step 11: Verify everything was created successfully
+-- Step 12: Verify everything was created successfully
 SELECT 'Database setup completed successfully!' as status;
 
 SELECT 'Tables created:' as info;
