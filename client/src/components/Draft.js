@@ -43,7 +43,9 @@ function Draft({ wsService, currentUser }) {
   // Debug logging
   console.log('🚀 Draft component rendering');
   console.log('👤 currentUser:', currentUser);
-  console.log('❌ error:', error);
+  if (error) {
+    console.log('❌ error:', error);
+  }
 
   // Check profile completion when currentUser changes
   useEffect(() => {
