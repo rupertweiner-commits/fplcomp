@@ -1917,24 +1917,38 @@ function SimulationTab({
       console.log('Leaderboard fetch requested for user:', currentUser?.id);
       
       // Get all users with their total scores
-      const { data: users, error: usersError } = await supabase
+      let { data: users, error: usersError } = await supabase
         .from('users')
         .select('*')
         .eq('is_active', true);
       
       if (usersError) {
         console.error('Error fetching users for leaderboard:', usersError);
-        return;
+        // If users table doesn't exist or has issues, use empty array
+        if (usersError.message.includes('relation "users" does not exist') || 
+            usersError.message.includes('PGRST200')) {
+          console.log('Users table not found or has issues, using empty array');
+          users = [];
+        } else {
+          return;
+        }
       }
       
       // Get total scores for each user
-      const { data: scores, error: scoresError } = await supabase
+      let { data: scores, error: scoresError } = await supabase
         .from('draft_picks')
         .select('user_id, total_score');
       
       if (scoresError) {
         console.error('Error fetching scores for leaderboard:', scoresError);
-        return;
+        // If draft_picks table doesn't exist, use empty array
+        if (scoresError.message.includes('relation "draft_picks" does not exist') || 
+            scoresError.message.includes('PGRST200')) {
+          console.log('Draft picks table not found, using empty array');
+          scores = [];
+        } else {
+          return;
+        }
       }
       
       // Calculate total scores for each user
