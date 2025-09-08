@@ -138,9 +138,10 @@ async function handleStartSimulation(req, res) {
 }
 
 async function handleSimulateGameweek(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  try {
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
 
   // Check if user is admin
   const authHeader = req.headers.authorization;
@@ -170,6 +171,8 @@ async function handleSimulateGameweek(req, res) {
 
   // Simulate gameweek (mock implementation)
   console.log('🔍 Fetching users for simulation...');
+  console.log('🔍 Using Supabase client:', !!supabase);
+  console.log('🔍 Querying table: users');
   
   let { data: users, error: usersError } = await supabase
     .from('users')
@@ -285,4 +288,14 @@ async function handleGetLeaderboard(req, res) {
     success: true,
     data: { leaderboard }
   });
+  } catch (error) {
+    console.error('❌ Simulation gameweek error:', error);
+    console.error('❌ Error details:', error.message);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).json({
+      error: 'Internal server error',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 }
