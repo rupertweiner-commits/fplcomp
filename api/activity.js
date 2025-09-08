@@ -28,10 +28,14 @@ export default async function handler(req, res) {
     }
 
   } catch (error) {
-    console.error('Activity API error:', error);
+    console.error('❌ Activity API error:', error);
+    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Request details:', { method: req.method, url: req.url, query: req.query });
+    
     res.status(500).json({ 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
@@ -94,22 +98,43 @@ async function handleRecentActivity(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Get recent activity from all users
-  const { data: activity, error: activityError } = await supabase
-    .from('user_activity')
-    .select(`
-      *,
-      user:users!user_activity_user_id_fkey(id, first_name, last_name, email)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(20);
+  try {
+    console.log('🔍 Fetching recent activity...');
+    
+    // Get recent activity from all users
+    const { data: activity, error: activityError } = await supabase
+      .from('user_activity')
+      .select(`
+        *,
+        user:users!user_activity_user_id_fkey(id, first_name, last_name, email)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(20);
 
-  if (activityError) {
-    throw activityError;
+    if (activityError) {
+      console.error('❌ Activity query error:', activityError);
+      throw activityError;
+    }
+
+    console.log('✅ Recent activity fetched successfully:', activity?.length || 0, 'activities');
+
+    res.status(200).json({
+      success: true,
+      data: { activity: activity || [] }
+    });
+  } catch (error) {
+    console.error('❌ handleRecentActivity error:', error);
+    
+    // If table doesn't exist, return empty array instead of error
+    if (error.message?.includes('relation "user_activity" does not exist') || 
+        error.message?.includes('PGRST200')) {
+      console.log('ℹ️ user_activity table does not exist, returning empty array');
+      return res.status(200).json({
+        success: true,
+        data: { activity: [] }
+      });
+    }
+    
+    throw error;
   }
-
-  res.status(200).json({
-    success: true,
-    data: { activity }
-  });
 }

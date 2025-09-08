@@ -56,8 +56,11 @@ const UserActivity = ({ userId, isAdmin = false }) => {
         throw new Error(data.error || 'Failed to fetch recent activity');
       }
     } catch (err) {
-      console.error('Failed to fetch recent activity:', err);
+      console.error('❌ Failed to fetch recent activity:', err);
+      console.error('❌ Error details:', err.message);
+      console.error('❌ Full error object:', err);
       setRecentActivity([]);
+      setError(err.message || 'Failed to fetch recent activity');
     }
   }, [userId]);
 
