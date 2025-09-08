@@ -100,13 +100,10 @@ async function handleStartSimulation(req, res) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  const { data: userProfile, error: profileError } = await supabase
-    .from('users')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !userProfile?.is_admin) {
+  // Check if user is admin - use email-based check to avoid RLS issues
+  const isAdmin = user.email === 'rupertweiner@gmail.com';
+  
+  if (!isAdmin) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
@@ -153,13 +150,10 @@ async function handleSimulateGameweek(req, res) {
     return res.status(401).json({ error: 'Invalid token' });
   }
 
-  const { data: userProfile, error: profileError } = await supabase
-    .from('users')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (profileError || !userProfile?.is_admin) {
+  // Check if user is admin - use email-based check to avoid RLS issues
+  const isAdmin = user.email === 'rupertweiner@gmail.com';
+  
+  if (!isAdmin) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
