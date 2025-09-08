@@ -107,6 +107,8 @@ async function handleStartSimulation(req, res) {
     return res.status(403).json({ error: 'Admin access required' });
   }
 
+  console.log('🔍 Starting simulation for admin:', user.email);
+  
   // Start simulation mode
   const { data: simulationStatus, error: statusError } = await supabase
     .from('simulation_status')
@@ -122,8 +124,11 @@ async function handleStartSimulation(req, res) {
     .single();
 
   if (statusError) {
+    console.error('❌ Simulation status error:', statusError);
     throw statusError;
   }
+  
+  console.log('✅ Simulation status updated:', simulationStatus);
 
   res.status(200).json({
     success: true,

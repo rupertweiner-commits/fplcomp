@@ -257,7 +257,7 @@ function Draft({ wsService, currentUser }) {
 
     try {
       setLoading(true);
-      console.log('Starting simulation and randomizing teams for user:', currentUser?.id);
+      console.log('🚀 Starting global simulation (affects all users)');
       
       // First, start the simulation via API
       const response = await fetch('/api/simulation?action=start', {
@@ -267,6 +267,14 @@ function Draft({ wsService, currentUser }) {
           'Content-Type': 'application/json'
         }
       });
+      
+      console.log('📡 Simulation API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Simulation API error:', errorData);
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
 
       const data = await response.json();
 
