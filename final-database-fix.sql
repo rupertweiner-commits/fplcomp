@@ -203,13 +203,7 @@ INSERT INTO public.draft_status (
   1,
   1,
   0
-) ON CONFLICT (id) DO UPDATE SET
-  total_picks = COALESCE(draft_status.total_picks, 0),
-  simulation_mode = COALESCE(draft_status.simulation_mode, false),
-  is_paused = COALESCE(draft_status.is_paused, false),
-  active_gameweek = COALESCE(draft_status.active_gameweek, 1),
-  current_gameweek = COALESCE(draft_status.current_gameweek, 1),
-  updated_at = NOW();
+);
 
 INSERT INTO public.simulation_status (
   is_simulation_mode,
@@ -221,7 +215,7 @@ INSERT INTO public.simulation_status (
   1,
   false,
   0
-) ON CONFLICT DO NOTHING;
+);
 
 -- Step 8: Ensure your user exists and is admin
 INSERT INTO public.users (
@@ -244,14 +238,7 @@ INSERT INTO public.users (
   true,
   NOW(),
   NOW()
-) ON CONFLICT (id) DO UPDATE SET
-  email = EXCLUDED.email,
-  username = EXCLUDED.username,
-  first_name = EXCLUDED.first_name,
-  last_name = EXCLUDED.last_name,
-  is_admin = EXCLUDED.is_admin,
-  is_active = EXCLUDED.is_active,
-  updated_at = NOW();
+);
 
 -- Step 9: Create sample Chelsea players
 INSERT INTO public.chelsea_players (fpl_id, name, position, price, is_available) VALUES
