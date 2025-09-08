@@ -42,9 +42,14 @@ ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 ALTER TABLE public.draft_status 
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
--- Step 3: Add missing columns to existing tables first
+-- Step 3: Add ALL missing columns to existing tables first
 ALTER TABLE public.user_teams 
-ADD COLUMN IF NOT EXISTS price DECIMAL(4,1) DEFAULT 0.0;
+ADD COLUMN IF NOT EXISTS price DECIMAL(4,1) DEFAULT 0.0,
+ADD COLUMN IF NOT EXISTS is_captain BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS is_vice_captain BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS player_name TEXT,
+ADD COLUMN IF NOT EXISTS position TEXT,
+ADD COLUMN IF NOT EXISTS assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
 
 -- Step 4: Create all missing tables
 CREATE TABLE IF NOT EXISTS public.chelsea_players (
