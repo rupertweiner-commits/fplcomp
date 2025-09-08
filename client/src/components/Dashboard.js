@@ -36,7 +36,7 @@ function Dashboard({ wsService }) {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/fpl/dashboard');
+      const response = await fetch('/api/fpl?action=dashboard');
       const data = await response.json();
       
       if (data && data.success) {

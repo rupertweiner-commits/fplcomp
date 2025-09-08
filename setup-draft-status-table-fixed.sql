@@ -77,3 +77,4 @@ CREATE TRIGGER draft_status_updated_at
     EXECUTE FUNCTION update_draft_status_updated_at();
 
 
+

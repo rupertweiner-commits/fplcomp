@@ -42,17 +42,17 @@ function LiveTracker({ wsService }) {
       setLoading(true);
       
       // Get current gameweek
-      const gwResponse = await fetch('/api/fpl/current-gameweek');
+      const gwResponse = await fetch('/api/fpl?action=current-gameweek');
       const gwData = await gwResponse.json();
       const gameweek = gwData.data || 1;
       setCurrentGameweek(gameweek);
 
       // Fetch gameweek data in parallel
       const [liveResponse, fixturesResponse, performersResponse, bootstrapResponse] = await Promise.all([
-        fetch(`/api/fpl/gameweek-live?gameweek=${gameweek}`).then(r => r.json()).catch(() => ({ data: null })),
-        fetch(`/api/fpl/fixtures?event=${gameweek}`).then(r => r.json()),
-        fetch(`/api/fpl/top-performers?gameweek=${gameweek}&limit=10`).then(r => r.json()).catch(() => ({ data: [] })),
-        fetch('/api/fpl/bootstrap').then(r => r.json())
+        fetch(`/api/fpl?action=gameweek-live&gameweek=${gameweek}`).then(r => r.json()).catch(() => ({ data: null })),
+        fetch(`/api/fpl?action=fixtures&event=${gameweek}`).then(r => r.json()),
+        fetch(`/api/fpl?action=top-performers&gameweek=${gameweek}&limit=10`).then(r => r.json()).catch(() => ({ data: [] })),
+        fetch('/api/fpl?action=bootstrap').then(r => r.json())
       ]);
 
       setGameweekData(liveResponse.data);

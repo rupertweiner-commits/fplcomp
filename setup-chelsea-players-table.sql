@@ -69,3 +69,4 @@ CREATE POLICY "chelsea_players_update_admin" ON chelsea_players
     );
 
 
+

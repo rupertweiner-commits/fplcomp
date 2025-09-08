@@ -48,7 +48,7 @@ const FPLDataSync = () => {
     try {
       setStatus('Testing FPL API connection...');
       
-      const response = await fetch('/api/fpl/bootstrap');
+      const response = await fetch('/api/fpl?action=bootstrap');
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

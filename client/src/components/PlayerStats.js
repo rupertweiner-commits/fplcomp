@@ -19,7 +19,7 @@ function PlayerStats() {
       setLoading(true);
       
       // Fetch live data from FPL API via our Vercel API route
-      const response = await fetch('/api/fpl/bootstrap');
+      const response = await fetch('/api/fpl?action=bootstrap');
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

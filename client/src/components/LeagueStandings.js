@@ -33,7 +33,7 @@ function LeagueStandings() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/fpl/league/${id.trim()}?page=${page}`);
+      const response = await fetch(`/api/fpl?action=league&id=${id.trim()}&page=${page}`);
       const data = await response.json();
       setLeagueData(data.data);
       setCurrentPage(page);

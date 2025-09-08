@@ -24,7 +24,7 @@ function ManagerAnalysis() {
       setError(null);
 
       // Get current gameweek first
-      const gwResponse = await fetch('/api/fpl/current-gameweek');
+      const gwResponse = await fetch('/api/fpl?action=current-gameweek');
       const gwData = await gwResponse.json();
       const gameweek = gwData.data.currentGameweek;
       setCurrentGameweek(gameweek);
@@ -32,9 +32,9 @@ function ManagerAnalysis() {
 
       // Fetch manager data in parallel
       const [managerResponse, historyResponse, teamResponse] = await Promise.all([
-        fetch(`/api/fpl/manager/${managerId}`).then(r => r.json()),
-        fetch(`/api/fpl/manager/${managerId}/history`).then(r => r.json()),
-        fetch(`/api/fpl/manager/${managerId}/team/${gameweek}`).then(r => r.json())
+        fetch(`/api/fpl?action=manager&managerId=${managerId}`).then(r => r.json()),
+        fetch(`/api/fpl?action=manager&managerId=${managerId}&gameweek=${gameweek}`).then(r => r.json()),
+        fetch(`/api/fpl?action=manager&managerId=${managerId}&gameweek=${gameweek}`).then(r => r.json())
       ]);
 
       setManagerData(managerResponse.data.data);
@@ -50,7 +50,7 @@ function ManagerAnalysis() {
 
   const fetchTeamForGameweek = async (gameweek) => {
     try {
-      const response = await fetch(`/api/fpl/manager/${managerId}/team/${gameweek}`);
+      const response = await fetch(`/api/fpl?action=manager&managerId=${managerId}&gameweek=${gameweek}`);
       const data = await response.json();
       setCurrentTeam(data.data.data);
       setSelectedGameweek(gameweek);
