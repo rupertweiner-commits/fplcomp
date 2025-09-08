@@ -10,7 +10,6 @@ import {
   ArrowLeftRight,
   Star,
   Gift,
-  Dice6,
   Play,
   RotateCcw,
   Activity
@@ -284,6 +283,10 @@ function Draft({ wsService, currentUser }) {
     }
 
     try {
+      setLoading(true);
+      console.log('Starting simulation and randomizing teams for user:', currentUser?.id);
+      
+      // First, start the simulation via API
       const response = await fetch('/api/simulation?action=start', {
         method: 'POST',
         headers: {
@@ -294,15 +297,102 @@ function Draft({ wsService, currentUser }) {
 
       const data = await response.json();
 
-      if (data.success) {
-        alert('Simulation started successfully!');
-        fetchSimulationStatus();
-      } else {
+      if (!data.success) {
         alert(`Failed to start simulation: ${data.error}`);
+        return;
       }
+
+      // Then, randomize teams (integrated from handleRandomizeTeams)
+      console.log('Simulation started, now randomizing teams...');
+      
+      // Get all active users
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('is_active', true);
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError);
+        alert('Failed to fetch users for team randomization');
+        return;
+      }
+      
+      // Get Chelsea players
+      const { data: chelseaPlayers, error: playersError } = await supabase
+        .from('chelsea_players')
+        .select('*');
+      
+      if (playersError) {
+        console.error('Error fetching Chelsea players:', playersError);
+        alert('Failed to fetch Chelsea players for team randomization');
+        return;
+      }
+      
+      if (chelseaPlayers.length < users.length * 5) {
+        alert('Not enough Chelsea players for team randomization');
+        return;
+      }
+      
+      // Shuffle players
+      const shuffledPlayers = [...chelseaPlayers].sort(() => Math.random() - 0.5);
+      
+      // Assign 5 players to each user
+      const teamAssignments = [];
+      let playerIndex = 0;
+      
+      for (const user of users) {
+        const userTeam = shuffledPlayers.slice(playerIndex, playerIndex + 5);
+        
+        // Insert team assignment
+        for (const player of userTeam) {
+          teamAssignments.push({
+            user_id: user.id,
+            player_id: player.id,
+            player_name: player.name,
+            position: player.position,
+            price: player.price,
+            is_captain: false,
+            is_vice_captain: false,
+            assigned_at: new Date().toISOString()
+          });
+        }
+        
+        playerIndex += 5;
+        console.log(`👥 ${user.email}: ${userTeam.map(p => p.name).join(', ')}`);
+      }
+      
+      // Insert all team assignments
+      const { error: insertError } = await supabase
+        .from('user_teams')
+        .insert(teamAssignments);
+      
+      if (insertError) {
+        console.error('Error inserting team assignments:', insertError);
+        alert('Failed to save team assignments');
+        return;
+      }
+      
+      // Mark draft as complete
+      const { error: updateError } = await supabase
+        .from('draft_status')
+        .update({ is_draft_complete: true })
+        .eq('id', 1);
+      
+      if (updateError) {
+        console.error('Error updating draft status:', updateError);
+        // Don't fail the whole operation for this
+      }
+      
+      console.log('✅ Simulation started and teams randomized successfully');
+      await fetchDraftData();
+      await fetchSimulationStatus();
+      alert('Simulation started successfully! Teams have been randomized and assigned to all users.');
+      
     } catch (err) {
       console.error('Failed to start simulation:', err);
       alert('Failed to start simulation');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1874,97 +1964,6 @@ function SimulationTab({
     fetchSimulationData();
   }, [draftStatus?.simulationMode, fetchLeaderboard, fetchSimulationData]);
 
-  const handleRandomizeTeams = async () => {
-    try {
-      setLoading(true);
-      console.log('Randomize teams requested for user:', currentUser?.id);
-      
-      // Get all active users
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('is_active', true);
-      
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        alert('Failed to fetch users for team randomization');
-        return;
-      }
-      
-      // Get Chelsea players
-      const { data: chelseaPlayers, error: playersError } = await supabase
-        .from('chelsea_players')
-        .select('*');
-      
-      if (playersError) {
-        console.error('Error fetching Chelsea players:', playersError);
-        alert('Failed to fetch Chelsea players for team randomization');
-        return;
-      }
-      
-      if (chelseaPlayers.length < users.length * 5) {
-        alert('Not enough Chelsea players for team randomization');
-        return;
-      }
-      
-      // Shuffle players
-      const shuffledPlayers = [...chelseaPlayers].sort(() => Math.random() - 0.5);
-      
-      // Assign 5 players to each user
-      const teamAssignments = [];
-      let playerIndex = 0;
-      
-      for (const user of users) {
-        const userTeam = shuffledPlayers.slice(playerIndex, playerIndex + 5);
-        
-        // Insert team assignment
-        for (const player of userTeam) {
-          teamAssignments.push({
-            user_id: user.id,
-            player_id: player.id,
-            gameweek: 1,
-            is_active: true,
-            created_at: new Date().toISOString()
-          });
-        }
-        
-        playerIndex += 5;
-        console.log(`👥 ${user.email}: ${userTeam.map(p => p.web_name).join(', ')}`);
-      }
-      
-      // Insert all team assignments
-      const { error: insertError } = await supabase
-        .from('user_teams')
-        .insert(teamAssignments);
-      
-      if (insertError) {
-        console.error('Error inserting team assignments:', insertError);
-        alert('Failed to save team assignments');
-        return;
-      }
-      
-      // Mark draft as complete
-      const { error: updateError } = await supabase
-        .from('draft_status')
-        .update({ is_draft_complete: true })
-        .eq('id', 1);
-      
-      if (updateError) {
-        console.error('Error updating draft status:', updateError);
-        // Don't fail the whole operation for this
-      }
-      
-      console.log('✅ Teams randomized successfully');
-      await onRefresh();
-      await fetchSimulationData();
-      alert('Teams randomized successfully! Each user now has a balanced 5-player team.');
-    } catch (error) {
-      console.error('Error randomizing teams:', error);
-      alert('Failed to randomize teams');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Transfer system for testing
   const handleMakeTransfer = async (userTeam, playerOut, playerIn) => {
@@ -2291,17 +2290,6 @@ function SimulationTab({
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <button
-            onClick={handleRandomizeTeams}
-            disabled={loading || !simulationMode || !currentUser?.isAdmin}
-            className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg disabled:opacity-50 ${
-              !currentUser?.isAdmin ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            style={{backgroundColor: '#034694'}}
-          >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Dice6 className="w-4 h-4" />}
-            Randomize Teams
-          </button>
           
           {simulationMode && (
             <>
