@@ -15,7 +15,7 @@ const FPLDataSync = () => {
     try {
       setStatus('Syncing Chelsea players from FPL API to database...');
       
-      const response = await fetch('/api/sync/chelsea-players', {
+      const response = await fetch('/api/fpl-sync?action=sync-chelsea-players', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -29,7 +29,7 @@ const FPLDataSync = () => {
 
       const result = await response.json();
       
-      setStatus(`✅ Successfully synced ${result.playersCount} Chelsea players to database!`);
+      setStatus(`✅ Successfully synced ${result.data.totalPlayers} Chelsea players to database! (${result.data.playersCreated} created, ${result.data.playersUpdated} updated)`);
       setLastSync(new Date().toLocaleString());
       
     } catch (err) {
@@ -55,7 +55,7 @@ const FPLDataSync = () => {
       }
 
       const data = await response.json();
-      const chelseaPlayers = data.elements.filter(player => player.team === 7);
+      const chelseaPlayers = data.elements.filter(player => player.team === 4);
       
       setStatus(`✅ FPL API connection successful! Found ${chelseaPlayers.length} Chelsea players.`);
       

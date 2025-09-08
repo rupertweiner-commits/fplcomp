@@ -1,4 +1,4 @@
--- Create missing tables for team management
+-- Create missing tables for team management (without outdated players)
 -- Run this in your Supabase SQL Editor
 
 -- Create draft_status table if it doesn't exist
@@ -20,9 +20,10 @@ INSERT INTO draft_status (id, is_draft_active, is_draft_complete, simulation_mod
 SELECT 1, false, false, false, null, false, 1, 1
 WHERE NOT EXISTS (SELECT 1 FROM draft_status WHERE id = 1);
 
--- Create chelsea_players table if it doesn't exist
+-- Create chelsea_players table if it doesn't exist (empty for now)
 CREATE TABLE IF NOT EXISTS chelsea_players (
     id SERIAL PRIMARY KEY,
+    fpl_id INTEGER UNIQUE, -- FPL player ID
     name VARCHAR(100) NOT NULL,
     position VARCHAR(10) NOT NULL CHECK (position IN ('GK', 'DEF', 'MID', 'FWD')),
     price DECIMAL(8,2) DEFAULT 0.0,
@@ -30,27 +31,6 @@ CREATE TABLE IF NOT EXISTS chelsea_players (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
-
--- Insert some sample Chelsea players if table is empty
-INSERT INTO chelsea_players (name, position, price, is_available)
-SELECT * FROM (VALUES
-    ('Kepa Arrizabalaga', 'GK', 5.0, true),
-    ('Edouard Mendy', 'GK', 5.5, true),
-    ('Thiago Silva', 'DEF', 6.0, true),
-    ('Antonio Rüdiger', 'DEF', 5.5, true),
-    ('César Azpilicueta', 'DEF', 5.0, true),
-    ('Ben Chilwell', 'DEF', 5.5, true),
-    ('Reece James', 'DEF', 6.0, true),
-    ('N''Golo Kanté', 'MID', 6.5, true),
-    ('Jorginho', 'MID', 6.0, true),
-    ('Mason Mount', 'MID', 7.0, true),
-    ('Kai Havertz', 'MID', 7.5, true),
-    ('Romelu Lukaku', 'FWD', 8.0, true),
-    ('Timo Werner', 'FWD', 7.0, true),
-    ('Christian Pulisic', 'FWD', 6.5, true),
-    ('Hakim Ziyech', 'FWD', 6.0, true)
-) AS t(name, position, price, is_available)
-WHERE NOT EXISTS (SELECT 1 FROM chelsea_players LIMIT 1);
 
 -- Create draft_picks table if it doesn't exist
 CREATE TABLE IF NOT EXISTS draft_picks (
@@ -91,4 +71,4 @@ CREATE POLICY "draft_status_update_admin" ON draft_status
         )
     );
 
-SELECT 'Missing tables created successfully!' as status;
+SELECT 'Missing tables created successfully! Run the Chelsea players script next.' as status;
