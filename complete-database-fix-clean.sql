@@ -267,8 +267,7 @@ INSERT INTO public.chelsea_players (name, position, price, is_available) VALUES
 ('Nicolas Jackson', 'FWD', 6.5, true),
 ('Christopher Nkunku', 'FWD', 7.5, true),
 ('Armando Broja', 'FWD', 5.5, true),
-('Cole Palmer', 'FWD', 6.0, true)
-ON CONFLICT (name) DO NOTHING;
+('Cole Palmer', 'FWD', 6.0, true);
 
 -- Step 9: Create sample gameweek results to fix "Error fetching gameweek data"
 INSERT INTO public.gameweek_results (user_id, gameweek, total_points, captain_points, bench_points)
@@ -279,8 +278,7 @@ SELECT
   0,
   0
 FROM public.users u
-WHERE u.is_active = true
-ON CONFLICT (user_id, gameweek) DO NOTHING;
+WHERE u.is_active = true;
 
 -- Step 10: Create sample user teams to fix "Error fetching user teams"
 INSERT INTO public.user_teams (user_id, player_id, player_name, position, price, is_captain, is_vice_captain)
@@ -295,8 +293,7 @@ SELECT
 FROM public.users u
 CROSS JOIN public.chelsea_players cp
 WHERE u.is_active = true
-AND cp.id <= 5
-ON CONFLICT (user_id, player_id) DO NOTHING;
+AND cp.id <= 5;
 
 -- Step 11: Verify everything was created successfully
 SELECT 'Database setup completed successfully!' as status;
