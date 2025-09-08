@@ -251,7 +251,54 @@ INSERT INTO public.users (
   is_active = EXCLUDED.is_active,
   updated_at = NOW();
 
--- Step 8: Verify everything was created successfully
+-- Step 8: Create sample Chelsea players to fix "Error fetching chelsea players"
+INSERT INTO public.chelsea_players (name, position, price, is_available) VALUES
+('Reece James', 'DEF', 5.5, true),
+('Thiago Silva', 'DEF', 5.0, true),
+('Ben Chilwell', 'DEF', 5.5, true),
+('Marc Cucurella', 'DEF', 5.0, true),
+('Wesley Fofana', 'DEF', 4.5, true),
+('Enzo Fernández', 'MID', 6.5, true),
+('Moises Caicedo', 'MID', 6.0, true),
+('Conor Gallagher', 'MID', 5.5, true),
+('Carney Chukwuemeka', 'MID', 5.0, true),
+('Mykhailo Mudryk', 'MID', 6.0, true),
+('Raheem Sterling', 'FWD', 7.0, true),
+('Nicolas Jackson', 'FWD', 6.5, true),
+('Christopher Nkunku', 'FWD', 7.5, true),
+('Armando Broja', 'FWD', 5.5, true),
+('Cole Palmer', 'FWD', 6.0, true)
+ON CONFLICT (name) DO NOTHING;
+
+-- Step 9: Create sample gameweek results to fix "Error fetching gameweek data"
+INSERT INTO public.gameweek_results (user_id, gameweek, total_points, captain_points, bench_points)
+SELECT 
+  u.id,
+  1,
+  0,
+  0,
+  0
+FROM public.users u
+WHERE u.is_active = true
+ON CONFLICT (user_id, gameweek) DO NOTHING;
+
+-- Step 10: Create sample user teams to fix "Error fetching user teams"
+INSERT INTO public.user_teams (user_id, player_id, player_name, position, price, is_captain, is_vice_captain)
+SELECT 
+  u.id,
+  cp.id,
+  cp.name,
+  cp.position,
+  cp.price,
+  false,
+  false
+FROM public.users u
+CROSS JOIN public.chelsea_players cp
+WHERE u.is_active = true
+AND cp.id <= 5  -- Give each user 5 players
+ON CONFLICT (user_id, player_id) DO NOTHING;
+
+-- Step 11: Verify everything was created successfully
 SELECT 'Database setup completed successfully!' as status;
 
 SELECT 'Tables created:' as info;
@@ -279,3 +326,10 @@ SELECT
   is_active
 FROM public.users 
 WHERE email = 'rupertweiner@gmail.com';
+
+SELECT 'Sample data created:' as info;
+SELECT 'Chelsea players:' as table_name, COUNT(*) as count FROM public.chelsea_players
+UNION ALL
+SELECT 'Gameweek results:' as table_name, COUNT(*) as count FROM public.gameweek_results
+UNION ALL
+SELECT 'User teams:' as table_name, COUNT(*) as count FROM public.user_teams;
