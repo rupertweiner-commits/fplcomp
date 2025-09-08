@@ -2477,6 +2477,9 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const availableChips = myTeam?.chips || [];
   const usedChips = myTeam?.usedChips || [];
   const currentGameweek = draftStatus?.activeGameweek || draftStatus?.currentGameweek || 1;
+  
+  // State for user teams from database
+  const [userTeamPlayers, setUserTeamPlayers] = useState([]);
 
   useEffect(() => {
     if (myTeam) {
@@ -2490,8 +2493,29 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     if (draftStatus) {
       fetchAvailablePlayers();
       fetchAllPlayers();
+      fetchUserTeam();
     }
-  }, [draftStatus]);
+  }, [draftStatus, currentUser]);
+
+  const fetchUserTeam = async () => {
+    if (!currentUser?.id) return;
+    
+    try {
+      const { data: teamData, error } = await supabase
+        .from('user_teams')
+        .select('*')
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        console.error('Failed to fetch user team:', error);
+        return;
+      }
+
+      setUserTeamPlayers(teamData || []);
+    } catch (error) {
+      console.error('Failed to fetch user team:', error);
+    }
+  };
 
   // Add null check for draftStatus after hooks
   if (!draftStatus) {
@@ -2806,26 +2830,30 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
           <h3 className="text-lg font-semibold mb-4" style={{color: '#034694'}}>⚽ Gameweek Team Selection</h3>
           <p className="text-gray-600 mb-6">Select 4 active players, 1 bench player, and choose your captain (2x points)</p>
         
-        {myTeam?.team?.length > 0 && (
+        {userTeamPlayers?.length > 0 && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-blue-800">
-              <strong>Welcome, {currentUser?.username}!</strong> This is your team of {myTeam.team?.length || 0} players.
+              <strong>Welcome, {currentUser?.username}!</strong> This is your team of {userTeamPlayers.length} players.
             </p>
           </div>
         )}
         
-        {myTeam?.team?.length > 0 ? (
+        {userTeamPlayers?.length > 0 ? (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              {myTeam.team.map((playerId) => {
-                const isActive = selectedTeamPlayers.includes(playerId);
-                const isBenched = benchedPlayer === playerId;
-                const isCaptain = captain === playerId;
+              {userTeamPlayers.map((player) => {
+                const isActive = selectedTeamPlayers.includes(player.player_id);
+                const isBenched = benchedPlayer === player.player_id;
+                const isCaptain = captain === player.player_id;
                 
-                const playerDetails = getPlayerDetails(playerId);
+                const playerDetails = {
+                  name: player.player_name,
+                  position: player.position,
+                  price: player.price
+                };
                 
                 return (
-                  <div key={playerId} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                  <div key={player.player_id} className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                     isActive ? 'border-green-500 bg-green-50' :
                     isBenched ? 'border-yellow-500 bg-yellow-50' :
                     'border-gray-200 hover:border-gray-300'
@@ -2842,7 +2870,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
                       
                       <div className="mt-3 space-y-2">
                         <button
-                          onClick={() => togglePlayerSelection(playerId)}
+                          onClick={() => togglePlayerSelection(player.player_id)}
                           className={`w-full py-1 px-2 text-xs rounded ${
                             isActive ? 'bg-green-500 text-white' : 'bg-green-100 text-green-700 hover:bg-green-200'
                           }`}
@@ -2852,7 +2880,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
                         </button>
                         
                         <button
-                          onClick={() => handleBenchChange(playerId)}
+                          onClick={() => handleBenchChange(player.player_id)}
                           className={`w-full py-1 px-2 text-xs rounded ${
                             isBenched ? 'bg-yellow-500 text-white' : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                           }`}
@@ -2863,7 +2891,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
                         
                         {isActive && (
                           <button
-                            onClick={() => handleCaptainChange(playerId)}
+                            onClick={() => handleCaptainChange(player.player_id)}
                             className={`w-full py-1 px-2 text-xs rounded ${
                               isCaptain ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`}
@@ -2882,8 +2910,15 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
           <div className="text-center py-8 text-gray-500">
             <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p className="text-lg font-medium text-gray-700 mb-2">No team found for {currentUser?.username || 'current user'}</p>
-            <p className="text-sm">Go to the 🎮 Simulation tab and click "Randomize Teams" to assign teams to all users.</p>
+            <p className="text-sm">Go to the 🎮 Simulation tab and click "Enter Simulation" to assign teams to all users.</p>
             {!currentUser && <p className="text-xs text-red-500 mt-2">You may need to log in first.</p>}
+            {currentUser?.isAdmin && (
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  <strong>Admin:</strong> As an admin, you can start the simulation and assign teams to all users.
+                </p>
+              </div>
+            )}
           </div>
         )}
         </div>
