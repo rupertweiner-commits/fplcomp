@@ -79,11 +79,22 @@ function App() {
         
         try {
           console.log('🔍 Fetching profile for user ID:', session.user.id);
-          const { data: userProfile, error: profileError } = await supabase
+          
+          // Add timeout to profile fetch
+          const profilePromise = supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
+          
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
+          );
+          
+          const { data: userProfile, error: profileError } = await Promise.race([
+            profilePromise,
+            timeoutPromise
+          ]);
 
           console.log('🔍 Profile fetch result:', { userProfile, profileError });
           
