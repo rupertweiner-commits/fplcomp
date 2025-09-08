@@ -1842,14 +1842,23 @@ function SimulationTab({
       // Get gameweek history
       const { data: gameweekData, error: gameweekError } = await supabase
         .from('draft_picks')
-        .select(`
-          *,
-          users!inner(email)
-        `)
+        .select('*')
         .order('gameweek', { ascending: true });
       
       if (gameweekError) {
         console.error('Error fetching gameweek data:', gameweekError);
+      }
+      
+      // Get users for mapping
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email');
+      
+      const userMap = {};
+      if (users) {
+        users.forEach(user => {
+          userMap[user.id] = user.email;
+        });
       }
       
       // Process gameweek history
@@ -1868,7 +1877,7 @@ function SimulationTab({
           
           gameweeks[pick.gameweek].userScores.push({
             userId: pick.user_id,
-            username: pick.users?.email || 'Unknown',
+            username: userMap[pick.user_id] || 'Unknown',
             totalScore: pick.total_score || 0
           });
         });
@@ -1879,11 +1888,7 @@ function SimulationTab({
       // Get user teams
       const { data: userTeams, error: teamsError } = await supabase
         .from('user_teams')
-        .select(`
-          *,
-          users!inner(email),
-          chelsea_players!inner(web_name, position)
-        `);
+        .select('*');
       
       if (teamsError) {
         console.error('Error fetching user teams:', teamsError);
