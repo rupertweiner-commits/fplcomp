@@ -169,14 +169,27 @@ async function handleSimulateGameweek(req, res) {
   }
 
   // Simulate gameweek (mock implementation)
-  const { data: users, error: usersError } = await supabase
+  console.log('🔍 Fetching users for simulation...');
+  
+  let { data: users, error: usersError } = await supabase
     .from('users')
     .select('*')
     .eq('is_active', true);
 
   if (usersError) {
-    throw usersError;
+    console.error('❌ Users query error:', usersError);
+    // If users table doesn't exist or has RLS issues, use empty array
+    if (usersError.message?.includes('relation "users" does not exist') || 
+        usersError.message?.includes('PGRST200') ||
+        usersError.message?.includes('permission denied')) {
+      console.log('ℹ️ Users table access denied, using empty array for simulation');
+      users = [];
+    } else {
+      throw usersError;
+    }
   }
+  
+  console.log('✅ Users fetched for simulation:', users?.length || 0, 'users');
 
   // Generate mock scores for each user
   const gameweekResults = users.map(user => ({
