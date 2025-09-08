@@ -26,6 +26,7 @@ import AuthForm from './AuthForm.js';
 import FPLDataSync from './FPLDataSync.js';
 import TeamAssignment from './TeamAssignment.js';
 import AdminPlayerAllocation from './AdminPlayerAllocation.js';
+import NotificationPreferences from './NotificationPreferences.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -153,14 +154,20 @@ function Draft({ wsService, currentUser }) {
       }
 
       // Fetch Chelsea players from Supabase
-      const { data: playersData, error: playersError } = await supabase
+      let { data: playersData, error: playersError } = await supabase
         .from('chelsea_players')
         .select('*')
         .order('position', { ascending: true });
 
       if (playersError) {
         console.error('Failed to fetch Chelsea players:', playersError);
-        throw playersError;
+        // If table doesn't exist, use empty array
+        if (playersError.message.includes('relation "chelsea_players" does not exist')) {
+          console.log('Chelsea players table not found, using empty array');
+          playersData = [];
+        } else {
+          throw playersError;
+        }
       }
 
       // Fetch all users for draft
@@ -176,13 +183,19 @@ function Draft({ wsService, currentUser }) {
       }
 
       // Fetch draft picks to calculate team sizes
-      const { data: draftPicks, error: picksError } = await supabase
+      let { data: draftPicks, error: picksError } = await supabase
         .from('draft_picks')
         .select('user_id, player_id');
 
       if (picksError) {
         console.error('Failed to fetch draft picks:', picksError);
-        throw picksError;
+        // If table doesn't exist, use empty array
+        if (picksError.message.includes('relation "draft_picks" does not exist')) {
+          console.log('Draft picks table not found, using empty array');
+          draftPicks = [];
+        } else {
+          throw picksError;
+        }
       }
 
       // Calculate team sizes for each user
@@ -596,7 +609,7 @@ function Draft({ wsService, currentUser }) {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {(() => {
-            const baseTabs = ['simulation', 'teams', 'team-management', 'stats', 'profile'];
+            const baseTabs = ['simulation', 'teams', 'team-management', 'stats', 'profile', 'notifications'];
             // Add admin-only tabs
             if (currentUser?.isAdmin) {
               baseTabs.push('admin-allocation');
@@ -618,6 +631,7 @@ function Draft({ wsService, currentUser }) {
               {tab === 'team-management' && '⚽ Team Management'}
               {tab === 'stats' && '📊 Stats'}
               {tab === 'profile' && '👤 Profile'}
+              {tab === 'notifications' && '🔔 Notifications'}
               {tab === 'user-activity' && '📊 User Activity'}
             </button>
           ))}
@@ -683,6 +697,10 @@ function Draft({ wsService, currentUser }) {
           userId={currentUser?.id}
           onProfileUpdate={fetchDraftData}
         />
+      )}
+      
+      {selectedTab === 'notifications' && (
+        <NotificationPreferences currentUser={currentUser} />
       )}
       
       {selectedTab === 'draft-queue' && (
@@ -2459,6 +2477,9 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
           <div className="text-center py-8">
             <RefreshCw className="w-8 h-8 mx-auto mb-3 text-gray-400 animate-spin" />
             <p className="text-gray-600">Loading team management data...</p>
+            <p className="text-sm text-gray-500 mt-2">
+              If this continues, please check that the database tables are properly set up.
+            </p>
           </div>
         </div>
       </div>

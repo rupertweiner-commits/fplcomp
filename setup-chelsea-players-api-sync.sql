@@ -135,3 +135,5 @@ CREATE INDEX idx_chelsea_players_synced_at ON chelsea_players(synced_at DESC);
 
 
 
+
+
