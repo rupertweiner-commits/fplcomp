@@ -372,6 +372,13 @@ function Draft({ wsService, currentUser }) {
         return;
       }
       
+      // For admin users, always consider profile complete to avoid blocking
+      if (user.isAdmin) {
+        console.log('Admin user detected, skipping profile completion check');
+        setProfileComplete(true);
+        return;
+      }
+      
       // Otherwise, fetch the profile from database to check completion
       const { data: userProfile, error } = await supabase
         .from('users')

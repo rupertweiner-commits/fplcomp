@@ -144,31 +144,34 @@ function App() {
               }
             } catch (createError) {
               console.error('❌ Failed to create user profile:', createError);
-              // Fallback to basic user
-              const basicUser = {
-                id: session.user.id,
-                email: session.user.email,
-                firstName: '',
-                lastName: '',
-                isAdmin: false,
-                profileComplete: false
-              };
-              setCurrentUser(basicUser);
-              console.log('⚠️ Using fallback user object:', basicUser.email);
+            // Fallback to basic user - if it's the admin email, give admin privileges
+            const isAdminEmail = session.user.email === 'rupertweiner@gmail.com';
+            const basicUser = {
+              id: session.user.id,
+              email: session.user.email,
+              firstName: isAdminEmail ? 'Rupert' : '',
+              lastName: isAdminEmail ? 'Weiner' : '',
+              isAdmin: isAdminEmail,
+              profileComplete: isAdminEmail // Admin users are always considered complete
+            };
+            setCurrentUser(basicUser);
+            console.log('⚠️ Using fallback user object:', basicUser.email, 'isAdmin:', basicUser.isAdmin);
             }
           }
         } catch (error) {
           console.error('❌ Error fetching profile:', error);
-          // Fallback to basic user
+          // Fallback to basic user - if it's the admin email, give admin privileges
+          const isAdminEmail = session.user.email === 'rupertweiner@gmail.com';
           const basicUser = {
             id: session.user.id,
             email: session.user.email,
-            firstName: '',
-            lastName: '',
-            isAdmin: false,
-            profileComplete: false
+            firstName: isAdminEmail ? 'Rupert' : '',
+            lastName: isAdminEmail ? 'Weiner' : '',
+            isAdmin: isAdminEmail,
+            profileComplete: isAdminEmail // Admin users are always considered complete
           };
           setCurrentUser(basicUser);
+          console.log('⚠️ Using fallback user object:', basicUser.email, 'isAdmin:', basicUser.isAdmin);
         }
       } else if (event === 'SIGNED_OUT') {
         // User signed out
