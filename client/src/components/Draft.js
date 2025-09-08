@@ -366,12 +366,41 @@ function Draft({ wsService, currentUser }) {
     try {
       setCheckingProfile(true);
       
-      // Check if user has first_name and last_name in their profile
-      const isComplete = !!(user.firstName && user.lastName);
+      // If user object already has profileComplete flag, use it
+      if (user.profileComplete !== undefined) {
+        setProfileComplete(user.profileComplete);
+        return;
+      }
+      
+      // Otherwise, fetch the profile from database to check completion
+      const { data: userProfile, error } = await supabase
+        .from('users')
+        .select('first_name, last_name, email')
+        .eq('id', user.id)
+        .single();
+      
+      if (error) {
+        console.error('Failed to fetch profile for completion check:', error);
+        // If we can't fetch profile, assume it's complete to avoid blocking
+        setProfileComplete(true);
+        return;
+      }
+      
+      // Check if profile has required fields
+      const isComplete = !!(userProfile?.first_name && userProfile?.last_name && userProfile?.email);
       setProfileComplete(isComplete);
+      
+      console.log('Profile completion check:', {
+        hasFirstName: !!userProfile?.first_name,
+        hasLastName: !!userProfile?.last_name,
+        hasEmail: !!userProfile?.email,
+        isComplete
+      });
+      
     } catch (error) {
       console.error('Failed to check profile completion:', error);
-      setProfileComplete(false);
+      // If there's an error, assume profile is complete to avoid blocking
+      setProfileComplete(true);
     } finally {
       setCheckingProfile(false);
     }
