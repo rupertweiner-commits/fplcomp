@@ -16,6 +16,8 @@ function APITester({ currentUser }) {
     { method: 'GET', url: '/api/teams?action=all', name: 'All Teams', public: true },
     { method: 'GET', url: '/api/activity?action=recent', name: 'Recent Activity', public: true },
     { method: 'GET', url: '/api/fpl-sync?action=sync-status', name: 'FPL Sync Status', public: true },
+    { method: 'POST', url: '/api/fpl-sync?action=sync-chelsea-players', name: 'FPL Sync Chelsea Players', public: false },
+    { method: 'GET', url: '/api/fpl-sync?action=test', name: 'FPL Sync Test', public: true },
   ];
 
   const testEndpoint = async (endpoint) => {
@@ -33,22 +35,37 @@ function APITester({ currentUser }) {
         headers
       });
 
-      const data = await response.json();
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const textResponse = await response.text();
+        data = { error: `Non-JSON response: ${textResponse.substring(0, 200)}...` };
+      }
       
       return {
         name: endpoint.name,
+        method: endpoint.method,
+        url: endpoint.url,
         success: response.ok,
         status: response.status,
         error: response.ok ? null : (data.error || 'Unknown error'),
-        data: response.ok ? data : null
+        data: response.ok ? data : null,
+        responseTime: Date.now()
       };
     } catch (error) {
       return {
         name: endpoint.name,
+        method: endpoint.method,
+        url: endpoint.url,
         success: false,
         status: 0,
         error: error.message,
-        data: null
+        data: null,
+        responseTime: Date.now()
       };
     }
   };
@@ -146,25 +163,44 @@ function APITester({ currentUser }) {
           </Button>
 
           {results.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-3">
               <h3 className="font-medium text-gray-900">Test Results:</h3>
               {results.map((result, index) => (
                 <div
                   key={index}
-                  className={`p-3 rounded-lg border ${getStatusColor(result)}`}
+                  className={`p-4 rounded-lg border ${getStatusColor(result)}`}
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(result)}
-                      <span className="font-medium">{result.name}</span>
+                      <div>
+                        <div className="font-medium">{result.name}</div>
+                        <div className="text-xs text-gray-500 font-mono">
+                          {result.method} {result.url}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm">
+                    <div className="text-sm font-mono">
                       HTTP {result.status}
                     </div>
                   </div>
+                  
                   {result.error && (
-                    <div className="mt-2 text-sm">
-                      <strong>Error:</strong> {result.error}
+                    <div className="mt-3 p-2 bg-red-100 border border-red-200 rounded text-sm">
+                      <div className="font-medium text-red-800 mb-1">Error Details:</div>
+                      <div className="text-red-700 font-mono text-xs break-all">
+                        {result.error}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {result.success && result.data && (
+                    <div className="mt-3 p-2 bg-green-100 border border-green-200 rounded text-sm">
+                      <div className="font-medium text-green-800 mb-1">Success Response:</div>
+                      <div className="text-green-700 font-mono text-xs">
+                        {JSON.stringify(result.data, null, 2).substring(0, 200)}
+                        {JSON.stringify(result.data, null, 2).length > 200 && '...'}
+                      </div>
                     </div>
                   )}
                 </div>
