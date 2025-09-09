@@ -613,7 +613,7 @@ async function calculateUserScoresForGameweek(gameweek) {
 
     // Get all users
     const { data: users, error: usersError } = await supabase
-      .from('users')
+      .from('user_profiles')
       .select('id, email')
       .eq('is_active', true);
 

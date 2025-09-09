@@ -176,7 +176,7 @@ async function handleManager(req, res) {
 
     // Get manager data from database
     const { data: manager, error: managerError } = await supabase
-      .from('users')
+      .from('user_profiles')
       .select('*')
       .eq('id', managerId)
       .single();

@@ -145,7 +145,7 @@ function Draft({ wsService, currentUser }) {
 
       // Fetch all users for draft
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true)
         .order('id');
@@ -291,7 +291,7 @@ function Draft({ wsService, currentUser }) {
 
       // Get all active users
       const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true);
 
@@ -454,7 +454,7 @@ function Draft({ wsService, currentUser }) {
 
       // Otherwise, fetch the profile from database to check completion
       const { data: userProfile, error } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('first_name, last_name, email')
         .eq('id', user.id)
         .single();
@@ -570,7 +570,7 @@ function Draft({ wsService, currentUser }) {
 
       // Determine next turn
       const { data: allUsers, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true)
         .order('id');
@@ -888,7 +888,7 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
 
       // Get all active users
       const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true)
         .order('id');
@@ -1904,7 +1904,7 @@ function SimulationTab({
 
       // Get users for mapping
       const { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('id, email');
 
       const userMap = {};
@@ -1973,14 +1973,14 @@ function SimulationTab({
 
       // Get all users with their total scores
       let { data: users, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true);
 
       if (usersError) {
         console.error('Error fetching users for leaderboard:', usersError);
         // If users table doesn't exist or has issues, use empty array
-        if (usersError.message.includes('relation "users" does not exist') ||
+        if (usersError.message.includes('relation "user_profiles" does not exist') ||
             usersError.message.includes('PGRST200')) {
           console.log('Users table not found or has issues, using empty array');
           users = [];

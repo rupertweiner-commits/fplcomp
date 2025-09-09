@@ -53,7 +53,7 @@ async function handleSendEmail(req, res) {
 
   // Get user details
   const { data: user, error: userError } = await supabase
-    .from('users')
+    .from('user_profiles')
     .select('*')
     .eq('id', userId)
     .single();

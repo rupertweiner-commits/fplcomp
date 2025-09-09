@@ -29,7 +29,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     try {
       // Use Supabase to fetch user profile
       const { data: userProfile, error } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('id', currentUser.id)
         .single();
@@ -158,7 +158,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     try {
       // Update profile in Supabase
       const { data, error } = await supabase
-        .from('users')
+        .from('user_profiles')
         .update({
           first_name: formData.firstName,
           last_name: formData.lastName,

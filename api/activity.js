@@ -106,7 +106,7 @@ async function handleRecentActivity(req, res) {
       .from('user_activity')
       .select(`
         *,
-        user:users!user_activity_user_id_fkey(id, first_name, last_name, email)
+        user:user_profiles!user_activity_user_id_fkey(id, first_name, last_name, email)
       `)
       .order('created_at', { ascending: false })
       .limit(20);

@@ -83,7 +83,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
     try {
       // Check if email already exists
       const { data: existingEmail, error: emailError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('email')
         .eq('email', formData.email)
         .single();
@@ -108,7 +108,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
 
       // Create user record in users table
       const { data: userData, error: userError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .insert({
           id: authData.user.id,
           email: formData.email,

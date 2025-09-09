@@ -37,7 +37,7 @@ export const supabaseHelpers = {
   // Get user profile
   async getUserProfile(userId) {
     const { data, error } = await supabase
-      .from('users')
+      .from('user_profiles')
       .select('*')
       .eq('id', userId)
       .single();
@@ -49,7 +49,7 @@ export const supabaseHelpers = {
   // Update user profile
   async updateUserProfile(userId, updates) {
     const { data, error } = await supabase
-      .from('users')
+      .from('user_profiles')
       .update(updates)
       .eq('id', userId)
       .select()

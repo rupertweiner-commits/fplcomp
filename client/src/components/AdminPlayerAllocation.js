@@ -35,7 +35,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
       // Fetch all active users
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('is_active', true)
         .order('first_name');
@@ -47,7 +47,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
         .from('draft_allocations')
         .select(`
           *,
-          target_user:users!draft_allocations_target_user_id_fkey(id, first_name, last_name, email)
+          target_user:user_profiles!draft_allocations_target_user_id_fkey(id, first_name, last_name, email)
         `)
         .order('allocation_round', { ascending: true })
         .order('allocation_order', { ascending: true });
