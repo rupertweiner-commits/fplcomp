@@ -56,10 +56,48 @@ async function handleSyncChelseaPlayers(req, res) {
       throw new Error('Chelsea team not found in FPL data');
     }
     
-    // Get Chelsea players
-    const chelseaPlayers = fplData.elements.filter(player => player.team === 4);
+    // Get Chelsea players - filter for current squad members
+    const allChelseaPlayers = fplData.elements.filter(player => player.team === 4);
     
-    console.log(`Found ${chelseaPlayers.length} Chelsea players in FPL API`);
+    // Filter out players who have left Chelsea (based on news/status)
+    const chelseaPlayers = allChelseaPlayers.filter(player => {
+      // Include players who are available, injured, or suspended
+      const isActive = ['a', 'i', 's'].includes(player.status);
+      
+      // Exclude players with transfer news indicating they left
+      const hasTransferNews = player.news && (
+        player.news.toLowerCase().includes('transfer') ||
+        player.news.toLowerCase().includes('sold') ||
+        player.news.toLowerCase().includes('released') ||
+        player.news.toLowerCase().includes('contract terminated')
+      );
+      
+      return isActive && !hasTransferNews;
+    });
+    
+    console.log(`Found ${allChelseaPlayers.length} total Chelsea players in FPL API`);
+    console.log(`Filtered to ${chelseaPlayers.length} current Chelsea players`);
+    console.log('Chelsea team info:', chelseaTeam);
+    
+    // Log some player details for debugging
+    console.log('Sample current Chelsea players:', chelseaPlayers.slice(0, 10).map(p => ({
+      id: p.id,
+      name: `${p.first_name} ${p.second_name}`,
+      position: p.element_type,
+      status: p.status,
+      news: p.news,
+      price: p.now_cost / 10
+    })));
+    
+    // Log players that were filtered out
+    const filteredOut = allChelseaPlayers.filter(player => !chelseaPlayers.includes(player));
+    if (filteredOut.length > 0) {
+      console.log('Filtered out players:', filteredOut.map(p => ({
+        name: `${p.first_name} ${p.second_name}`,
+        status: p.status,
+        news: p.news
+      })));
+    }
     
     // Log sync start
     const { data: syncLog, error: logError } = await supabase
@@ -147,6 +185,16 @@ async function handleSyncChelseaPlayers(req, res) {
 
     if (fetchError) {
       console.error('Failed to fetch synced players:', fetchError);
+    } else {
+      console.log(`✅ Successfully synced ${syncedPlayers?.length || 0} players to Supabase`);
+      console.log('Sample synced players from DB:', syncedPlayers?.slice(0, 5).map(p => ({
+        id: p.id,
+        fpl_id: p.fpl_id,
+        name: p.name,
+        position: p.position,
+        price: p.price,
+        is_available: p.is_available
+      })));
     }
 
     res.status(200).json({

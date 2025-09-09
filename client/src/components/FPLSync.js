@@ -11,6 +11,8 @@ function FPLSync({ currentUser, onSyncComplete }) {
   const [error, setError] = useState(null);
   const [showDataTable, setShowDataTable] = useState(false);
   const [syncedPlayers, setSyncedPlayers] = useState([]);
+  const [supabasePlayers, setSupabasePlayers] = useState([]);
+  const [showSupabaseData, setShowSupabaseData] = useState(false);
 
   const handleSyncPlayers = async () => {
     if (!currentUser?.isAdmin) {
@@ -73,6 +75,30 @@ function FPLSync({ currentUser, onSyncComplete }) {
       }
     } catch (err) {
       console.error('Failed to check sync status:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCheckSupabaseData = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Checking Supabase Chelsea players...');
+      
+      const response = await fetch('/api/check-chelsea-players');
+      const data = await response.json();
+      
+      if (data.success) {
+        setSupabasePlayers(data.data.players || []);
+        console.log('📊 Supabase data:', data.data);
+        console.log(`Found ${data.data.totalPlayers} players in Supabase`);
+        console.log('Position counts:', data.data.positionCounts);
+      } else {
+        throw new Error(data.error || 'Failed to fetch Supabase data');
+      }
+    } catch (err) {
+      console.error('Failed to check Supabase data:', err);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -212,6 +238,81 @@ function FPLSync({ currentUser, onSyncComplete }) {
           </Card>
         )}
 
+        {/* Supabase Data Table */}
+        {supabasePlayers.length > 0 && showSupabaseData && (
+          <Card className="mb-6">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Current Supabase Data ({supabasePlayers.length} players)
+                </h3>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Player
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Position
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        FPL ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Last Updated
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {supabasePlayers.map((player, index) => (
+                      <tr key={player.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {player.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPositionColor(player.position)}`}>
+                            {player.position}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          £{player.price || 0}m
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {player.fpl_id || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            player.is_available 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {player.is_available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {player.updated_at ? new Date(player.updated_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h3 className="font-medium text-blue-900 mb-2">What this does:</h3>
@@ -223,26 +324,51 @@ function FPLSync({ currentUser, onSyncComplete }) {
             </ul>
           </div>
 
-          <div className="flex space-x-3">
-            <Button
-              onClick={handleSyncPlayers}
-              disabled={loading}
-              loading={loading}
-              variant="primary"
-              size="large"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Sync Chelsea Players from FPL
-            </Button>
+          <div className="space-y-4">
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleSyncPlayers}
+                disabled={loading}
+                loading={loading}
+                variant="primary"
+                size="large"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Sync Chelsea Players from FPL
+              </Button>
 
-            <Button
-              onClick={handleCheckSyncStatus}
-              disabled={loading}
-              variant="secondary"
-              size="large"
-            >
-              Check Sync Status
-            </Button>
+              <Button
+                onClick={handleCheckSyncStatus}
+                disabled={loading}
+                variant="secondary"
+                size="large"
+              >
+                Check Sync Status
+              </Button>
+            </div>
+
+            <div className="flex space-x-3">
+              <Button
+                onClick={handleCheckSupabaseData}
+                disabled={loading}
+                variant="secondary"
+                size="large"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                Check Supabase Data
+              </Button>
+
+              {supabasePlayers.length > 0 && (
+                <Button
+                  onClick={() => setShowSupabaseData(!showSupabaseData)}
+                  variant="secondary"
+                  size="large"
+                >
+                  {showSupabaseData ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                  {showSupabaseData ? 'Hide' : 'Show'} Supabase Data
+                </Button>
+              )}
+            </div>
           </div>
 
           <p className="text-xs text-gray-500">
