@@ -1,9 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
+// Initialize Supabase client with error handling
+let supabase;
+try {
+  supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
+} catch (error) {
+  console.error('Failed to initialize Supabase client:', error);
+}
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -13,6 +19,16 @@ export default async function handler(req, res) {
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // Check if Supabase client is initialized
+  if (!supabase) {
+    console.error('Supabase client not initialized - missing environment variables');
+    return res.status(500).json({
+      success: false,
+      error: 'Server configuration error',
+      details: 'Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variables'
+    });
   }
 
   try {
