@@ -102,29 +102,25 @@ async function handleSyncChelseaPlayers(req, res) {
     }
     console.log('✅ Cleared existing data');
 
-    // Insert new data with basic columns first (to test schema)
+    // Insert new data using existing schema columns
     const playersToInsert = chelseaPlayers.map(player => ({
-      // Basic info
-      id: player.id, // Use FPL ID as primary key
-      web_name: player.web_name || `${player.first_name} ${player.second_name}`,
-      first_name: player.first_name,
-      second_name: player.second_name,
-      element_type: player.element_type,
-      position_name: mapFPLPosition(player.element_type),
-      team: player.team,
-      team_name: chelseaTeam.name,
-      
-      // Basic pricing and stats
-      now_cost: player.now_cost,
+      // Use existing columns
+      id: player.id, // FPL ID as primary key
+      fpl_id: player.id, // Also store in fpl_id column
+      name: player.web_name || `${player.first_name} ${player.second_name}`,
+      full_name: `${player.first_name} ${player.second_name}`,
+      position: mapFPLPosition(player.element_type),
+      price: (player.now_cost / 10).toFixed(1), // Convert to decimal
+      team_id: player.team,
       total_points: player.total_points || 0,
-      form: player.form || '0.0',
-      minutes: player.minutes || 0,
-      goals_scored: player.goals_scored || 0,
-      assists: player.assists || 0,
-      clean_sheets: player.clean_sheets || 0,
-      
-      // Basic status
+      form: player.form || 0.0,
+      selected_by_percent: parseFloat(player.selected_by_percent) || 0.0,
+      news: player.news || '',
+      news_added: player.news_added ? new Date(player.news_added).toISOString() : null,
+      chance_of_playing_this_round: player.chance_of_playing_this_round,
+      chance_of_playing_next_round: player.chance_of_playing_next_round,
       is_available: true,
+      last_updated: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
