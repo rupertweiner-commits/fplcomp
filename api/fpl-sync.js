@@ -23,16 +23,29 @@ export default async function handler(req, res) {
         return await handleSyncChelseaPlayers(req, res);
       case 'sync-status':
         return await handleSyncStatus(req, res);
+      case 'test':
+        return res.status(200).json({ 
+          success: true, 
+          message: 'FPL Sync API is working',
+          timestamp: new Date().toISOString()
+        });
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
 
   } catch (error) {
     console.error('FPL Sync API error:', error);
-    res.status(500).json({ 
-      error: 'Internal server error',
-      details: error.message 
-    });
+    console.error('Error stack:', error.stack);
+    
+    // Ensure we always return JSON
+    if (!res.headersSent) {
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error',
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
   }
 }
 
@@ -217,6 +230,7 @@ async function handleSyncChelseaPlayers(req, res) {
     
   } catch (error) {
     console.error('Failed to sync Chelsea players:', error);
+    console.error('Error stack:', error.stack);
     
     // Update sync log with error
     const { data: recentLog } = await supabase
@@ -238,10 +252,14 @@ async function handleSyncChelseaPlayers(req, res) {
         .eq('id', recentLog.id);
     }
     
-    res.status(500).json({
-      success: false,
-      error: error.message
-    });
+    // Ensure we always return JSON
+    if (!res.headersSent) {
+      res.status(500).json({
+        success: false,
+        error: error.message,
+        details: error.stack
+      });
+    }
   }
 }
 
