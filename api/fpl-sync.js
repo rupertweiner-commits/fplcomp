@@ -69,9 +69,25 @@ async function handleSyncChelseaPlayers(req, res) {
     const fplData = await fplResponse.json();
     console.log('✅ FPL data fetched successfully, elements count:', fplData.elements?.length || 0);
 
-    // Get Chelsea players (team ID 4)
-    const chelseaPlayers = fplData.elements.filter(player => player.team === 4);
+    // Debug: Check what teams are available
+    const teams = fplData.teams || [];
+    console.log('🏟️ Available teams:', teams.map(t => `${t.id}: ${t.name}`));
+    
+    // Find Chelsea team ID
+    const chelseaTeam = teams.find(team => 
+      team.name.toLowerCase().includes('chelsea') || 
+      team.short_name.toLowerCase().includes('che')
+    );
+    console.log('🔵 Chelsea team found:', chelseaTeam);
+    
+    if (!chelseaTeam) {
+      throw new Error('Chelsea team not found in FPL data');
+    }
+    
+    // Get Chelsea players
+    const chelseaPlayers = fplData.elements.filter(player => player.team === chelseaTeam.id);
     console.log(`📊 Found ${chelseaPlayers.length} Chelsea players in FPL data`);
+    console.log('📊 Sample Chelsea players:', chelseaPlayers.slice(0, 3).map(p => `${p.first_name} ${p.second_name} (Team: ${p.team})`));
 
     // Clear existing data
     console.log('🗑️ Clearing existing Chelsea players...');
@@ -86,8 +102,8 @@ async function handleSyncChelseaPlayers(req, res) {
     }
     console.log('✅ Cleared existing data');
 
-    // Insert new data (simplified - only first 10 players to avoid timeout)
-    const playersToInsert = chelseaPlayers.slice(0, 10).map(player => ({
+    // Insert new data
+    const playersToInsert = chelseaPlayers.map(player => ({
       fpl_id: player.id,
       name: `${player.first_name} ${player.second_name}`,
       position: mapFPLPosition(player.element_type),
@@ -131,10 +147,12 @@ async function handleSyncChelseaPlayers(req, res) {
 
     return res.status(200).json({
       success: true,
-      message: 'Chelsea players sync completed',
+      message: `Chelsea players sync completed - ${insertedPlayers?.length || 0} players synced`,
       data: {
         playersCreated: insertedPlayers?.length || 0,
         totalPlayers: chelseaPlayers.length,
+        chelseaTeamId: chelseaTeam.id,
+        chelseaTeamName: chelseaTeam.name,
         players: insertedPlayers || []
       }
     });
