@@ -2,7 +2,7 @@
 -- Run this in Supabase SQL Editor
 
 -- Step 1: Check if user exists in user_profiles
-SELECT id, email, first_name, last_name, is_admin, is_active 
+SELECT id, email, first_name, last_name, is_admin
 FROM user_profiles 
 WHERE email = 'rupertweiner@gmail.com';
 
@@ -19,7 +19,6 @@ INSERT INTO user_profiles (
   email, 
   first_name, 
   last_name, 
-  is_active, 
   is_admin, 
   created_at, 
   updated_at
@@ -29,18 +28,16 @@ INSERT INTO user_profiles (
   'Rupert',
   'Weiner',
   true,
-  true,
   NOW(),
   NOW()
 ) ON CONFLICT (id) DO UPDATE SET
   first_name = EXCLUDED.first_name,
   last_name = EXCLUDED.last_name,
   is_admin = EXCLUDED.is_admin,
-  is_active = EXCLUDED.is_active,
   updated_at = NOW();
 */
 
 -- Step 4: Verify the user was created
-SELECT id, email, first_name, last_name, is_admin, is_active 
+SELECT id, email, first_name, last_name, is_admin
 FROM user_profiles 
 WHERE email = 'rupertweiner@gmail.com';
