@@ -123,6 +123,44 @@ function SimulationTab({
     }
   };
 
+  const handleNextGameweek = async() => {
+    if (!currentUser?.isAdmin) {
+      alert('Admin access required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('📅 Simulating next gameweek...');
+
+      const response = await fetch('/api/simulation-gameweek?action=simulate-next', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.access_token || ''}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        console.log('✅ Next gameweek simulated successfully:', data.data);
+        alert(`Gameweek ${data.data.gameweek} simulated! ${data.data.results.length} players updated.`);
+        // Refresh the leaderboard and simulation status
+        if (onRefreshLeaderboard) onRefreshLeaderboard();
+        if (onRefresh) onRefresh();
+      } else {
+        console.error('❌ Next gameweek simulation failed:', data.error);
+        alert(`Next gameweek simulation failed: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('❌ Next gameweek simulation error:', error);
+      alert(`Next gameweek simulation error: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const currentGameweek = simulationStatus?.current_gameweek || 1;
   const isDraftComplete = simulationStatus?.is_draft_complete || false;
 
@@ -235,6 +273,17 @@ function SimulationTab({
           >
             <Play className="w-4 h-4 mr-2" />
             Simulate Current Gameweek
+          </Button>
+
+          <Button
+            disabled={loading || !currentUser?.isAdmin}
+            loading={loading}
+            onClick={handleNextGameweek}
+            size="large"
+            variant="primary"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Next Gameweek
           </Button>
 
           <Button
