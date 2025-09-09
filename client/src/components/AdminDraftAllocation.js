@@ -1,0 +1,346 @@
+import React, { useState, useEffect } from 'react';
+import { Users, Trophy, Target, CheckCircle, AlertCircle } from 'lucide-react';
+
+function AdminDraftAllocation({ currentUser }) {
+  const [mockUsers, setMockUsers] = useState([]);
+  const [availablePlayers, setAvailablePlayers] = useState([]);
+  const [allocations, setAllocations] = useState([]);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedPlayer, setSelectedPlayer] = useState('');
+  const [isCaptain, setIsCaptain] = useState(false);
+  const [isViceCaptain, setIsViceCaptain] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState({ type: '', text: '' });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch mock users
+      const usersResponse = await fetch('/api/draft-allocation?action=get-mock-users', {
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+      const usersData = await usersResponse.json();
+      if (usersData.success) {
+        setMockUsers(usersData.data);
+        if (usersData.data.length > 0) {
+          setSelectedUser(usersData.data[0].id);
+        }
+      }
+
+      // Fetch available players
+      const playersResponse = await fetch('/api/draft-allocation?action=get-available-players', {
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+      const playersData = await playersResponse.json();
+      if (playersData.success) {
+        setAvailablePlayers(playersData.data.players);
+      }
+
+      // Fetch current allocations
+      const allocationsResponse = await fetch('/api/draft-allocation?action=get-allocations', {
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+      const allocationsData = await allocationsResponse.json();
+      if (allocationsData.success) {
+        setAllocations(allocationsData.data.allocations);
+      }
+
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      setMessage({ type: 'error', text: 'Failed to fetch data' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAllocatePlayer = async () => {
+    if (!selectedUser || !selectedPlayer) {
+      setMessage({ type: 'error', text: 'Please select both a user and a player' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setMessage({ type: '', text: '' });
+
+      const response = await fetch('/api/draft-allocation?action=allocate-player', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          userId: selectedUser,
+          playerId: selectedPlayer,
+          isCaptain: isCaptain,
+          isViceCaptain: isViceCaptain
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: 'Player allocated successfully!' });
+        setSelectedPlayer('');
+        setIsCaptain(false);
+        setIsViceCaptain(false);
+        await fetchData(); // Refresh data
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to allocate player' });
+      }
+    } catch (error) {
+      console.error('Error allocating player:', error);
+      setMessage({ type: 'error', text: 'Failed to allocate player' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCompleteDraft = async () => {
+    try {
+      setLoading(true);
+      setMessage({ type: '', text: '' });
+
+      const response = await fetch('/api/draft-allocation?action=complete-draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage({ type: 'success', text: 'Draft completed successfully! Ready for simulation.' });
+        await fetchData(); // Refresh data
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to complete draft' });
+      }
+    } catch (error) {
+      console.error('Error completing draft:', error);
+      setMessage({ type: 'error', text: 'Failed to complete draft' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTotalAllocations = () => {
+    return allocations.reduce((total, user) => total + user.picks.length, 0);
+  };
+
+  const getUsersWithCompleteTeams = () => {
+    return allocations.filter(user => user.picks.length >= 2).length;
+  };
+
+  if (!currentUser?.isAdmin) {
+    return (
+      <div className="text-center py-12">
+        <AlertCircle className="mx-auto h-12 w-12 text-red-500" />
+        <h3 className="mt-2 text-sm font-medium text-gray-900">Admin Access Required</h3>
+        <p className="mt-1 text-sm text-gray-500">You need admin privileges to access this feature.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+              <Target className="mr-3 h-8 w-8 text-blue-600" />
+              Admin Draft Allocation
+            </h2>
+            <p className="text-gray-600 mt-2">
+              Allocate Chelsea players to mock users for testing
+            </p>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-500">Total Allocations</div>
+            <div className="text-2xl font-bold text-blue-600">{getTotalAllocations()}</div>
+            <div className="text-sm text-gray-500">
+              {getUsersWithCompleteTeams()}/3 users with complete teams
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Message */}
+      {message.text && (
+        <div className={`p-4 rounded-md ${
+          message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
+        }`}>
+          <div className="flex">
+            {message.type === 'success' ? (
+              <CheckCircle className="h-5 w-5 mr-2" />
+            ) : (
+              <AlertCircle className="h-5 w-5 mr-2" />
+            )}
+            {message.text}
+          </div>
+        </div>
+      )}
+
+      {/* Allocation Form */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">Allocate Player</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* User Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select User
+            </label>
+            <select
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Choose a user...</option>
+              {mockUsers.map(user => (
+                <option key={user.id} value={user.id}>
+                  {user.username} ({user.first_name} {user.last_name})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Player Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Select Player
+            </label>
+            <select
+              value={selectedPlayer}
+              onChange={(e) => setSelectedPlayer(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Choose a player...</option>
+              {availablePlayers.map(player => (
+                <option key={player.id} value={player.id}>
+                  {player.web_name || player.name} ({player.position}) - {player.total_points || 0} pts
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Captain/Vice Captain Selection */}
+        <div className="mt-4 flex space-x-4">
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={isCaptain}
+              onChange={(e) => {
+                setIsCaptain(e.target.checked);
+                if (e.target.checked) setIsViceCaptain(false);
+              }}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Captain</span>
+          </label>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={isViceCaptain}
+              onChange={(e) => {
+                setIsViceCaptain(e.target.checked);
+                if (e.target.checked) setIsCaptain(false);
+              }}
+              className="mr-2"
+            />
+            <span className="text-sm text-gray-700">Vice Captain</span>
+          </label>
+        </div>
+
+        {/* Allocate Button */}
+        <div className="mt-6">
+          <button
+            onClick={handleAllocatePlayer}
+            disabled={loading || !selectedUser || !selectedPlayer}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Allocating...' : 'Allocate Player'}
+          </button>
+        </div>
+      </div>
+
+      {/* Current Allocations */}
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+          <Trophy className="mr-2 h-5 w-5" />
+          Current Allocations
+        </h3>
+        
+        {allocations.length === 0 ? (
+          <p className="text-gray-500 text-center py-4">No players allocated yet</p>
+        ) : (
+          <div className="space-y-4">
+            {allocations.map((userAllocation, index) => (
+              <div key={userAllocation.user.id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-gray-900">
+                    {userAllocation.user.username} ({userAllocation.user.first_name} {userAllocation.user.last_name})
+                  </h4>
+                  <span className="text-sm text-gray-500">
+                    {userAllocation.picks.length}/2 players
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {userAllocation.picks.map((pick, pickIndex) => (
+                    <div key={pickIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <span className="text-sm font-medium">{pick.player_name}</span>
+                      <div className="flex space-x-2">
+                        {pick.is_captain && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">C</span>
+                        )}
+                        {pick.is_vice_captain && (
+                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">VC</span>
+                        )}
+                        <span className="text-xs text-gray-500">{pick.total_score} pts</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Complete Draft Button */}
+      {getTotalAllocations() >= 6 && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Complete Draft?</h3>
+            <p className="text-gray-600 mb-4">
+              All users have been allocated 2 players each. Complete the draft to start simulation.
+            </p>
+            <button
+              onClick={handleCompleteDraft}
+              disabled={loading}
+              className="bg-green-600 text-white py-2 px-6 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Completing...' : 'Complete Draft'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default AdminDraftAllocation;

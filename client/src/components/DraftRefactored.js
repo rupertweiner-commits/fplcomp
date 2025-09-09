@@ -9,7 +9,8 @@ import {
   Users,
   Bell,
   Activity,
-  RefreshCw
+  RefreshCw,
+  Target
 } from 'lucide-react';
 import { useDraftState } from '../hooks/useDraftState';
 import { useRefresh } from '../contexts/RefreshContext';
@@ -28,6 +29,7 @@ import ErrorBoundary from './ErrorBoundary';
 import SimulationTab from './tabs/SimulationTab';
 import TeamManagementTab from './tabs/TeamManagementTab';
 import ConsolidatedStatsTab from './tabs/ConsolidatedStatsTab';
+import AdminDraftAllocation from './AdminDraftAllocation';
 
 function DraftRefactored({ wsService, currentUser }) {
   const [activeTab, setActiveTab] = useState('simulation');
@@ -272,6 +274,18 @@ function DraftRefactored({ wsService, currentUser }) {
               <>
                 <button
                   className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === 'admin-draft' ?
+                      'border-blue-500 text-blue-600' :
+                      'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                  onClick={() => setActiveTab('admin-draft')}
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Admin Draft</span>
+                </button>
+
+                <button
+                  className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === 'fpl-sync' ?
                       'border-blue-500 text-blue-600' :
                       'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -334,6 +348,10 @@ function DraftRefactored({ wsService, currentUser }) {
 
           {activeTab === 'notifications' && (
             <NotificationPreferences currentUser={currentUser} />
+          )}
+
+          {activeTab === 'admin-draft' && (
+            <AdminDraftAllocation currentUser={currentUser} />
           )}
 
           {activeTab === 'fpl-sync' && (
