@@ -45,41 +45,57 @@ async function handleGetStatus(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Get simulation status
-  const { data: status, error: statusError } = await supabase
-    .from('simulation_status')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(1)
-    .single();
+  try {
+    console.log('🔍 Getting simulation status...');
 
-  if (statusError && statusError.code !== 'PGRST116') { // PGRST116 = no rows returned
-    throw statusError;
+    // Get simulation status
+    const { data: status, error: statusError } = await supabase
+      .from('simulation_status')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (statusError && statusError.code !== 'PGRST116') { // PGRST116 = no rows returned
+      console.error('❌ Simulation status error:', statusError);
+      // Don't throw, provide default status
+    }
+
+    // Get draft status
+    const { data: draftStatus, error: draftError } = await supabase
+      .from('draft_status')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (draftError && draftError.code !== 'PGRST116') {
+      console.error('❌ Draft status error:', draftError);
+      // Don't throw, provide default status
+    }
+
+    const simulationStatus = status || {
+      is_simulation_mode: false,
+      current_gameweek: 1,
+      is_draft_complete: draftStatus?.is_draft_complete || false,
+      total_users: 0
+    };
+
+    console.log('✅ Simulation status retrieved:', simulationStatus);
+
+    res.status(200).json({
+      success: true,
+      data: simulationStatus
+    });
+
+  } catch (error) {
+    console.error('❌ Get status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get simulation status',
+      details: error.message
+    });
   }
-
-  // Get draft status
-  const { data: draftStatus, error: draftError } = await supabase
-    .from('draft_status')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (draftError && draftError.code !== 'PGRST116') {
-    throw draftError;
-  }
-
-  const simulationStatus = status || {
-    is_simulation_mode: false,
-    current_gameweek: 1,
-    is_draft_complete: draftStatus?.is_complete || false,
-    total_users: 0
-  };
-
-  res.status(200).json({
-    success: true,
-    data: simulationStatus
-  });
 }
 
 async function handleStartSimulation(req, res) {
@@ -253,56 +269,60 @@ async function handleGetLeaderboard(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Get all gameweek results
-  const { data: results, error: resultsError } = await supabase
-    .from('gameweek_results')
-    .select(`
-      *,
-      user:users!gameweek_results_user_id_fkey(id, first_name, last_name, email)
-    `);
+  try {
+    console.log('🔍 Getting leaderboard...');
 
-  if (resultsError) {
-    throw resultsError;
-  }
+    // Get user total points from the dedicated table
+    const { data: userTotals, error: totalsError } = await supabase
+      .from('user_total_points')
+      .select(`
+        *,
+        user:users!user_total_points_user_id_fkey(id, first_name, last_name, email)
+      `);
 
-  // Calculate total points for each user
-  const userTotals = {};
-  
-  results.forEach(score => {
-    if (!userTotals[score.user_id]) {
-      userTotals[score.user_id] = {
-        user_id: score.user_id,
-        user: score.user,
-        totalPoints: 0,
-        gameweeksPlayed: 0,
-        averagePoints: 0
-      };
+    if (totalsError) {
+      console.error('❌ User totals error:', totalsError);
+      // Fallback to empty leaderboard
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
     }
-    
-    userTotals[score.user_id].totalPoints += score.total_points;
-    userTotals[score.user_id].gameweeksPlayed += 1;
-  });
 
-  // Calculate averages
-  Object.values(userTotals).forEach(user => {
-    user.averagePoints = user.gameweeksPlayed > 0 ? user.totalPoints / user.gameweeksPlayed : 0;
-  });
+    // If no data, return empty leaderboard
+    if (!userTotals || userTotals.length === 0) {
+      console.log('📊 No leaderboard data found, returning empty array');
+      return res.status(200).json({
+        success: true,
+        data: []
+      });
+    }
 
-  // Sort by total points
-  const leaderboard = Object.values(userTotals).sort((a, b) => b.totalPoints - a.totalPoints);
+    // Sort by total points and add ranks
+    const leaderboard = userTotals
+      .sort((a, b) => b.total_points - a.total_points)
+      .map((user, index) => ({
+        user_id: user.user_id,
+        user: user.user,
+        totalPoints: user.total_points,
+        gameweeksPlayed: user.gameweeks_played,
+        averagePoints: user.average_points,
+        rank: index + 1
+      }));
 
-  res.status(200).json({
-    success: true,
-    data: { leaderboard }
-  });
+    console.log('✅ Leaderboard retrieved:', leaderboard.length, 'users');
+
+    res.status(200).json({
+      success: true,
+      data: leaderboard
+    });
+
   } catch (error) {
-    console.error('❌ Simulation gameweek error:', error);
-    console.error('❌ Error details:', error.message);
-    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Get leaderboard error:', error);
     res.status(500).json({
-      error: 'Internal server error',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      success: false,
+      error: 'Failed to get leaderboard',
+      details: error.message
     });
   }
 }
