@@ -10,6 +10,9 @@ DROP POLICY IF EXISTS "Chelsea players are viewable by everyone" ON chelsea_play
 DROP POLICY IF EXISTS "Chelsea players are manageable by admins" ON chelsea_players;
 DROP POLICY IF EXISTS "Anyone can read chelsea players" ON chelsea_players;
 DROP POLICY IF EXISTS "Admins can manage chelsea players" ON chelsea_players;
+DROP POLICY IF EXISTS "chelsea_players_read_all" ON chelsea_players;
+DROP POLICY IF EXISTS "chelsea_players_service_role_all" ON chelsea_players;
+DROP POLICY IF EXISTS "chelsea_players_admin_all" ON chelsea_players;
 
 -- Create simple, non-recursive policies
 -- Allow anyone to read chelsea_players
