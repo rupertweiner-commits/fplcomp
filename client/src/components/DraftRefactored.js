@@ -18,19 +18,16 @@ import AuthForm from './AuthForm';
 import ProfileCompletion from './ProfileCompletion';
 import ForgotPassword from './ForgotPassword';
 import NotificationPreferences from './NotificationPreferences';
-import UserActivity from './UserActivity';
 import FPLSync from './FPLSync';
 import APITester from './APITester';
 import PWAStatus from './PWAStatus';
 import PWAInstallPrompt from './PWAInstallPrompt';
-import MobileNavigation from './MobileNavigation';
 import ErrorBoundary from './ErrorBoundary';
 
 // Import tab components
 import SimulationTab from './tabs/SimulationTab';
 import TeamManagementTab from './tabs/TeamManagementTab';
-import StatsTab from './tabs/StatsTab';
-import LeaderboardTab from './tabs/LeaderboardTab';
+import ConsolidatedStatsTab from './tabs/ConsolidatedStatsTab';
 
 function DraftRefactored({ wsService, currentUser }) {
   const [activeTab, setActiveTab] = useState('simulation');
@@ -260,18 +257,6 @@ function DraftRefactored({ wsService, currentUser }) {
 
             <button
               className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'leaderboard' ?
-                  'border-blue-500 text-blue-600' :
-                  'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('leaderboard')}
-            >
-              <BarChart3 className="w-4 h-4" />
-              <span>Leaderboard</span>
-            </button>
-
-            <button
-              className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'notifications' ?
                   'border-blue-500 text-blue-600' :
                   'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -280,18 +265,6 @@ function DraftRefactored({ wsService, currentUser }) {
             >
               <Bell className="w-4 h-4" />
               <span>Notifications</span>
-            </button>
-
-            <button
-              className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'activity' ?
-                  'border-blue-500 text-blue-600' :
-                  'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-              onClick={() => setActiveTab('activity')}
-            >
-              <Activity className="w-4 h-4" />
-              <span>User Activity</span>
             </button>
 
             {currentUser?.isAdmin && (
@@ -348,29 +321,17 @@ function DraftRefactored({ wsService, currentUser }) {
           )}
 
           {activeTab === 'stats' && (
-            <StatsTab
+            <ConsolidatedStatsTab
               chelseaPlayers={chelseaPlayers}
               currentUser={currentUser}
               draftStatus={draftStatus}
               liveScores={liveScores}
-            />
-          )}
-
-          {activeTab === 'leaderboard' && (
-            <LeaderboardTab
-              allPlayers={chelseaPlayers}
-              currentUser={currentUser}
-              draftStatus={draftStatus}
-              liveScores={liveScores}
+              leaderboard={leaderboard}
             />
           )}
 
           {activeTab === 'notifications' && (
             <NotificationPreferences currentUser={currentUser} />
-          )}
-
-          {activeTab === 'activity' && (
-            <UserActivity currentUser={currentUser} />
           )}
 
           {activeTab === 'fpl-sync' && (
@@ -386,11 +347,6 @@ function DraftRefactored({ wsService, currentUser }) {
         <PWAStatus />
         <PWAInstallPrompt />
 
-        {/* Mobile Navigation */}
-        <MobileNavigation
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
       </div>
     </ErrorBoundary>
   );
