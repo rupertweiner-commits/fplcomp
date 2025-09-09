@@ -104,6 +104,61 @@ function FPLSync({ currentUser, onSyncComplete }) {
     }
   };
 
+  const handleClearAndSync = async () => {
+    if (!currentUser?.isAdmin) {
+      setError('Admin access required');
+      return;
+    }
+
+    if (!window.confirm('This will clear all existing Chelsea players data and sync fresh data from FPL API. Continue?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      setSyncResult(null);
+      setSyncedPlayers([]);
+      setSupabasePlayers([]);
+
+      console.log('🗑️ Starting clear and sync...');
+
+      const response = await fetch('/api/fpl-sync?action=clear-and-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.access_token || ''}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      if (data.success) {
+        setSyncResult(data.data);
+        setSyncedPlayers(data.data.players || []);
+        console.log('✅ Clear and sync completed:', data.data);
+        console.log('📊 Synced players:', data.data.players?.length || 0);
+        
+        // Notify parent component that sync completed
+        if (onSyncComplete) {
+          onSyncComplete(data.data);
+        }
+      } else {
+        throw new Error(data.error || 'Clear and sync failed');
+      }
+
+    } catch (err) {
+      console.error('❌ Clear and sync error:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!currentUser?.isAdmin) {
     return (
       <Card>
@@ -335,6 +390,17 @@ function FPLSync({ currentUser, onSyncComplete }) {
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Sync Chelsea Players from FPL
+              </Button>
+
+              <Button
+                onClick={handleClearAndSync}
+                disabled={loading}
+                loading={loading}
+                variant="danger"
+                size="large"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Clear & Sync Fresh Data
               </Button>
 
               <Button

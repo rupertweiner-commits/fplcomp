@@ -21,6 +21,8 @@ export default async function handler(req, res) {
     switch (action) {
       case 'sync-chelsea-players':
         return await handleSyncChelseaPlayers(req, res);
+      case 'clear-and-sync':
+        return await handleClearAndSync(req, res);
       case 'sync-status':
         return await handleSyncStatus(req, res);
       default:
@@ -118,6 +120,8 @@ async function handleSyncChelseaPlayers(req, res) {
     let playersCreated = 0;
     
     // Upsert each Chelsea player
+    console.log(`🔄 Starting to upsert ${chelseaPlayers.length} players...`);
+    
     for (const player of chelseaPlayers) {
       const playerData = {
         fpl_id: player.id,
@@ -130,13 +134,20 @@ async function handleSyncChelseaPlayers(req, res) {
         updated_at: new Date().toISOString()
       };
       
-      const { data: existingPlayer } = await supabase
+      console.log(`🔄 Processing player: ${playerData.name} (FPL ID: ${playerData.fpl_id})`);
+      
+      const { data: existingPlayer, error: selectError } = await supabase
         .from('chelsea_players')
-        .select('id')
+        .select('id, fpl_id, name')
         .eq('fpl_id', player.id)
         .single();
       
+      if (selectError && selectError.code !== 'PGRST116') {
+        console.error(`❌ Error checking existing player ${player.id}:`, selectError);
+      }
+      
       if (existingPlayer) {
+        console.log(`📝 Updating existing player: ${existingPlayer.name} (DB ID: ${existingPlayer.id})`);
         // Update existing player
         const { error: updateError } = await supabase
           .from('chelsea_players')
@@ -144,11 +155,13 @@ async function handleSyncChelseaPlayers(req, res) {
           .eq('fpl_id', player.id);
         
         if (updateError) {
-          console.error(`Failed to update player ${player.id}:`, updateError);
+          console.error(`❌ Failed to update player ${player.id} (${playerData.name}):`, updateError);
         } else {
+          console.log(`✅ Updated player: ${playerData.name}`);
           playersUpdated++;
         }
       } else {
+        console.log(`➕ Creating new player: ${playerData.name}`);
         // Create new player
         const { error: insertError } = await supabase
           .from('chelsea_players')
@@ -158,12 +171,15 @@ async function handleSyncChelseaPlayers(req, res) {
           });
         
         if (insertError) {
-          console.error(`Failed to insert player ${player.id}:`, insertError);
+          console.error(`❌ Failed to insert player ${player.id} (${playerData.name}):`, insertError);
         } else {
+          console.log(`✅ Created player: ${playerData.name}`);
           playersCreated++;
         }
       }
     }
+    
+    console.log(`📊 Upsert summary: ${playersCreated} created, ${playersUpdated} updated`);
     
     // Update sync log
     if (syncLog) {
@@ -235,6 +251,44 @@ async function handleSyncChelseaPlayers(req, res) {
     res.status(500).json({
       success: false,
       error: error.message
+    });
+  }
+}
+
+async function handleClearAndSync(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    console.log('🗑️ Clearing existing Chelsea players data...');
+    
+    // Clear all existing Chelsea players
+    const { error: deleteError } = await supabase
+      .from('chelsea_players')
+      .delete()
+      .neq('id', 0); // Delete all rows
+    
+    if (deleteError) {
+      console.error('❌ Failed to clear existing data:', deleteError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to clear existing data',
+        details: deleteError.message 
+      });
+    }
+    
+    console.log('✅ Cleared existing Chelsea players data');
+    
+    // Now run the normal sync
+    return await handleSyncChelseaPlayers(req, res);
+    
+  } catch (error) {
+    console.error('❌ Clear and sync error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Clear and sync failed',
+      details: error.message 
     });
   }
 }
