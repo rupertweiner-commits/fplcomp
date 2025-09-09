@@ -103,19 +103,56 @@ async function handleSyncChelseaPlayers(req, res) {
     }
     console.log('✅ Cleared existing data');
 
-    // Insert new data using existing schema columns
+    // Insert new data with comprehensive FPL statistics
     const playersToInsert = chelseaPlayers.map(player => ({
-      // Use existing columns
+      // Basic info
       id: player.id, // FPL ID as primary key
       fpl_id: player.id, // Also store in fpl_id column
       name: player.web_name || `${player.first_name} ${player.second_name}`,
       full_name: `${player.first_name} ${player.second_name}`,
+      web_name: player.web_name,
+      first_name: player.first_name,
+      second_name: player.second_name,
+      element_type: player.element_type,
       position: mapFPLPosition(player.element_type),
-      price: (player.now_cost / 10).toFixed(1), // Convert to decimal
+      position_name: mapFPLPosition(player.element_type),
+      team: player.team,
+      team_name: chelseaTeam.name,
       team_id: player.team,
+      
+      // Pricing
+      price: (player.now_cost / 10).toFixed(1), // Convert to decimal
+      now_cost: player.now_cost,
+      
+      // Scoring statistics
       total_points: player.total_points || 0,
+      event_points: player.event_points || 0,
       form: player.form || 0.0,
       selected_by_percent: parseFloat(player.selected_by_percent) || 0.0,
+      
+      // Performance stats
+      minutes: player.minutes || 0,
+      goals_scored: player.goals_scored || 0,
+      assists: player.assists || 0,
+      clean_sheets: player.clean_sheets || 0,
+      goals_conceded: player.goals_conceded || 0,
+      own_goals: player.own_goals || 0,
+      penalties_saved: player.penalties_saved || 0,
+      penalties_missed: player.penalties_missed || 0,
+      yellow_cards: player.yellow_cards || 0,
+      red_cards: player.red_cards || 0,
+      saves: player.saves || 0,
+      bonus: player.bonus || 0,
+      bps: player.bps || 0,
+      starts: player.starts || 0,
+      
+      // Advanced stats
+      influence: player.influence || '0.0',
+      creativity: player.creativity || '0.0',
+      threat: player.threat || '0.0',
+      ict_index: player.ict_index || '0.0',
+      
+      // Status and news
       news: player.news || '',
       news_added: player.news_added ? new Date(player.news_added).toISOString() : null,
       chance_of_playing_this_round: player.chance_of_playing_this_round,
