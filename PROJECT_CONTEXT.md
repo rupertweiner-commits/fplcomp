@@ -105,6 +105,15 @@ Before deploying:
 - Cold start delays on first request
 - 10-second timeout limit
 - No persistent connections
+- **⚠️ CRITICAL: 12 Function Limit on Hobby Plan**
+  - **Problem**: Vercel Hobby plan allows maximum 12 serverless functions
+  - **Error**: "No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan"
+  - **Solution**: Consolidate related functions or upgrade to Pro plan
+  - **Current Functions**: 12 (at limit)
+    - `activity.js`, `admin.js`, `check-chelsea-players.js`, `chips.js`
+    - `fpl-sync.js`, `fpl.js`, `simulation.js`, `teams.js`
+    - `notifications/email.js`, `notifications/push.js`
+    - `simulation-gameweek.js` (consolidated into `simulation.js`)
 
 ### Database
 - User sync depends on database triggers
@@ -223,3 +232,70 @@ WHERE schemaname = 'public';
 - **Policy already exists**: Use `DROP POLICY IF EXISTS` before creating policies
 - **Table already exists**: Use `CREATE TABLE IF NOT EXISTS` for tables
 - **Function already exists**: Use `CREATE OR REPLACE FUNCTION` for functions
+
+## Vercel Function Management
+
+### Function Consolidation Strategies
+
+**When hitting the 12-function limit:**
+
+1. **Merge Related Functions**:
+   - Combine `fpl-sync.js`, `fpl-sync-simple.js`, `fpl-sync-test.js` into single `fpl-sync.js`
+   - Merge `simulation.js` and `simulation-gameweek.js` into single `simulation.js`
+   - Use action-based routing: `?action=test`, `?action=sync`, `?action=simulate-next`
+
+2. **Consolidate by Domain**:
+   - **FPL Data**: `fpl.js` + `fpl-sync.js` → `fpl.js`
+   - **Simulation**: `simulation.js` + `simulation-gameweek.js` → `simulation.js`
+   - **Teams**: `teams.js` + `chips.js` → `teams.js`
+   - **Admin**: `admin.js` + `activity.js` → `admin.js`
+
+3. **Remove Unused Functions**:
+   - Delete test/debug functions after development
+   - Remove duplicate functionality
+   - Archive old versions
+
+### Current Function Count (After Consolidation)
+- **Total**: 10 functions (2 under limit)
+- **Available for new functions**: 2 slots
+- **Functions**: `activity.js`, `admin.js`, `check-chelsea-players.js`, `chips.js`, `fpl-sync.js`, `fpl.js`, `simulation.js`, `teams.js`, `notifications/email.js`, `notifications/push.js`
+
+### Function Consolidation Examples
+
+**Before (12 functions):**
+```
+api/
+├── fpl-sync.js
+├── fpl-sync-simple.js      ← REMOVED
+├── fpl-sync-test.js        ← REMOVED
+├── simulation.js
+├── simulation-gameweek.js  ← REMOVED
+└── ...
+```
+
+**After (10 functions):**
+```
+api/
+├── fpl-sync.js             ← Contains test, simple, and full sync
+├── simulation.js           ← Contains all simulation actions
+└── ...
+```
+
+### Action-Based Routing Pattern
+```javascript
+// Single function handling multiple actions
+export default async function handler(req, res) {
+  const { action } = req.query;
+  
+  switch (action) {
+    case 'test':
+      return await handleTest(req, res);
+    case 'sync':
+      return await handleSync(req, res);
+    case 'status':
+      return await handleStatus(req, res);
+    default:
+      return res.status(400).json({ error: 'Invalid action' });
+  }
+}
+```

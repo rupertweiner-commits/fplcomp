@@ -27,7 +27,11 @@ export default async function handler(req, res) {
         return res.status(200).json({ 
           success: true, 
           message: 'FPL Sync API is working',
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          environment: {
+            hasSupabaseUrl: !!process.env.SUPABASE_URL,
+            hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
+          }
         });
       default:
         return res.status(400).json({ error: 'Invalid action' });
