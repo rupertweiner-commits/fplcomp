@@ -318,7 +318,7 @@ function AdminDraftAllocation({ currentUser }) {
                       {userAllocation.picks.length}/5 players
                     </span>
                     <span className="text-xs text-gray-400">
-                      {getTeamComposition(userAllocation.picks).gkDef} GK/DEF, {getTeamComposition(userAllocation.picks).midFwd} MID/FWD
+                      {userAllocation.picks.filter(pick => pick.position === 'GK' || pick.position === 'DEF').length} GK/DEF, {userAllocation.picks.filter(pick => pick.position === 'MID' || pick.position === 'FWD').length} MID/FWD
                     </span>
                   </div>
                 </div>
