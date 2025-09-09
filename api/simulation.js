@@ -194,20 +194,20 @@ async function handleSimulateGameweek(req, res) {
   // Simulate gameweek (mock implementation)
   console.log('🔍 Fetching users for simulation...');
   console.log('🔍 Using Supabase client:', !!supabase);
-  console.log('🔍 Querying table: users');
+  console.log('🔍 Querying table: user_profiles');
   
   let { data: users, error: usersError } = await supabase
-    .from('users')
+    .from('user_profiles')
     .select('*')
     .eq('is_active', true);
 
   if (usersError) {
     console.error('❌ Users query error:', usersError);
-    // If users table doesn't exist or has RLS issues, use empty array
-    if (usersError.message?.includes('relation "users" does not exist') || 
+    // If user_profiles table doesn't exist or has RLS issues, use empty array
+    if (usersError.message?.includes('relation "user_profiles" does not exist') || 
         usersError.message?.includes('PGRST200') ||
         usersError.message?.includes('permission denied')) {
-      console.log('ℹ️ Users table access denied, using empty array for simulation');
+      console.log('ℹ️ User_profiles table access denied, using empty array for simulation');
       users = [];
     } else {
       throw usersError;
@@ -283,7 +283,7 @@ async function handleGetLeaderboard(req, res) {
       .from('user_total_points')
       .select(`
         *,
-        user:users!user_total_points_user_id_fkey(id, first_name, last_name, email)
+        user:user_profiles!user_total_points_user_id_fkey(id, first_name, last_name, email)
       `);
 
     if (totalsError) {

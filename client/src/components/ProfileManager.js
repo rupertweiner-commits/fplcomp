@@ -30,7 +30,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
         .eq('id', userId)
         .single();

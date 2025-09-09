@@ -54,7 +54,7 @@ async function handleUserActivity(req, res, userId) {
     .from('user_activity')
     .select(`
       *,
-      user:users!user_activity_user_id_fkey(id, first_name, last_name, email)
+      user:user_profiles!user_activity_user_id_fkey(id, first_name, last_name, email)
     `)
     .eq('user_id', userId)
     .order('created_at', { ascending: false })
@@ -66,7 +66,7 @@ async function handleUserActivity(req, res, userId) {
 
   // Get user stats
   const { data: user, error: userError } = await supabase
-    .from('users')
+    .from('user_profiles')
     .select('*')
     .eq('id', userId)
     .single();
