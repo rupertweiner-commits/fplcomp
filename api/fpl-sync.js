@@ -21,8 +21,6 @@ export default async function handler(req, res) {
     switch (action) {
       case 'sync-chelsea-players':
         return await handleSyncChelseaPlayers(req, res);
-      case 'clear-and-sync':
-        return await handleClearAndSync(req, res);
       case 'sync-status':
         return await handleSyncStatus(req, res);
       default:
@@ -119,67 +117,59 @@ async function handleSyncChelseaPlayers(req, res) {
     let playersUpdated = 0;
     let playersCreated = 0;
     
-    // Upsert each Chelsea player
-    console.log(`🔄 Starting to upsert ${chelseaPlayers.length} players...`);
+    // Clear existing data and insert fresh data
+    console.log(`🗑️ Clearing existing Chelsea players data...`);
     
-    for (const player of chelseaPlayers) {
-      const playerData = {
-        fpl_id: player.id,
-        name: `${player.first_name} ${player.second_name}`,
-        position: mapFPLPosition(player.element_type),
-        price: player.now_cost / 10, // FPL stores prices in tenths
-        team_id: player.team,
-        is_available: player.status === 'a', // 'a' = available
-        last_updated: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      console.log(`🔄 Processing player: ${playerData.name} (FPL ID: ${playerData.fpl_id})`);
-      
-      const { data: existingPlayer, error: selectError } = await supabase
-        .from('chelsea_players')
-        .select('id, fpl_id, name')
-        .eq('fpl_id', player.id)
-        .single();
-      
-      if (selectError && selectError.code !== 'PGRST116') {
-        console.error(`❌ Error checking existing player ${player.id}:`, selectError);
-      }
-      
-      if (existingPlayer) {
-        console.log(`📝 Updating existing player: ${existingPlayer.name} (DB ID: ${existingPlayer.id})`);
-        // Update existing player
-        const { error: updateError } = await supabase
-          .from('chelsea_players')
-          .update(playerData)
-          .eq('fpl_id', player.id);
-        
-        if (updateError) {
-          console.error(`❌ Failed to update player ${player.id} (${playerData.name}):`, updateError);
-        } else {
-          console.log(`✅ Updated player: ${playerData.name}`);
-          playersUpdated++;
-        }
-      } else {
-        console.log(`➕ Creating new player: ${playerData.name}`);
-        // Create new player
-        const { error: insertError } = await supabase
-          .from('chelsea_players')
-          .insert({
-            ...playerData,
-            created_at: new Date().toISOString()
-          });
-        
-        if (insertError) {
-          console.error(`❌ Failed to insert player ${player.id} (${playerData.name}):`, insertError);
-        } else {
-          console.log(`✅ Created player: ${playerData.name}`);
-          playersCreated++;
-        }
-      }
+    const { error: deleteError } = await supabase
+      .from('chelsea_players')
+      .delete()
+      .neq('id', 0); // Delete all rows
+    
+    if (deleteError) {
+      console.error('❌ Failed to clear existing data:', deleteError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to clear existing data',
+        details: deleteError.message 
+      });
     }
     
-    console.log(`📊 Upsert summary: ${playersCreated} created, ${playersUpdated} updated`);
+    console.log(`✅ Cleared existing data, now inserting ${chelseaPlayers.length} fresh players...`);
+    
+    // Prepare all player data
+    const playersToInsert = chelseaPlayers.map(player => ({
+      fpl_id: player.id,
+      name: `${player.first_name} ${player.second_name}`,
+      position: mapFPLPosition(player.element_type),
+      price: player.now_cost / 10, // FPL stores prices in tenths
+      team_id: player.team,
+      is_available: player.status === 'a', // 'a' = available
+      last_updated: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    
+    console.log(`📝 Inserting ${playersToInsert.length} players in batch...`);
+    
+    // Insert all players in one batch operation
+    const { data: insertedPlayers, error: insertError } = await supabase
+      .from('chelsea_players')
+      .insert(playersToInsert)
+      .select();
+    
+    if (insertError) {
+      console.error('❌ Failed to insert players:', insertError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Failed to insert players',
+        details: insertError.message 
+      });
+    }
+    
+    console.log(`✅ Successfully inserted ${insertedPlayers?.length || 0} players`);
+    
+    const playersCreated = insertedPlayers?.length || 0;
+    const playersUpdated = 0; // We're replacing, not updating
     
     // Update sync log
     if (syncLog) {
@@ -251,44 +241,6 @@ async function handleSyncChelseaPlayers(req, res) {
     res.status(500).json({
       success: false,
       error: error.message
-    });
-  }
-}
-
-async function handleClearAndSync(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    console.log('🗑️ Clearing existing Chelsea players data...');
-    
-    // Clear all existing Chelsea players
-    const { error: deleteError } = await supabase
-      .from('chelsea_players')
-      .delete()
-      .neq('id', 0); // Delete all rows
-    
-    if (deleteError) {
-      console.error('❌ Failed to clear existing data:', deleteError);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Failed to clear existing data',
-        details: deleteError.message 
-      });
-    }
-    
-    console.log('✅ Cleared existing Chelsea players data');
-    
-    // Now run the normal sync
-    return await handleSyncChelseaPlayers(req, res);
-    
-  } catch (error) {
-    console.error('❌ Clear and sync error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Clear and sync failed',
-      details: error.message 
     });
   }
 }
