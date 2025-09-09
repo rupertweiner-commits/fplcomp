@@ -10,7 +10,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState('request'); // 'request', 'reset', 'success'
 
-  const handleRequestReset = async (e) => {
+  const handleRequestReset = async(e) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage({ type: '', text: '' });
@@ -18,30 +18,30 @@ const ForgotPassword = ({ onBackToLogin }) => {
     try {
       // Use Supabase's built-in password reset
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/reset-password`
       });
 
       if (error) {
         setMessage({ type: 'error', text: error.message });
       } else {
-        setMessage({ 
-          type: 'success', 
-          text: 'Password reset email sent! Please check your email and click the link to reset your password.' 
+        setMessage({
+          type: 'success',
+          text: 'Password reset email sent! Please check your email and click the link to reset your password.'
         });
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: 'Failed to send password reset email. Please try again.' 
+      setMessage({
+        type: 'error',
+        text: 'Failed to send password reset email. Please try again.'
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async(e) => {
     e.preventDefault();
-    
+
     if (newPassword !== confirmPassword) {
       setMessage({ type: 'error', text: 'Passwords do not match' });
       return;
@@ -59,7 +59,7 @@ const ForgotPassword = ({ onBackToLogin }) => {
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
-      
+
       if (error) {
         setMessage({ type: 'error', text: error.message });
       } else {
@@ -67,9 +67,9 @@ const ForgotPassword = ({ onBackToLogin }) => {
         setStep('success');
       }
     } catch (error) {
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.error || 'Failed to reset password' 
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.error || 'Failed to reset password'
       });
     } finally {
       setIsLoading(false);
@@ -88,26 +88,26 @@ const ForgotPassword = ({ onBackToLogin }) => {
         </p>
       </div>
 
-      <form onSubmit={handleRequestReset} className="space-y-4">
+      <form className="space-y-4" onSubmit={handleRequestReset}>
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
             Email address
           </label>
           <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            id="email"
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
+            required
+            type="email"
+            value={email}
           />
         </div>
 
         <button
-          type="submit"
-          disabled={isLoading || !email}
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          disabled={isLoading || !email}
+          type="submit"
         >
           {isLoading ? 'Sending...' : 'Send reset link'}
         </button>
@@ -127,42 +127,42 @@ const ForgotPassword = ({ onBackToLogin }) => {
         </p>
       </div>
 
-      <form onSubmit={handleResetPassword} className="space-y-4">
+      <form className="space-y-4" onSubmit={handleResetPassword}>
         <div>
-          <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="newPassword">
             New password
           </label>
           <input
-            type="password"
-            id="newPassword"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            minLength={8}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            id="newPassword"
+            minLength={8}
+            onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Enter new password (min 8 characters)"
+            required
+            type="password"
+            value={newPassword}
           />
         </div>
 
         <div>
-          <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="confirmPassword">
             Confirm new password
           </label>
           <input
-            type="password"
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            id="confirmPassword"
+            onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm new password"
+            required
+            type="password"
+            value={confirmPassword}
           />
         </div>
 
         <button
-          type="submit"
-          disabled={isLoading || !newPassword || !confirmPassword}
           className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+          disabled={isLoading || !newPassword || !confirmPassword}
+          type="submit"
         >
           {isLoading ? 'Resetting...' : 'Reset password'}
         </button>
@@ -180,8 +180,8 @@ const ForgotPassword = ({ onBackToLogin }) => {
         Your password has been reset. You can now log in with your new password.
       </p>
       <button
-        onClick={onBackToLogin}
         className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+        onClick={onBackToLogin}
       >
         Back to login
       </button>
@@ -210,8 +210,8 @@ const ForgotPassword = ({ onBackToLogin }) => {
       <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
         {/* Back button */}
         <button
-          onClick={onBackToLogin}
           className="flex items-center text-gray-600 hover:text-gray-800 mb-6 transition-colors"
+          onClick={onBackToLogin}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to login

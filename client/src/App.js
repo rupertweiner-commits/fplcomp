@@ -5,8 +5,10 @@ import { Wifi, WifiOff, Shield, User } from 'lucide-react';
 
 // Import components
 import Draft from './components/Draft';
+import DraftRefactored from './components/DraftRefactored';
 import MobileNavigation from './components/MobileNavigation';
 import ProfileManager from './components/ProfileManager';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // Import services
 import { authService } from './services/authService';
@@ -18,7 +20,7 @@ import { supabase } from './config/supabase';
 import { ToastProvider } from './contexts/ToastContext';
 
 // Debug: Log which version is running
-  console.log('🚀 App version: v24 - Fixed sign in hanging with timeouts - 2024-09-02 23:30');
+console.log('🚀 App version: v24 - Fixed sign in hanging with timeouts - 2024-09-02 23:30');
 console.log('🔧 WebSocket should be completely disabled');
 console.log('�� Push notifications completely removed');
 console.log('🔧 Service Worker completely removed');
@@ -32,20 +34,22 @@ function App() {
 
   // Initialize authentication on app start
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initializeAuth = async() => {
       try {
         console.log('🔐 Initializing authentication...');
-        
+
         // Small delay to ensure Supabase is fully initialized
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Always try to initialize with Supabase first to validate session
         console.log('🔄 Starting auth initialization...');
         const isAuthenticated = await authService.initialize();
+
         console.log('📊 Auth initialization result:', isAuthenticated);
-        
+
         if (isAuthenticated) {
           const user = authService.getCurrentUser();
+
           console.log('✅ User authenticated:', user?.email);
           setCurrentUser(user);
         } else {
@@ -71,33 +75,33 @@ function App() {
     });
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async(event, session) => {
       console.log('🔄 Auth state changed:', event, session?.user?.email);
-      
+
       if (event === 'SIGNED_IN' && session) {
         console.log('🔄 User signed in, fetching profile for:', session.user.email);
-        
+
         try {
           console.log('🔍 Fetching profile for user ID:', session.user.id);
-          
+
           // Add timeout to profile fetch
           const profilePromise = supabase
             .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
-          
-          const timeoutPromise = new Promise((_, reject) => 
+
+          const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Profile fetch timeout')), 5000)
           );
-          
+
           const { data: userProfile, error: profileError } = await Promise.race([
             profilePromise,
             timeoutPromise
           ]);
 
           console.log('🔍 Profile fetch result:', { userProfile, profileError });
-          
+
           if (!profileError && userProfile) {
             const user = {
               id: userProfile.id,
@@ -107,11 +111,12 @@ function App() {
               isAdmin: userProfile.is_admin || false,
               profileComplete: !!(userProfile.first_name && userProfile.last_name)
             };
+
             setCurrentUser(user);
             console.log('✅ User profile loaded:', user.email, 'isAdmin:', user.isAdmin);
           } else {
             console.warn('⚠️ Profile fetch failed, creating user profile:', profileError?.message);
-            
+
             // Try to create user profile if it doesn't exist
             try {
               const { data: newUserProfile, error: createError } = await supabase
@@ -137,6 +142,7 @@ function App() {
                   isAdmin: newUserProfile.is_admin || false,
                   profileComplete: !!(newUserProfile.first_name && newUserProfile.last_name)
                 };
+
                 setCurrentUser(user);
                 console.log('✅ Created and loaded new user profile:', user.email);
               } else {
@@ -144,18 +150,19 @@ function App() {
               }
             } catch (createError) {
               console.error('❌ Failed to create user profile:', createError);
-            // Fallback to basic user - if it's the admin email, give admin privileges
-            const isAdminEmail = session.user.email === 'rupertweiner@gmail.com';
-            const basicUser = {
-              id: session.user.id,
-              email: session.user.email,
-              firstName: isAdminEmail ? 'Rupert' : '',
-              lastName: isAdminEmail ? 'Weiner' : '',
-              isAdmin: isAdminEmail,
-              profileComplete: isAdminEmail // Admin users are always considered complete
-            };
-            setCurrentUser(basicUser);
-            console.log('⚠️ Using fallback user object:', basicUser.email, 'isAdmin:', basicUser.isAdmin);
+              // Fallback to basic user - if it's the admin email, give admin privileges
+              const isAdminEmail = session.user.email === 'rupertweiner@gmail.com';
+              const basicUser = {
+                id: session.user.id,
+                email: session.user.email,
+                firstName: isAdminEmail ? 'Rupert' : '',
+                lastName: isAdminEmail ? 'Weiner' : '',
+                isAdmin: isAdminEmail,
+                profileComplete: isAdminEmail // Admin users are always considered complete
+              };
+
+              setCurrentUser(basicUser);
+              console.log('⚠️ Using fallback user object:', basicUser.email, 'isAdmin:', basicUser.isAdmin);
             }
           }
         } catch (error) {
@@ -170,6 +177,7 @@ function App() {
             isAdmin: isAdminEmail,
             profileComplete: isAdminEmail // Admin users are always considered complete
           };
+
           setCurrentUser(basicUser);
           console.log('⚠️ Using fallback user object:', basicUser.email, 'isAdmin:', basicUser.isAdmin);
         }
@@ -192,25 +200,25 @@ function App() {
   useEffect(() => {
     // For frontend-only deployment, skip WebSocket connection
     // and show connected status based on API availability
-    
+
     // SERVICE WORKER COMPLETELY REMOVED - No cleanup needed
-    
-    const checkApiConnection = async () => {
+
+    const checkApiConnection = async() => {
       try {
         console.log('🔍 Checking API connection...');
         console.log('🔧 WebSocket service should be disabled in this version');
-        
+
         // Test connection to our Vercel API
         const response = await fetch('/api/fpl?action=bootstrap', {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
-          },
+            'Content-Type': 'application/json'
+          }
         });
-        
+
         console.log('📡 API response status:', response.status);
         console.log('📡 API response ok:', response.ok);
-        
+
         if (response.ok) {
           console.log('✅ API connection successful');
           setIsConnected(true);
@@ -248,7 +256,7 @@ function App() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
       </div>
@@ -265,7 +273,7 @@ function App() {
               <div className="flex justify-between items-center h-16">
                 {/* Logo and Title */}
                 <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{backgroundColor: '#034694'}}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#034694' }}>
                     <Shield className="w-6 h-6 text-white" />
                   </div>
                   <div className="hidden sm:block">
@@ -280,11 +288,13 @@ function App() {
                 {/* Connection Status and Mobile Navigation */}
                 <div className="flex items-center space-x-3">
                   {/* Connection Status - Hidden on mobile */}
-                  <div className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
-                    isConnected 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
+                  <div
+                    className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+                      isConnected ?
+                        'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                    }`}
+                  >
                     {isConnected ? (
                       <Wifi className="w-4 h-4" />
                     ) : (
@@ -294,8 +304,8 @@ function App() {
                   </div>
 
                   {/* Mobile Navigation */}
-                  <MobileNavigation 
-                    currentUser={currentUser} 
+                  <MobileNavigation
+                    currentUser={currentUser}
                     onLogout={handleLogout}
                   />
                 </div>
@@ -303,56 +313,62 @@ function App() {
             </div>
           </header>
 
-        {/* Navigation */}
-        <Navigation currentUser={currentUser} />
+          {/* Navigation */}
+          <Navigation currentUser={currentUser} />
 
-        {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Routes>
-            <Route path="/" element={<Draft wsService={null} currentUser={currentUser} />} />
-            <Route path="/draft" element={<Draft wsService={null} currentUser={currentUser} />} />
-            <Route path="/profile" element={
-              currentUser ? (
-                <ProfileManager userId={currentUser.id} onProfileUpdate={() => {}} />
-              ) : (
-                <div className="text-center py-12">
-                  <p className="text-gray-600">Please log in to access your profile.</p>
+          {/* Main Content */}
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <ErrorBoundary>
+              <Routes>
+                <Route element={<DraftRefactored currentUser={currentUser} wsService={null} />} path="/" />
+                <Route element={<DraftRefactored currentUser={currentUser} wsService={null} />} path="/draft" />
+                <Route
+                  element={
+                    currentUser ? (
+                      <ProfileManager onProfileUpdate={() => {}} userId={currentUser.id} />
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-gray-600">Please log in to access your profile.</p>
+                      </div>
+                    )
+                  }
+                  path="/profile"
+                />
+              </Routes>
+            </ErrorBoundary>
+          </main>
+
+          {/* Footer */}
+          <footer className="bg-white border-t border-gray-200 mt-auto">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                <div className="text-sm text-gray-500">
+                  © 2024 KPG's Annual Chelsea Competition. Data from
+                  {' '}
+                  <a
+                    className="text-fpl-primary hover:underline"
+                    href="https://fantasy.premierleague.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Premier League
+                  </a>
                 </div>
-              )
-            } />
-          </Routes>
-        </main>
-
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
-              <div className="text-sm text-gray-500">
-                © 2024 KPG's Annual Chelsea Competition. Data from{' '}
-                <a 
-                  href="https://fantasy.premierleague.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-fpl-primary hover:underline"
-                >
-                  Premier League
-                </a>
-              </div>
-              <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-500">
-                <span>API Reference: </span>
-                <a 
-                  href="https://www.oliverlooney.com/blogs/FPL-APIs-Explained" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-fpl-primary hover:underline"
-                >
-                  Oliver Looney's FPL API Guide
-                </a>
+                <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-500">
+                  <span>API Reference: </span>
+                  <a
+                    className="text-fpl-primary hover:underline"
+                    href="https://www.oliverlooney.com/blogs/FPL-APIs-Explained"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    Oliver Looney's FPL API Guide
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </footer>
-      </div>
+          </footer>
+        </div>
       </Router>
     </ToastProvider>
   );
@@ -360,10 +376,10 @@ function App() {
 
 function Navigation({ currentUser }) {
   const location = useLocation();
-  
+
   const navItems = [
     { path: '/', label: 'Competition Draft', icon: Shield },
-    { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },
+    { path: '/profile', label: 'Profile', icon: User, requiresAuth: true }
   ];
 
   return (
@@ -372,22 +388,22 @@ function Navigation({ currentUser }) {
         <div className="flex space-x-8">
           {navItems.map(({ path, label, icon: Icon, requiresAuth }) => {
             if (requiresAuth && !currentUser) return null;
-            
+
             const isActive = location.pathname === path;
-            
+
             return (
               <Link
-                key={path}
-                to={path}
                 className={`flex items-center space-x-2 py-4 px-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                  isActive
-                    ? 'border-transparent text-white'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  isActive ?
+                    'border-transparent text-white' :
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
+                key={path}
                 style={isActive ? {
                   borderBottomColor: '#034694',
                   color: '#034694'
                 } : {}}
+                to={path}
               >
                 <Icon className="w-4 h-4" />
                 <span>{label}</span>

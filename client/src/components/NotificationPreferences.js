@@ -14,7 +14,7 @@ const NotificationPreferences = ({ currentUser }) => {
     push_gameweek_results: false,
     push_transfer_notifications: false
   });
-  
+
   const [pushPermission, setPushPermission] = useState('default');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -27,15 +27,15 @@ const NotificationPreferences = ({ currentUser }) => {
     }
   }, [currentUser]);
 
-  const fetchPreferences = async () => {
+  const fetchPreferences = async() => {
     try {
       const response = await fetch(`/api/notifications/email?action=preferences&userId=${currentUser.id}`, {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setPreferences(data.data);
       }
@@ -44,13 +44,13 @@ const NotificationPreferences = ({ currentUser }) => {
     }
   };
 
-  const checkPushPermission = async () => {
+  const checkPushPermission = async() => {
     if ('Notification' in window) {
       setPushPermission(Notification.permission);
     }
   };
 
-  const requestPushPermission = async () => {
+  const requestPushPermission = async() => {
     if (!('Notification' in window)) {
       setError('Push notifications are not supported in this browser');
       return;
@@ -58,6 +58,7 @@ const NotificationPreferences = ({ currentUser }) => {
 
     try {
       const permission = await Notification.requestPermission();
+
       setPushPermission(permission);
 
       if (permission === 'granted') {
@@ -73,7 +74,7 @@ const NotificationPreferences = ({ currentUser }) => {
     }
   };
 
-  const registerServiceWorker = async () => {
+  const registerServiceWorker = async() => {
     try {
       const registration = await navigator.serviceWorker.register('/sw.js');
       const subscription = await registration.pushManager.subscribe({
@@ -85,7 +86,7 @@ const NotificationPreferences = ({ currentUser }) => {
       const response = await fetch('/api/notifications/push?action=subscribe', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -109,7 +110,7 @@ const NotificationPreferences = ({ currentUser }) => {
     }
   };
 
-  const updatePreferences = async (newPreferences) => {
+  const updatePreferences = async(newPreferences) => {
     try {
       setLoading(true);
       setError('');
@@ -118,7 +119,7 @@ const NotificationPreferences = ({ currentUser }) => {
       const response = await fetch('/api/notifications/email?action=preferences', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -128,7 +129,7 @@ const NotificationPreferences = ({ currentUser }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setPreferences(newPreferences);
         setSuccess('Notification preferences updated successfully!');
@@ -148,6 +149,7 @@ const NotificationPreferences = ({ currentUser }) => {
       ...preferences,
       [key]: !preferences[key]
     };
+
     updatePreferences(newPreferences);
   };
 
@@ -160,6 +162,7 @@ const NotificationPreferences = ({ currentUser }) => {
         ...preferences,
         [key]: !preferences[key]
       };
+
       updatePreferences(newPreferences);
     }
   };
@@ -183,7 +186,7 @@ const NotificationPreferences = ({ currentUser }) => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          <Settings className="inline w-8 h-8 mr-2" style={{color: '#034694'}} />
+          <Settings className="inline w-8 h-8 mr-2" style={{ color: '#034694' }} />
           Notification Preferences
         </h2>
         <p className="text-gray-600">
@@ -213,10 +216,10 @@ const NotificationPreferences = ({ currentUser }) => {
       {/* Email Notifications */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center mb-4">
-          <Mail className="w-6 h-6 mr-3" style={{color: '#034694'}} />
+          <Mail className="w-6 h-6 mr-3" style={{ color: '#034694' }} />
           <h3 className="text-lg font-semibold">Email Notifications</h3>
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
@@ -224,10 +227,10 @@ const NotificationPreferences = ({ currentUser }) => {
               <p className="text-sm text-gray-600">Receive notifications via email</p>
             </div>
             <button
-              onClick={() => handleEmailToggle('email_notifications_enabled')}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 preferences.email_notifications_enabled ? 'bg-blue-600' : 'bg-gray-200'
               }`}
+              onClick={() => handleEmailToggle('email_notifications_enabled')}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -245,10 +248,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When players are allocated to your team</p>
                 </div>
                 <button
-                  onClick={() => handleEmailToggle('email_draft_updates')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.email_draft_updates ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handleEmailToggle('email_draft_updates')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -264,10 +267,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When gameweek results are published</p>
                 </div>
                 <button
-                  onClick={() => handleEmailToggle('email_gameweek_results')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.email_gameweek_results ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handleEmailToggle('email_gameweek_results')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -283,10 +286,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When players are transferred between teams</p>
                 </div>
                 <button
-                  onClick={() => handleEmailToggle('email_transfer_notifications')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.email_transfer_notifications ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handleEmailToggle('email_transfer_notifications')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -302,10 +305,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">Weekly performance summary</p>
                 </div>
                 <button
-                  onClick={() => handleEmailToggle('email_weekly_summary')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.email_weekly_summary ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handleEmailToggle('email_weekly_summary')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -322,23 +325,26 @@ const NotificationPreferences = ({ currentUser }) => {
       {/* Push Notifications */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center mb-4">
-          <Smartphone className="w-6 h-6 mr-3" style={{color: '#034694'}} />
+          <Smartphone className="w-6 h-6 mr-3" style={{ color: '#034694' }} />
           <h3 className="text-lg font-semibold">Push Notifications</h3>
           <StatusIcon className={`w-5 h-5 ml-2 ${pushStatus.color}`} />
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <label className="font-medium">Enable Push Notifications</label>
               <p className="text-sm text-gray-600">Receive notifications on your device</p>
-              <p className="text-xs text-gray-500">Status: {pushStatus.status}</p>
+              <p className="text-xs text-gray-500">
+                Status:
+                {pushStatus.status}
+              </p>
             </div>
             <button
-              onClick={() => handlePushToggle('push_notifications_enabled')}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 preferences.push_notifications_enabled ? 'bg-blue-600' : 'bg-gray-200'
               }`}
+              onClick={() => handlePushToggle('push_notifications_enabled')}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -356,10 +362,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When players are allocated to your team</p>
                 </div>
                 <button
-                  onClick={() => handlePushToggle('push_draft_updates')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.push_draft_updates ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handlePushToggle('push_draft_updates')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -375,10 +381,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When gameweek results are published</p>
                 </div>
                 <button
-                  onClick={() => handlePushToggle('push_gameweek_results')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.push_gameweek_results ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handlePushToggle('push_gameweek_results')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -394,10 +400,10 @@ const NotificationPreferences = ({ currentUser }) => {
                   <p className="text-sm text-gray-600">When players are transferred between teams</p>
                 </div>
                 <button
-                  onClick={() => handlePushToggle('push_transfer_notifications')}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     preferences.push_transfer_notifications ? 'bg-blue-600' : 'bg-gray-200'
                   }`}
+                  onClick={() => handlePushToggle('push_transfer_notifications')}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${

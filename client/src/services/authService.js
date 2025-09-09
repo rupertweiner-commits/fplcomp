@@ -97,12 +97,11 @@ class AuthService {
         return { success: false, error: 'Account created but profile setup failed. Please try logging in.' };
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         message: 'Account created successfully! Please check your email to verify your account.',
         user: userData
       };
-
     } catch (error) {
       console.error('Registration error:', error);
       return { success: false, error: 'An unexpected error occurred. Please try again.' };
@@ -157,23 +156,23 @@ class AuthService {
   async checkSession() {
     try {
       console.log('🔍 Checking session (localStorage-first approach)...');
-      
+
       // First, try to restore from localStorage
       const storedUser = localStorage.getItem(this.userKey);
       const storedToken = localStorage.getItem(this.tokenKey);
-      
+
       if (storedUser && storedToken) {
         console.log('📦 Found stored user data, restoring...');
-        
+
         try {
           this.user = JSON.parse(storedUser);
           this.token = storedToken;
-          
+
           console.log('✅ Restored user from localStorage:', this.user.email);
-          
+
           // Validate session in background (don't wait for it)
           this.validateSessionInBackground();
-          
+
           return true;
         } catch (error) {
           console.error('❌ Error parsing stored user:', error);
@@ -182,11 +181,10 @@ class AuthService {
           localStorage.removeItem(this.tokenKey);
         }
       }
-      
+
       // No stored data, try Supabase with short timeout
       console.log('🔄 No stored data, trying Supabase session...');
       return await this.trySupabaseSession();
-      
     } catch (error) {
       console.error('❌ Session check error:', error);
       return false;
@@ -198,12 +196,12 @@ class AuthService {
     try {
       console.log('🔄 Checking Supabase session...');
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error) {
         console.error('❌ Supabase session error:', error);
         return false;
       }
-      
+
       if (!session) {
         console.log('⚠️ No Supabase session found');
         return false;
@@ -220,14 +218,14 @@ class AuthService {
         profileComplete: false
       };
       this.token = session.access_token;
-      
+
       // Store the user data
       localStorage.setItem(this.userKey, JSON.stringify(this.user));
       localStorage.setItem(this.tokenKey, session.access_token);
-      
+
       // Try to fetch profile in background
       this.fetchUserProfileInBackground(session.user.id);
-      
+
       return true;
     } catch (error) {
       console.error('❌ Supabase session check failed:', error);
@@ -240,19 +238,19 @@ class AuthService {
     try {
       console.log('🔄 Validating session in background...');
       const { data: { session }, error } = await supabase.auth.getSession();
-      
+
       if (error || !session) {
         console.log('⚠️ Background validation failed, session may be invalid');
         return;
       }
-      
+
       // Update token if it changed
       if (session.access_token !== this.token) {
         this.token = session.access_token;
         localStorage.setItem(this.tokenKey, session.access_token);
         console.log('🔄 Updated token from background validation');
       }
-      
+
       console.log('✅ Background session validation successful');
     } catch (error) {
       console.log('⚠️ Background validation error (non-critical):', error);
@@ -278,7 +276,7 @@ class AuthService {
           isAdmin: userProfile.is_admin || false,
           profileComplete: !!(userProfile.first_name && userProfile.last_name)
         };
-        
+
         // Update stored data
         localStorage.setItem(this.userKey, JSON.stringify(this.user));
         console.log('✅ User profile updated in background:', this.user.email);
@@ -289,9 +287,6 @@ class AuthService {
       console.log('⚠️ Background profile fetch error (non-critical):', error);
     }
   }
-
-
-
 
 
   // Initialize auth state on app start

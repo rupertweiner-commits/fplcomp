@@ -6,6 +6,7 @@ const DeadlineNotificationDemo = () => {
 
   const addNotification = (notification) => {
     const id = Date.now();
+
     setActiveNotifications(prev => [...prev, { ...notification, id }]);
   };
 
@@ -71,21 +72,21 @@ const DeadlineNotificationDemo = () => {
         {/* Demo Controls */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">🎮 Demo Controls</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">⏰ Deadline Reminders</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => addNotification(sampleData.reminder24h)}
                   className="w-full py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  onClick={() => addNotification(sampleData.reminder24h)}
                 >
                   📅 24 Hours Before Deadline
                 </button>
 
                 <button
-                  onClick={() => addNotification(sampleData.reminder1h)}
                   className="w-full py-2 px-4 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  onClick={() => addNotification(sampleData.reminder1h)}
                 >
                   🚨 1 Hour Before Deadline
                 </button>
@@ -96,14 +97,14 @@ const DeadlineNotificationDemo = () => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">📊 Post-Deadline Summaries</h3>
               <div className="space-y-2">
                 <button
-                  onClick={() => addNotification(sampleData.summary)}
                   className="w-full py-2 px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                  onClick={() => addNotification(sampleData.summary)}
                 >
                   🏆 Deadline Summary Report
                 </button>
                 <button
-                  onClick={clearAll}
                   className="w-full py-2 px-4 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  onClick={clearAll}
                 >
                   🗑️ Clear All Notifications
                 </button>
@@ -115,7 +116,7 @@ const DeadlineNotificationDemo = () => {
         {/* Notification Examples */}
         <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">📱 Notification Examples</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Reminder Examples */}
             <div>
@@ -133,7 +134,6 @@ const DeadlineNotificationDemo = () => {
                     <p className="text-blue-100 text-xs">Saturday, 2:00 PM GMT</p>
                   </div>
                 </div>
-
 
 
                 <div className="border border-gray-200 rounded-lg p-4">
@@ -180,7 +180,7 @@ const DeadlineNotificationDemo = () => {
         {/* Features */}
         <div className="bg-white rounded-2xl shadow-xl p-6">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">✨ Notification Features</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -218,11 +218,11 @@ const DeadlineNotificationDemo = () => {
       {/* Active Notifications */}
       {activeNotifications.map(notification => (
         <DeadlineNotification
-          key={notification.id}
-          type={notification.type}
           data={notification.data}
-          onClose={() => removeNotification(notification.id)}
+          key={notification.id}
           onAction={() => console.log('Action clicked for notification:', notification.id)}
+          onClose={() => removeNotification(notification.id)}
+          type={notification.type}
         />
       ))}
     </div>

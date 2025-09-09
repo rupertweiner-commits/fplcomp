@@ -8,7 +8,7 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
   const navItems = [
     { path: '/', label: 'Competition Draft', icon: Shield },
     { path: '/profile', label: 'Profile', icon: User, requiresAuth: true },
-    { path: '/settings', label: 'Settings', icon: Settings, requiresAuth: true },
+    { path: '/settings', label: 'Settings', icon: Settings, requiresAuth: true }
   ];
 
   const toggleMenu = () => {
@@ -29,10 +29,10 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
       {/* Mobile menu button */}
       <div className="lg:hidden">
         <button
-          onClick={toggleMenu}
-          className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
           aria-expanded="false"
           aria-label="Toggle menu"
+          className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+          onClick={toggleMenu}
         >
           {isMenuOpen ? (
             <X className="h-6 w-6" />
@@ -46,11 +46,11 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
       {isMenuOpen && (
         <div className="lg:hidden">
           {/* Backdrop */}
-          <div 
+          <div
             className="fixed inset-0 bg-gray-600 bg-opacity-75 z-40"
             onClick={closeMenu}
           />
-          
+
           {/* Menu panel */}
           <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-xl z-50">
             <div className="h-full flex flex-col py-6 bg-white shadow-xl">
@@ -58,8 +58,8 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
               <div className="px-4 flex items-center justify-between">
                 <h2 className="text-lg font-medium text-gray-900">Menu</h2>
                 <button
-                  onClick={closeMenu}
                   className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+                  onClick={closeMenu}
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -90,19 +90,19 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
               <nav className="flex-1 px-4 py-4 space-y-1">
                 {navItems.map(({ path, label, icon: Icon, requiresAuth }) => {
                   if (requiresAuth && !currentUser) return null;
-                  
+
                   const isActive = location.pathname === path;
-                  
+
                   return (
                     <Link
-                      key={path}
-                      to={path}
-                      onClick={closeMenu}
                       className={`flex items-center space-x-3 px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                        isActive
-                          ? 'bg-blue-100 text-blue-900'
-                          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        isActive ?
+                          'bg-blue-100 text-blue-900' :
+                          'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                       }`}
+                      key={path}
+                      onClick={closeMenu}
+                      to={path}
                     >
                       <Icon className="w-5 h-5" />
                       <span>{label}</span>
@@ -115,8 +115,8 @@ const MobileNavigation = ({ currentUser, onLogout }) => {
               {currentUser && (
                 <div className="px-4 py-4 border-t border-gray-200">
                   <button
-                    onClick={handleLogout}
                     className="flex items-center space-x-3 w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                    onClick={handleLogout}
                   >
                     <LogOut className="w-5 h-5" />
                     <span>Logout</span>

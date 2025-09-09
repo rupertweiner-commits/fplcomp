@@ -73,7 +73,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignup = async () => {
+  const handleSignup = async() => {
     if (!validateForm()) return;
 
     setLoading(true);
@@ -126,7 +126,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
       }
 
       setSuccess('Account created successfully! Please check your email to verify your account.');
-      
+
       // Clear form
       setFormData({
         email: '',
@@ -139,7 +139,6 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         setIsLogin(true);
         setSuccess('');
       }, 3000);
-
     } catch (error) {
       console.error('Signup error:', error);
       setErrors({ submit: 'An unexpected error occurred. Please try again.' });
@@ -148,7 +147,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
     }
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async() => {
     if (!validateForm()) return;
 
     setLoading(true);
@@ -157,7 +156,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
 
     try {
       console.log('🔄 Starting simple login process...');
-      
+
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
@@ -172,7 +171,6 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
 
       console.log('✅ Login successful, auth state will handle the rest');
       // Don't manually reset loading - let the auth state change handle it
-
     } catch (error) {
       console.error('❌ Login error:', error);
       setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
@@ -205,33 +203,33 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         {/* Tabs */}
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
           <button
-            type="button"
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              isLogin ?
+                'bg-white text-blue-600 shadow-sm' :
+                'text-gray-600 hover:text-gray-900'
+            }`}
             onClick={() => {
               setIsLogin(true);
               setErrors({});
               setSuccess('');
             }}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              isLogin
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            type="button"
           >
             <LogIn className="inline w-4 h-4 mr-2" />
             Login
           </button>
           <button
-            type="button"
+            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              !isLogin ?
+                'bg-white text-blue-600 shadow-sm' :
+                'text-gray-600 hover:text-gray-900'
+            }`}
             onClick={() => {
               setIsLogin(false);
               setErrors({});
               setSuccess('');
             }}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-              !isLogin
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            type="button"
           >
             <UserPlus className="inline w-4 h-4 mr-2" />
             Sign Up
@@ -259,7 +257,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -267,13 +265,13 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
               Email Address *
             </label>
             <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter your email address"
+              type="email"
+              value={formData.email}
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -291,18 +289,18 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
             </label>
             <div className="relative">
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
                 className={`w-full px-4 py-3 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.password ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
+                onChange={(e) => handleInputChange('password', e.target.value)}
                 placeholder="Enter your password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
               />
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword(!showPassword)}
+                type="button"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -323,13 +321,13 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
                 Confirm Password *
               </label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.confirmPassword ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 placeholder="Confirm your password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.confirmPassword}
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -342,17 +340,17 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
 
           {/* Submit Button */}
           <button
-            type="submit"
-            disabled={loading}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
-              loading
-                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                : 'bg-gradient-to-r from-blue-600 to-green-600 text-white hover:from-blue-700 hover:to-green-700 transform hover:scale-105'
+              loading ?
+                'bg-gray-300 text-gray-500 cursor-not-allowed' :
+                'bg-gradient-to-r from-blue-600 to-green-600 text-white hover:from-blue-700 hover:to-green-700 transform hover:scale-105'
             }`}
+            disabled={loading}
+            type="submit"
           >
             {loading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
                 {isLogin ? 'Signing in...' : 'Creating account...'}
               </div>
             ) : (
@@ -377,9 +375,9 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         {isLogin && onForgotPassword && (
           <div className="mt-4 text-center">
             <button
-              type="button"
-              onClick={onForgotPassword}
               className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
+              onClick={onForgotPassword}
+              type="button"
             >
               Forgot your password?
             </button>

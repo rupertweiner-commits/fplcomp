@@ -12,6 +12,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
+
     if (file) {
       validateAndPreviewFile(file);
     }
@@ -35,6 +36,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
     // Create preview
     const reader = new FileReader();
+
     reader.onload = (e) => {
       setPreviewImage(e.target.result);
     };
@@ -46,6 +48,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
       navigator.mediaDevices.getUserMedia({ video: true })
         .then((stream) => {
           const video = cameraRef.current;
+
           video.srcObject = stream;
           video.play();
         })
@@ -61,17 +64,19 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
     const video = cameraRef.current;
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     context.drawImage(video, 0, 0);
-    
+
     canvas.toBlob((blob) => {
       const file = new File([blob], 'profile-photo.jpg', { type: 'image/jpeg' });
+
       validateAndPreviewFile(file);
-      
+
       // Stop camera stream
       const stream = video.srcObject;
+
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
       }
@@ -79,7 +84,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
     }, 'image/jpeg', 0.8);
   };
 
-  const uploadPicture = async () => {
+  const uploadPicture = async() => {
     if (!previewImage) {
       setError('Please select an image first');
       return;
@@ -117,7 +122,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
       setUploadProgress(100);
       setSuccess('Profile picture updated successfully!');
-      
+
       // Update parent component with the public URL
       if (onPictureUpdate) {
         onPictureUpdate(urlData.publicUrl);
@@ -125,12 +130,11 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 
       // Reset form
       setPreviewImage(null);
-      
+
       // Close after success
       setTimeout(() => {
         onClose();
       }, 2000);
-
     } catch (err) {
       console.error('Upload error:', err);
       setError('Failed to upload image: ' + err.message);
@@ -139,7 +143,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
     }
   };
 
-  const removePicture = async () => {
+  const removePicture = async() => {
     try {
       // Remove from Supabase Storage if there's a current picture
       if (currentPicture && currentPicture.includes('supabase')) {
@@ -147,7 +151,7 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
         const { error: deleteError } = await supabase.storage
           .from('profile-pictures')
           .remove([`profile-pictures/${fileName}`]);
-        
+
         if (deleteError) {
           console.error('Delete error:', deleteError);
         }
@@ -172,8 +176,8 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-900">Update Profile Picture</h3>
           <button
-            onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
+            onClick={onClose}
           >
             <X className="w-5 h-5" />
           </button>
@@ -186,9 +190,9 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-2">Current Picture:</p>
               <img
-                src={currentPicture}
                 alt="Current profile"
                 className="w-20 h-20 rounded-full mx-auto border-2 border-gray-200"
+                src={currentPicture}
               />
             </div>
           )}
@@ -198,15 +202,15 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
             {/* File Upload */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
               <input
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileSelect}
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="hidden"
               />
               <button
-                onClick={() => fileInputRef.current?.click()}
                 className="flex items-center justify-center gap-2 text-blue-600 hover:text-blue-700"
+                onClick={() => fileInputRef.current?.click()}
               >
                 <Upload className="w-5 h-5" />
                 <span>Choose from device</span>
@@ -217,8 +221,8 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
             {/* Camera Capture */}
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-green-400 transition-colors">
               <button
-                onClick={handleCameraCapture}
                 className="flex items-center justify-center gap-2 text-green-600 hover:text-green-700"
+                onClick={handleCameraCapture}
               >
                 <Camera className="w-5 h-5" />
                 <span>Take photo</span>
@@ -230,14 +234,14 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
           {cameraRef.current?.srcObject && (
             <div className="space-y-2">
               <video
-                ref={cameraRef}
-                className="w-full rounded-lg"
                 autoPlay
+                className="w-full rounded-lg"
                 muted
+                ref={cameraRef}
               />
               <button
-                onClick={capturePhoto}
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+                onClick={capturePhoto}
               >
                 Capture Photo
               </button>
@@ -250,13 +254,13 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
               <p className="text-sm text-gray-600">Preview:</p>
               <div className="relative">
                 <img
-                  src={previewImage}
                   alt="Preview"
                   className="w-full h-48 object-cover rounded-lg border border-gray-200"
+                  src={previewImage}
                 />
                 <button
-                  onClick={() => setPreviewImage(null)}
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                  onClick={() => setPreviewImage(null)}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -271,10 +275,13 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
-                ></div>
+                />
               </div>
               <p className="text-sm text-gray-600 text-center">
-                Uploading... {uploadProgress}%
+                Uploading...
+                {' '}
+                {uploadProgress}
+                %
               </p>
             </div>
           )}
@@ -299,28 +306,28 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
           <div className="flex gap-3 pt-4">
             {currentPicture && (
               <button
-                onClick={removePicture}
-                disabled={isUploading}
                 className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                disabled={isUploading}
+                onClick={removePicture}
               >
                 Remove Picture
               </button>
             )}
-            
+
             {previewImage && (
               <button
-                onClick={uploadPicture}
-                disabled={isUploading}
                 className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                disabled={isUploading}
+                onClick={uploadPicture}
               >
                 {isUploading ? 'Uploading...' : 'Update Picture'}
               </button>
             )}
-            
+
             <button
-              onClick={onClose}
-              disabled={isUploading}
               className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 disabled:opacity-50 transition-colors"
+              disabled={isUploading}
+              onClick={onClose}
             >
               Cancel
             </button>
@@ -332,5 +339,4 @@ const ProfilePictureUpload = ({ userId, currentPicture, onPictureUpdate, onClose
 };
 
 export default ProfilePictureUpload;
-
 

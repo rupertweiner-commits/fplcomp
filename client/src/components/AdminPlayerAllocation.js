@@ -20,10 +20,10 @@ const AdminPlayerAllocation = ({ currentUser }) => {
     }
   }, [currentUser]);
 
-  const fetchData = async () => {
+  const fetchData = async() => {
     try {
       setLoading(true);
-      
+
       // Fetch available Chelsea players
       const { data: players, error: playersError } = await supabase
         .from('chelsea_players')
@@ -62,10 +62,9 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       const maxRound = Math.max(0, ...allocationsData.map(a => a.allocation_round));
       const currentRoundAllocations = allocationsData.filter(a => a.allocation_round === maxRound);
       const maxOrder = Math.max(0, ...currentRoundAllocations.map(a => a.allocation_order));
-      
+
       setCurrentRound(maxRound + 1);
       setAllocationOrder(maxOrder + 1);
-
     } catch (err) {
       setError(`Failed to load data: ${err.message}`);
     } finally {
@@ -73,7 +72,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
     }
   };
 
-  const allocatePlayer = async () => {
+  const allocatePlayer = async() => {
     if (!selectedUser || !selectedPlayer) {
       setError('Please select both a user and a player');
       return;
@@ -85,6 +84,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
       // Check if player is already allocated
       const existingAllocation = allocations.find(a => a.player_id === selectedPlayer.id);
+
       if (existingAllocation) {
         setError(`Player ${selectedPlayer.name} is already allocated to ${existingAllocation.target_user.first_name}`);
         return;
@@ -92,6 +92,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
       // Check if user already has 5 players
       const userAllocations = allocations.filter(a => a.target_user_id === selectedUser.id);
+
       if (userAllocations.length >= 5) {
         setError(`${selectedUser.first_name} already has 5 players allocated`);
         return;
@@ -114,14 +115,13 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       if (allocationError) throw allocationError;
 
       setSuccess(`Successfully allocated ${selectedPlayer.name} to ${selectedUser.first_name}`);
-      
+
       // Clear selections
       setSelectedUser(null);
       setSelectedPlayer(null);
-      
+
       // Refresh data
       await fetchData();
-
     } catch (err) {
       setError(`Failed to allocate player: ${err.message}`);
     } finally {
@@ -129,7 +129,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
     }
   };
 
-  const removeAllocation = async (allocationId) => {
+  const removeAllocation = async(allocationId) => {
     if (!window.confirm('Are you sure you want to remove this allocation?')) {
       return;
     }
@@ -148,6 +148,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
       // Remove from player_ownership
       const allocation = allocations.find(a => a.id === allocationId);
+
       if (allocation) {
         const { error: ownershipError } = await supabase
           .from('player_ownership')
@@ -160,7 +161,6 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
       setSuccess('Allocation removed successfully');
       await fetchData();
-
     } catch (err) {
       setError(`Failed to remove allocation: ${err.message}`);
     } finally {
@@ -191,6 +191,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
   const getAvailablePlayersForUser = (userId) => {
     const userAllocations = allocations.filter(a => a.target_user_id === userId);
     const allocatedPlayerIds = userAllocations.map(a => a.player_id);
+
     return availablePlayers.filter(p => !allocatedPlayerIds.includes(p.id));
   };
 
@@ -213,7 +214,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          <Trophy className="inline w-8 h-8 mr-2" style={{color: '#034694'}} />
+          <Trophy className="inline w-8 h-8 mr-2" style={{ color: '#034694' }} />
           Admin Player Allocation Portal
         </h2>
         <p className="text-gray-600">
@@ -243,7 +244,7 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       {/* Allocation Controls */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">Allocate Player</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           {/* User Selection */}
           <div>
@@ -251,19 +252,27 @@ const AdminPlayerAllocation = ({ currentUser }) => {
               Select User
             </label>
             <select
-              value={selectedUser?.id || ''}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               onChange={(e) => {
                 const user = users.find(u => u.id === e.target.value);
+
                 setSelectedUser(user);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={selectedUser?.id || ''}
             >
               <option value="">Choose a user...</option>
               {users.map(user => {
                 const userAllocations = getUserAllocations(user.id);
+
                 return (
                   <option key={user.id} value={user.id}>
-                    {user.first_name} {user.last_name} ({userAllocations.length}/5 players)
+                    {user.first_name}
+                    {' '}
+                    {user.last_name}
+                    {' '}
+                    (
+                    {userAllocations.length}
+                    /5 players)
                   </option>
                 );
               })}
@@ -276,24 +285,37 @@ const AdminPlayerAllocation = ({ currentUser }) => {
               Select Player
             </label>
             <select
-              value={selectedPlayer?.id || ''}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               onChange={(e) => {
                 const player = availablePlayers.find(p => p.id === parseInt(e.target.value));
+
                 setSelectedPlayer(player);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={selectedPlayer?.id || ''}
             >
               <option value="">Choose a player...</option>
               {selectedUser ? (
                 getAvailablePlayersForUser(selectedUser.id).map(player => (
                   <option key={player.id} value={player.id}>
-                    {player.name} ({player.position}) - {player.price}M
+                    {player.name}
+                    {' '}
+                    (
+                    {player.position}
+                    ) -
+                    {player.price}
+                    M
                   </option>
                 ))
               ) : (
                 availablePlayers.map(player => (
                   <option key={player.id} value={player.id}>
-                    {player.name} ({player.position}) - {player.price}M
+                    {player.name}
+                    {' '}
+                    (
+                    {player.position}
+                    ) -
+                    {player.price}
+                    M
                   </option>
                 ))
               )}
@@ -303,13 +325,13 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
         {/* Allocation Button */}
         <button
-          onClick={allocatePlayer}
-          disabled={loading || !selectedUser || !selectedPlayer}
           className={`flex items-center gap-2 px-4 py-2 text-white rounded-lg ${
-            loading || !selectedUser || !selectedPlayer
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-600 hover:bg-green-700'
+            loading || !selectedUser || !selectedPlayer ?
+              'bg-gray-400 cursor-not-allowed' :
+              'bg-green-600 hover:bg-green-700'
           }`}
+          disabled={loading || !selectedUser || !selectedPlayer}
+          onClick={allocatePlayer}
         >
           {loading ? (
             <RefreshCw className="w-4 h-4 animate-spin" />
@@ -321,7 +343,13 @@ const AdminPlayerAllocation = ({ currentUser }) => {
 
         {/* Current Round Info */}
         <div className="mt-4 text-sm text-gray-600">
-          <p>Current Round: {currentRound} | Next Allocation Order: {allocationOrder}</p>
+          <p>
+            Current Round:
+            {currentRound}
+            {' '}
+            | Next Allocation Order:
+            {allocationOrder}
+          </p>
         </div>
       </div>
 
@@ -330,22 +358,26 @@ const AdminPlayerAllocation = ({ currentUser }) => {
         {users.map(user => {
           const userAllocations = getUserAllocations(user.id);
           const totalValue = userAllocations.reduce((sum, a) => sum + parseFloat(a.player_price), 0);
-          
+
           return (
-            <div key={user.id} className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-6" key={user.id}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  {user.first_name} {user.last_name}
+                  {user.first_name}
+                  {' '}
+                  {user.last_name}
                 </h3>
                 <div className="text-sm text-gray-600">
-                  {userAllocations.length}/5 players
+                  {userAllocations.length}
+                  /5 players
                 </div>
               </div>
 
               <div className="mb-4">
                 <div className="text-sm text-gray-600 mb-1">Total Value</div>
-                <div className="text-lg font-bold" style={{color: '#034694'}}>
-                  {totalValue.toFixed(1)}M
+                <div className="text-lg font-bold" style={{ color: '#034694' }}>
+                  {totalValue.toFixed(1)}
+                  M
                 </div>
               </div>
 
@@ -354,18 +386,23 @@ const AdminPlayerAllocation = ({ currentUser }) => {
                   <p className="text-gray-500 text-sm">No players allocated yet</p>
                 ) : (
                   userAllocations.map(allocation => (
-                    <div key={allocation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                    <div className="flex items-center justify-between p-2 bg-gray-50 rounded" key={allocation.id}>
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(allocation.player_position)}`}>
-                          {getPositionIcon(allocation.player_position)} {allocation.player_position}
+                          {getPositionIcon(allocation.player_position)}
+                          {' '}
+                          {allocation.player_position}
                         </span>
                         <span className="text-sm font-medium">{allocation.player_name}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-600">{allocation.player_price}M</span>
+                        <span className="text-xs text-gray-600">
+                          {allocation.player_price}
+                          M
+                        </span>
                         <button
-                          onClick={() => removeAllocation(allocation.id)}
                           className="text-red-500 hover:text-red-700 text-xs"
+                          onClick={() => removeAllocation(allocation.id)}
                           title="Remove allocation"
                         >
                           ×
@@ -383,20 +420,25 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       {/* Available Players */}
       <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">Available Players</h3>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {availablePlayers
             .filter(player => !allocations.some(a => a.player_id === player.id))
             .map(player => (
-              <div key={player.id} className="p-3 border rounded-lg">
+              <div className="p-3 border rounded-lg" key={player.id}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-sm">{player.name}</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
-                    {getPositionIcon(player.position)} {player.position}
+                    {getPositionIcon(player.position)}
+                    {' '}
+                    {player.position}
                   </span>
                 </div>
                 <div className="text-xs text-gray-600">
-                  Price: {player.price}M
+                  Price:
+                  {' '}
+                  {player.price}
+                  M
                 </div>
               </div>
             ))}

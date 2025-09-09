@@ -14,28 +14,28 @@ function PlayerStats() {
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentGameweek, setCurrentGameweek] = useState(1);
 
-  const fetchPlayersData = async () => {
+  const fetchPlayersData = async() => {
     try {
       setLoading(true);
-      
+
       // Fetch live data from FPL API via our Vercel API route
       const response = await fetch('/api/fpl?action=bootstrap');
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const bootstrap = await response.json();
-      
+
       setCurrentGameweek(bootstrap.current_event || 1);
-      
+
       // Filter to show only Chelsea players (team ID = 7)
       const chelseaPlayers = bootstrap.elements.filter(player => player.team === 7);
-      
+
       if (chelseaPlayers.length === 0) {
         throw new Error('No Chelsea players found in FPL API');
       }
-      
+
       setPlayers(chelseaPlayers);
       setTeams(bootstrap.teams);
       setPositions(bootstrap.element_types);
@@ -50,29 +50,30 @@ function PlayerStats() {
 
   const applyFilters = useCallback(() => {
     let filtered = [...players];
-    
+
     // Text search
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(player => 
+
+      filtered = filtered.filter(player =>
         player.web_name.toLowerCase().includes(term) ||
         player.first_name.toLowerCase().includes(term) ||
         player.second_name.toLowerCase().includes(term)
       );
     }
-    
+
     // Team filter removed - only showing Chelsea players
-    
+
     // Position filter
     if (selectedPosition) {
       filtered = filtered.filter(player => player.element_type.toString() === selectedPosition);
     }
-    
+
     // Sorting
     filtered.sort((a, b) => {
       let aVal = a[sortBy];
       let bVal = b[sortBy];
-      
+
       // Handle special sorting cases
       if (sortBy === 'value') {
         aVal = parseFloat(a.now_cost) / 10;
@@ -81,14 +82,14 @@ function PlayerStats() {
         aVal = parseFloat(a.form) || 0;
         bVal = parseFloat(b.form) || 0;
       }
-      
+
       if (sortOrder === 'asc') {
         return aVal - bVal;
       } else {
         return bVal - aVal;
       }
     });
-    
+
     setFilteredPlayers(filtered);
   }, [players, searchTerm, selectedPosition, sortBy, sortOrder]);
 
@@ -102,11 +103,13 @@ function PlayerStats() {
 
   const getTeamName = (teamId) => {
     const team = teams.find(t => t.id === teamId);
+
     return team ? team.short_name : 'Unknown';
   };
 
   const getPositionName = (elementType) => {
     const position = positions.find(p => p.id === elementType);
+
     return position ? position.singular_name_short : 'Unknown';
   };
 
@@ -116,6 +119,7 @@ function PlayerStats() {
 
   const getPlayerForm = (player) => {
     const form = parseFloat(player.form);
+
     if (form >= 6) return { color: 'text-green-600', label: 'Excellent' };
     if (form >= 4) return { color: 'text-blue-600', label: 'Good' };
     if (form >= 2) return { color: 'text-yellow-600', label: 'Average' };
@@ -141,9 +145,9 @@ function PlayerStats() {
           <p className="text-lg font-medium">Failed to load player data</p>
           <p className="text-sm">{error}</p>
         </div>
-        <button 
-          onClick={fetchPlayersData} 
+        <button
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          onClick={fetchPlayersData}
         >
           <RefreshCw className="w-4 h-4 inline mr-2" />
           Retry
@@ -157,20 +161,22 @@ function PlayerStats() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
-          <h1 className="text-3xl font-bold flex items-center space-x-3" style={{color: '#034694'}}>
-            <Shield className="w-8 h-8" style={{color: '#034694'}} />
+          <h1 className="text-3xl font-bold flex items-center space-x-3" style={{ color: '#034694' }}>
+            <Shield className="w-8 h-8" style={{ color: '#034694' }} />
             <span>Chelsea Players</span>
           </h1>
           <p className="text-gray-600 mt-1">
-            Live FPL Data - KPG's Annual Chelsea Competition - Gameweek {currentGameweek}
+            Live FPL Data - KPG's Annual Chelsea Competition - Gameweek
+            {' '}
+            {currentGameweek}
           </p>
         </div>
-        
-        <button 
-          onClick={fetchPlayersData}
-          disabled={loading}
+
+        <button
           className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:opacity-90 text-white disabled:opacity-50"
-          style={{backgroundColor: '#034694'}}
+          disabled={loading}
+          onClick={fetchPlayersData}
+          style={{ backgroundColor: '#034694' }}
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           <span>{loading ? 'Loading...' : 'Refresh Live Data'}</span>
@@ -188,11 +194,11 @@ function PlayerStats() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                type="text"
-                value={searchTerm}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search by name..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                type="text"
+                value={searchTerm}
               />
             </div>
           </div>
@@ -213,9 +219,9 @@ function PlayerStats() {
               Position
             </label>
             <select
-              value={selectedPosition}
-              onChange={(e) => setSelectedPosition(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSelectedPosition(e.target.value)}
+              value={selectedPosition}
             >
               <option value="">All Positions</option>
               {positions.map(position => (
@@ -232,13 +238,14 @@ function PlayerStats() {
               Sort By
             </label>
             <select
-              value={`${sortBy}-${sortOrder}`}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               onChange={(e) => {
                 const [field, order] = e.target.value.split('-');
+
                 setSortBy(field);
                 setSortOrder(order);
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={`${sortBy}-${sortOrder}`}
             >
               <option value="total_points-desc">Total Points (High to Low)</option>
               <option value="total_points-asc">Total Points (Low to High)</option>
@@ -252,23 +259,31 @@ function PlayerStats() {
             </select>
           </div>
         </div>
-        
+
         {/* Results count */}
         <div className="mt-4 text-sm text-gray-600">
-          Showing {filteredPlayers.length} of {players.length} players
+          Showing
+          {' '}
+          {filteredPlayers.length}
+          {' '}
+          of
+          {' '}
+          {players.length}
+          {' '}
+          players
         </div>
       </div>
 
       {/* Player Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredPlayers.slice(0, 50).map(player => (
-          <PlayerCard 
-            key={player.id} 
-            player={player} 
-            getTeamName={getTeamName}
-            getPositionName={getPositionName}
+          <PlayerCard
             formatPrice={formatPrice}
             getPlayerForm={getPlayerForm}
+            getPositionName={getPositionName}
+            getTeamName={getTeamName}
+            key={player.id}
+            player={player}
           />
         ))}
       </div>
@@ -277,11 +292,15 @@ function PlayerStats() {
       {filteredPlayers.length > 50 && (
         <div className="text-center">
           <p className="text-gray-600 mb-4">
-            Showing 50 of {filteredPlayers.length} players
+            Showing 50 of
+            {' '}
+            {filteredPlayers.length}
+            {' '}
+            players
           </p>
-          <button 
-            onClick={() => {/* Implement pagination */}}
+          <button
             className="fpl-button-secondary"
+            onClick={() => { /* Implement pagination */ }}
           >
             Load More Players
           </button>
@@ -302,7 +321,7 @@ function PlayerStats() {
 
 function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlayerForm }) {
   const form = getPlayerForm(player);
-  
+
   return (
     <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
       {/* Header */}
@@ -312,7 +331,9 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
             {player.web_name}
           </h3>
           <p className="text-sm text-gray-600 truncate">
-            {player.first_name} {player.second_name}
+            {player.first_name}
+            {' '}
+            {player.second_name}
           </p>
           <div className="flex items-center space-x-2 mt-1">
             <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
@@ -323,9 +344,9 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
             </span>
           </div>
         </div>
-        
+
         <div className="text-right">
-          <div className="text-lg font-bold" style={{color: '#034694'}}>
+          <div className="text-lg font-bold" style={{ color: '#034694' }}>
             {formatPrice(player.now_cost)}
           </div>
           <div className="text-xs text-gray-500">price</div>
@@ -342,7 +363,7 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
           </div>
           <span className="font-semibold text-gray-900">{player.total_points}</span>
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Award className="w-4 h-4 text-gray-500" />
@@ -360,13 +381,13 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
             <div className="text-sm font-semibold text-gray-900">{player.goals_scored}</div>
             <div className="text-xs text-gray-500">Goals</div>
           </div>
-          
+
           <div className="text-center">
             <Award className="w-4 h-4 text-blue-600 mx-auto mb-1" />
             <div className="text-sm font-semibold text-gray-900">{player.assists}</div>
             <div className="text-xs text-gray-500">Assists</div>
           </div>
-          
+
           <div className="text-center">
             <Shield className="w-4 h-4 text-purple-600 mx-auto mb-1" />
             <div className="text-sm font-semibold text-gray-900">{player.clean_sheets}</div>
@@ -378,7 +399,8 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
           <span className="text-sm text-gray-600">Ownership</span>
           <span className="text-sm font-semibold text-gray-900">
-            {parseFloat(player.selected_by_percent).toFixed(1)}%
+            {parseFloat(player.selected_by_percent).toFixed(1)}
+            %
           </span>
         </div>
 
@@ -386,15 +408,16 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
         <div className="flex items-center space-x-2 pt-2">
           {player.status !== 'a' && (
             <span className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded">
-              {player.status === 'i' ? 'Injured' : 
-               player.status === 's' ? 'Suspended' : 
-               player.status === 'd' ? 'Doubtful' : 'Unavailable'}
+              {player.status === 'i' ? 'Injured' :
+                player.status === 's' ? 'Suspended' :
+                  player.status === 'd' ? 'Doubtful' : 'Unavailable'}
             </span>
           )}
-          
+
           {parseFloat(player.chance_of_playing_next_round) < 100 && (
             <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded">
-              {player.chance_of_playing_next_round}% chance
+              {player.chance_of_playing_next_round}
+              % chance
             </span>
           )}
         </div>
@@ -402,10 +425,10 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
 
       {/* Action */}
       <div className="mt-4 pt-4 border-t border-gray-100">
-        <button 
-          onClick={() => {/* Implement player details modal */}}
+        <button
           className="w-full text-center text-sm font-medium hover:opacity-80 transition-opacity"
-          style={{color: '#034694'}}
+          onClick={() => { /* Implement player details modal */ }}
+          style={{ color: '#034694' }}
         >
           View Details
         </button>

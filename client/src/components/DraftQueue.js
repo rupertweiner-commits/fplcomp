@@ -9,17 +9,17 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
-  
+
   const timerRef = useRef(null);
   const statusIntervalRef = useRef(null);
 
   // Fetch draft status on component mount
   useEffect(() => {
     fetchDraftStatus();
-    
+
     // Set up polling for status updates
     statusIntervalRef.current = setInterval(fetchDraftStatus, 5000);
-    
+
     return () => {
       if (statusIntervalRef.current) {
         clearInterval(statusIntervalRef.current);
@@ -55,19 +55,20 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   useEffect(() => {
     if (currentTurn && currentUser) {
       const isTurn = currentTurn.currentPlayer?.userId === currentUser.id;
+
       setIsMyTurn(isTurn);
-      
+
       if (isTurn) {
         setTimeRemaining(currentTurn.timeRemaining || 60);
       }
     }
   }, [currentTurn, currentUser]);
 
-  const fetchDraftStatus = async () => {
+  const fetchDraftStatus = async() => {
     try {
       // TODO: Implement draft status fetching with Supabase
       console.log('Draft status fetch requested for user:', currentUser?.id);
-      
+
       // Placeholder data for now
       setDraftStatus({
         status: 'waiting',
@@ -75,19 +76,19 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
         timePerTurn: 60,
         isActive: false
       });
-      
+
       setDraftProgress({
         totalPicks: 20,
         completedPicks: 0,
         currentRound: 1
       });
-      
+
       setCurrentTurn({
         currentPlayer: { id: 1, username: 'Portia' },
         nextPlayer: { id: 2, username: 'Yasmin' },
         timeRemaining: 60
       });
-      
+
       setError(null);
     } catch (error) {
       console.error('Failed to fetch draft status:', error);
@@ -95,9 +96,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const initializeDraft = async () => {
+  const initializeDraft = async() => {
     if (!currentUser?.isAdmin) return;
-    
+
     setLoading(true);
     try {
       // Get users from your existing draft data
@@ -121,9 +122,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const startDraft = async () => {
+  const startDraft = async() => {
     if (!currentUser?.isAdmin) return;
-    
+
     setLoading(true);
     try {
       // TODO: Implement draft queue start with Supabase
@@ -139,9 +140,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const pauseDraft = async () => {
+  const pauseDraft = async() => {
     if (!currentUser?.isAdmin) return;
-    
+
     setLoading(true);
     try {
       // TODO: Implement draft queue pause with Supabase
@@ -157,9 +158,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const resumeDraft = async () => {
+  const resumeDraft = async() => {
     if (!currentUser?.isAdmin) return;
-    
+
     setLoading(true);
     try {
       // TODO: Implement draft queue resume with Supabase
@@ -175,9 +176,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const resetDraft = async () => {
+  const resetDraft = async() => {
     if (!currentUser?.isAdmin) return;
-    
+
     if (!window.confirm('Are you sure you want to reset the draft? This will clear all picks.')) {
       return;
     }
@@ -197,9 +198,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     }
   };
 
-  const skipTurn = async (targetUserId, reason) => {
+  const skipTurn = async(targetUserId, reason) => {
     if (!currentUser?.isAdmin) return;
-    
+
     setLoading(true);
     try {
       // TODO: Implement draft queue skip turn with Supabase
@@ -218,6 +219,7 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
+
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -245,7 +247,7 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
     return (
       <div className="mobile-card">
         <div className="mobile-loading">
-          <div className="mobile-loading-spinner"></div>
+          <div className="mobile-loading-spinner" />
           <p className="mt-4 text-gray-600">Loading draft status...</p>
         </div>
       </div>
@@ -276,17 +278,28 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
           <div className="mt-4">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
               <span>Progress</span>
-              <span>{draftProgress.progress}%</span>
+              <span>
+                {draftProgress.progress}
+                %
+              </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${draftProgress.progress}%` }}
-              ></div>
+              />
             </div>
             <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>{draftProgress.completedPicks} picks made</span>
-              <span>{draftProgress.remainingPicks} remaining</span>
+              <span>
+                {draftProgress.completedPicks}
+                {' '}
+                picks made
+              </span>
+              <span>
+                {draftProgress.remainingPicks}
+                {' '}
+                remaining
+              </span>
             </div>
           </div>
         )}
@@ -296,7 +309,7 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
       {currentTurn?.currentPlayer && (
         <div className="mobile-card">
           <h3 className="mobile-card-title mb-4">Current Turn</h3>
-          
+
           <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
             <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
@@ -304,10 +317,13 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
               </div>
               <div>
                 <p className="font-semibold text-lg">{currentTurn.currentPlayer.username}</p>
-                <p className="text-sm text-gray-600">Position {currentTurn.currentPlayer.position}</p>
+                <p className="text-sm text-gray-600">
+                  Position
+                  {currentTurn.currentPlayer.position}
+                </p>
               </div>
             </div>
-            
+
             {isMyTurn && (
               <div className="text-center">
                 <div className="text-2xl font-bold text-red-600">
@@ -322,9 +338,9 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
           {currentUser?.isAdmin && (
             <div className="mt-4 flex space-x-2">
               <button
-                onClick={() => skipTurn(currentTurn.currentPlayer.userId, 'Admin skip')}
-                disabled={loading}
                 className="mobile-btn mobile-btn-secondary flex items-center space-x-2"
+                disabled={loading}
+                onClick={() => skipTurn(currentTurn.currentPlayer.userId, 'Admin skip')}
               >
                 <SkipForward className="w-4 h-4" />
                 <span>Skip Turn</span>
@@ -344,7 +360,10 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
             </div>
             <div>
               <p className="font-medium">{currentTurn.nextPlayer.username}</p>
-              <p className="text-sm text-gray-600">Position {currentTurn.nextPlayer.position}</p>
+              <p className="text-sm text-gray-600">
+                Position
+                {currentTurn.nextPlayer.position}
+              </p>
             </div>
           </div>
         </div>
@@ -356,22 +375,24 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
           <h3 className="mobile-card-title mb-4">Draft Order</h3>
           <div className="space-y-2">
             {draftProgress.queue?.map((player, index) => (
-              <div 
-                key={player.userId}
+              <div
                 className={`flex items-center justify-between p-3 rounded-lg border ${
-                  player.userId === currentTurn?.currentPlayer?.userId
-                    ? 'border-purple-300 bg-purple-50'
-                    : 'border-gray-200'
+                  player.userId === currentTurn?.currentPlayer?.userId ?
+                    'border-purple-300 bg-purple-50' :
+                    'border-gray-200'
                 }`}
+                key={player.userId}
               >
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    player.hasPicked 
-                      ? 'bg-green-100 text-green-600' 
-                      : player.userId === currentTurn?.currentPlayer?.userId
-                      ? 'bg-purple-100 text-purple-600'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      player.hasPicked ?
+                        'bg-green-100 text-green-600' :
+                        player.userId === currentTurn?.currentPlayer?.userId ?
+                          'bg-purple-100 text-purple-600' :
+                          'bg-gray-100 text-gray-600'
+                    }`}
+                  >
                     {player.position}
                   </div>
                   <div>
@@ -381,7 +402,7 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   {player.hasPicked && (
                     <CheckCircle className="w-5 h-5 text-green-600" />
@@ -409,46 +430,46 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
             {draftStatus.status === 'waiting' && (
               <>
                 <button
-                  onClick={initializeDraft}
-                  disabled={loading}
                   className="mobile-btn mobile-btn-primary"
+                  disabled={loading}
+                  onClick={initializeDraft}
                 >
                   Initialize Draft
                 </button>
                 <button
-                  onClick={startDraft}
-                  disabled={loading}
                   className="mobile-btn mobile-btn-primary"
+                  disabled={loading}
+                  onClick={startDraft}
                 >
                   Start Draft
                 </button>
               </>
             )}
-            
+
             {draftStatus.status === 'active' && (
               <button
-                onClick={pauseDraft}
-                disabled={loading}
                 className="mobile-btn mobile-btn-secondary"
+                disabled={loading}
+                onClick={pauseDraft}
               >
                 Pause Draft
               </button>
             )}
-            
+
             {draftStatus.status === 'paused' && (
               <button
-                onClick={resumeDraft}
-                disabled={loading}
                 className="mobile-btn mobile-btn-primary"
+                disabled={loading}
+                onClick={resumeDraft}
               >
                 Resume Draft
               </button>
             )}
-            
+
             <button
-              onClick={resetDraft}
-              disabled={loading}
               className="mobile-btn mobile-btn-danger"
+              disabled={loading}
+              onClick={resetDraft}
             >
               Reset Draft
             </button>
@@ -464,8 +485,8 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
             <span>{message}</span>
           </div>
           <button
-            onClick={() => setMessage(null)}
             className="ml-auto text-gray-500 hover:text-gray-700"
+            onClick={() => setMessage(null)}
           >
             ×
           </button>
@@ -479,8 +500,8 @@ const DraftQueue = ({ currentUser, onDraftUpdate }) => {
             <span>{error}</span>
           </div>
           <button
-            onClick={() => setError(null)}
             className="ml-auto text-gray-500 hover:text-gray-700"
+            onClick={() => setError(null)}
           >
             ×
           </button>

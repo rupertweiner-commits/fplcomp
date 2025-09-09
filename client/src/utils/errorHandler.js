@@ -1,204 +1,230 @@
+import { ERROR_MESSAGES } from './constants';
+
 /**
- * Utility functions for safe function execution and error handling
+ * Centralized error handling utilities
  */
 
 /**
- * Safely executes a function with error handling
- * @param {Function} fn - Function to execute
- * @param {string} context - Context description for error logging
- * @param {*} defaultValue - Default value to return on error
- * @returns {*} Function result or default value
+ * Handle API errors with consistent formatting
+ * @param {Error} error - The error object
+ * @param {string} context - Context where the error occurred
+ * @param {Object} options - Additional options
+ * @returns {Object} Formatted error object
  */
-export const safeExecute = (fn, context = 'Unknown', defaultValue = null) => {
-  try {
-    return fn();
-  } catch (error) {
-    console.error(`Error in ${context}:`, error);
-    return defaultValue;
-  }
-};
+export const handleApiError = (error, context = '', options = {}) => {
+  console.error(`❌ API Error in ${context}:`, error);
 
-/**
- * Safely executes an async function with error handling
- * @param {Function} fn - Async function to execute
- * @param {string} context - Context description for error logging
- * @param {*} defaultValue - Default value to return on error
- * @returns {Promise<*>} Promise that resolves to function result or default value
- */
-export const safeExecuteAsync = async (fn, context = 'Unknown', defaultValue = null) => {
-  try {
-    return await fn();
-  } catch (error) {
-    console.error(`Error in ${context}:`, error);
-    return defaultValue;
-  }
-};
+  // Determine error type and message
+  let errorMessage = ERROR_MESSAGES.UNKNOWN_ERROR;
+  let errorCode = 'UNKNOWN_ERROR';
 
-/**
- * Safely parses JSON with error handling
- * @param {string} jsonString - JSON string to parse
- * @param {*} defaultValue - Default value to return on parse error
- * @returns {*} Parsed object or default value
- */
-export const safeJsonParse = (jsonString, defaultValue = null) => {
-  if (!jsonString || typeof jsonString !== 'string') {
-    return defaultValue;
+  if (error.name === 'TypeError' && error.message.includes('fetch')) {
+    errorMessage = ERROR_MESSAGES.NETWORK_ERROR;
+    errorCode = 'NETWORK_ERROR';
+  } else if (error.status === 401 || error.status === 403) {
+    errorMessage = ERROR_MESSAGES.UNAUTHORIZED;
+    errorCode = 'UNAUTHORIZED';
+  } else if (error.status === 404) {
+    errorMessage = ERROR_MESSAGES.NOT_FOUND;
+    errorCode = 'NOT_FOUND';
+  } else if (error.status === 422) {
+    errorMessage = ERROR_MESSAGES.VALIDATION_ERROR;
+    errorCode = 'VALIDATION_ERROR';
+  } else if (error.status >= 500) {
+    errorMessage = ERROR_MESSAGES.SERVER_ERROR;
+    errorCode = 'SERVER_ERROR';
+  } else if (error.name === 'AbortError') {
+    errorMessage = ERROR_MESSAGES.TIMEOUT;
+    errorCode = 'TIMEOUT';
+  } else if (error.message) {
+    errorMessage = error.message;
+    errorCode = 'CUSTOM_ERROR';
   }
-  
-  try {
-    return JSON.parse(jsonString);
-  } catch (error) {
-    console.error('JSON parse error:', error);
-    return defaultValue;
-  }
-};
 
-/**
- * Safely formats a date with error handling
- * @param {string|Date} date - Date to format
- * @param {string} defaultValue - Default value to return on format error
- * @returns {string} Formatted date or default value
- */
-export const safeDateFormat = (date, defaultValue = 'Invalid date') => {
-  if (!date) return defaultValue;
-  
-  try {
-    const dateObj = new Date(date);
-    if (isNaN(dateObj.getTime())) {
-      return defaultValue;
-    }
-    return dateObj.toLocaleString();
-  } catch (error) {
-    console.error('Date format error:', error);
-    return defaultValue;
+  // Log to external service in production
+  if (process.env.NODE_ENV === 'production') {
+    trackError(error, context, options);
   }
-};
 
-/**
- * Safely accesses nested object properties
- * @param {Object} obj - Object to access
- * @param {string} path - Dot-separated path to property
- * @param {*} defaultValue - Default value if property doesn't exist
- * @returns {*} Property value or default value
- */
-export const safeGet = (obj, path, defaultValue = null) => {
-  if (!obj || typeof obj !== 'object') return defaultValue;
-  
-  try {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : defaultValue;
-    }, obj);
-  } catch (error) {
-    console.error('Safe get error:', error);
-    return defaultValue;
-  }
-};
-
-/**
- * Safely calls a function if it exists
- * @param {Function} fn - Function to call
- * @param {Array} args - Arguments to pass to function
- * @param {*} defaultValue - Default value to return if function doesn't exist
- * @returns {*} Function result or default value
- */
-export const safeCall = (fn, args = [], defaultValue = null) => {
-  if (typeof fn === 'function') {
-    try {
-      return fn(...args);
-    } catch (error) {
-      console.error('Function call error:', error);
-      return defaultValue;
-    }
-  }
-  return defaultValue;
-};
-
-/**
- * Creates a safe event handler that prevents default behavior and stops propagation
- * @param {Function} handler - Event handler function
- * @param {string} context - Context description for error logging
- * @returns {Function} Safe event handler
- */
-export const createSafeEventHandler = (handler, context = 'Unknown') => {
-  return (event) => {
-    try {
-      if (event && event.preventDefault) {
-        event.preventDefault();
-      }
-      if (event && event.stopPropagation) {
-        event.stopPropagation();
-      }
-      
-      if (typeof handler === 'function') {
-        return handler(event);
-      }
-    } catch (error) {
-      console.error(`Event handler error in ${context}:`, error);
-    }
+  return {
+    message: errorMessage,
+    code: errorCode,
+    context,
+    originalError: error,
+    timestamp: new Date().toISOString()
   };
 };
 
 /**
- * Safely updates state with error handling
- * @param {Function} setState - React setState function
- * @param {*} newState - New state value
- * @param {string} context - Context description for error logging
+ * Handle component errors
+ * @param {Error} error - The error object
+ * @param {string} componentName - Name of the component
+ * @param {Object} errorInfo - Additional error info
+ * @returns {Object} Formatted error object
  */
-export const safeSetState = (setState, newState, context = 'Unknown') => {
-  try {
-    setState(newState);
-  } catch (error) {
-    console.error(`setState error in ${context}:`, error);
-  }
-};
+export const handleComponentError = (error, componentName, errorInfo = {}) => {
+  console.error(`❌ Component Error in ${componentName}:`, error, errorInfo);
 
-/**
- * Validates required props and throws error if missing
- * @param {Object} props - Props object to validate
- * @param {Array} requiredProps - Array of required prop names
- * @param {string} componentName - Name of component for error message
- */
-export const validateRequiredProps = (props, requiredProps, componentName) => {
-  const missingProps = requiredProps.filter(prop => props[prop] === undefined);
-  
-  if (missingProps.length > 0) {
-    throw new Error(
-      `${componentName} is missing required props: ${missingProps.join(', ')}`
-    );
+  // Track error in production
+  if (process.env.NODE_ENV === 'production') {
+    trackError(error, componentName, { errorInfo });
   }
-};
 
-/**
- * Debounces function calls to prevent excessive execution
- * @param {Function} func - Function to debounce
- * @param {number} wait - Wait time in milliseconds
- * @returns {Function} Debounced function
- */
-export const debounce = (func, wait) => {
-  let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
+  return {
+    message: 'A component error occurred',
+    component: componentName,
+    error: error.message,
+    stack: error.stack,
+    errorInfo,
+    timestamp: new Date().toISOString()
   };
 };
 
 /**
- * Throttles function calls to limit execution frequency
- * @param {Function} func - Function to throttle
- * @param {number} limit - Time limit in milliseconds
- * @returns {Function} Throttled function
+ * Handle validation errors
+ * @param {Object} validationErrors - Validation error object
+ * @param {string} field - Field name
+ * @returns {Object} Formatted validation error
  */
-export const throttle = (func, limit) => {
-  let inThrottle;
-  return function executedFunction(...args) {
-    if (!inThrottle) {
-      func.apply(this, args);
-      inThrottle = true;
-      setTimeout(() => inThrottle = false, limit);
+export const handleValidationError = (validationErrors, field = '') => {
+  const error = {
+    message: ERROR_MESSAGES.VALIDATION_ERROR,
+    code: 'VALIDATION_ERROR',
+    field,
+    errors: validationErrors,
+    timestamp: new Date().toISOString()
+  };
+
+  console.warn(`⚠️ Validation Error in ${field}:`, validationErrors);
+
+  return error;
+};
+
+/**
+ * Track error for monitoring
+ * @param {Error} error - The error object
+ * @param {string} context - Context where error occurred
+ * @param {Object} metadata - Additional metadata
+ */
+export const trackError = (error, context, metadata = {}) => {
+  const errorData = {
+    message: error.message,
+    stack: error.stack,
+    context,
+    metadata,
+    timestamp: new Date().toISOString(),
+    userAgent: navigator.userAgent,
+    url: window.location.href,
+    userId: getCurrentUserId()
+  };
+
+  // In production, send to error tracking service
+  if (process.env.NODE_ENV === 'production') {
+    // Example: Send to external service
+    // fetch('/api/errors', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(errorData)
+    // }).catch(console.error);
+
+    console.log('Error tracked:', errorData);
+  }
+};
+
+/**
+ * Get current user ID for error tracking
+ * @returns {string|null} User ID or null
+ */
+const getCurrentUserId = () => {
+  try {
+    // Try to get user ID from various sources
+    const user = JSON.parse(localStorage.getItem('fpl_user') || 'null');
+
+    return user?.id || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Create a user-friendly error message
+ * @param {Object} error - Error object
+ * @returns {string} User-friendly message
+ */
+export const getUserFriendlyMessage = (error) => {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error?.message) {
+    return error.message;
+  }
+
+  if (error?.code) {
+    return ERROR_MESSAGES[error.code] || ERROR_MESSAGES.UNKNOWN_ERROR;
+  }
+
+  return ERROR_MESSAGES.UNKNOWN_ERROR;
+};
+
+/**
+ * Check if error is retryable
+ * @param {Error} error - Error object
+ * @returns {boolean} Whether error is retryable
+ */
+export const isRetryableError = (error) => {
+  const retryableCodes = ['NETWORK_ERROR', 'TIMEOUT', 'SERVER_ERROR'];
+  const retryableStatuses = [408, 429, 500, 502, 503, 504];
+
+  return retryableCodes.includes(error.code) ||
+         retryableStatuses.includes(error.status) ||
+         error.name === 'AbortError';
+};
+
+/**
+ * Retry function with exponential backoff
+ * @param {Function} fn - Function to retry
+ * @param {number} maxRetries - Maximum number of retries
+ * @param {number} baseDelay - Base delay in milliseconds
+ * @returns {Promise} Promise that resolves with function result
+ */
+export const retryWithBackoff = async(fn, maxRetries = 3, baseDelay = 1000) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === maxRetries || !isRetryableError(error)) {
+        throw error;
+      }
+
+      const delay = baseDelay * Math.pow(2, attempt);
+
+      console.log(`Retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
+  }
+
+  throw lastError;
+};
+
+/**
+ * Error boundary helper for React components
+ * @param {Error} error - Error object
+ * @param {Object} errorInfo - Error info from React
+ * @returns {Object} Error boundary state
+ */
+export const createErrorBoundaryState = (error, errorInfo) => {
+  return {
+    hasError: true,
+    error: {
+      message: error.message,
+      stack: error.stack,
+      componentStack: errorInfo.componentStack
+    },
+    timestamp: new Date().toISOString()
   };
 };

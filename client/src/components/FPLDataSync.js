@@ -7,31 +7,31 @@ const FPLDataSync = () => {
   const [error, setError] = useState('');
   const [lastSync, setLastSync] = useState(null);
 
-  const handleSyncPlayers = async () => {
+  const handleSyncPlayers = async() => {
     setLoading(true);
     setError('');
     setStatus('');
 
     try {
       setStatus('Syncing Chelsea players from FPL API to database...');
-      
+
       const response = await fetch('/api/fpl-sync?action=sync-chelsea-players', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
 
       if (!response.ok) {
         const errorData = await response.json();
+
         throw new Error(errorData.details || `HTTP ${response.status}`);
       }
 
       const result = await response.json();
-      
+
       setStatus(`✅ Successfully synced ${result.data.totalPlayers} Chelsea players to database! (${result.data.playersCreated} created, ${result.data.playersUpdated} updated)`);
       setLastSync(new Date().toLocaleString());
-      
     } catch (err) {
       console.error('Sync failed:', err);
       setError(`Failed to sync players: ${err.message}`);
@@ -40,25 +40,24 @@ const FPLDataSync = () => {
     }
   };
 
-  const handleTestConnection = async () => {
+  const handleTestConnection = async() => {
     setLoading(true);
     setError('');
     setStatus('');
 
     try {
       setStatus('Testing FPL API connection...');
-      
+
       const response = await fetch('/api/fpl?action=bootstrap');
-      
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
       const chelseaPlayers = data.elements.filter(player => player.team === 4);
-      
+
       setStatus(`✅ FPL API connection successful! Found ${chelseaPlayers.length} Chelsea players.`);
-      
     } catch (err) {
       console.error('Connection test failed:', err);
       setError(`FPL API connection failed: ${err.message}`);
@@ -74,11 +73,11 @@ const FPLDataSync = () => {
           <Database className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-semibold text-gray-900">FPL Data Sync</h2>
         </div>
-        <a 
-          href="https://fantasy.premierleague.com/api/bootstrap-static/" 
-          target="_blank" 
-          rel="noopener noreferrer"
+        <a
           className="flex items-center space-x-2 text-sm text-blue-600 hover:text-blue-800"
+          href="https://fantasy.premierleague.com/api/bootstrap-static/"
+          rel="noopener noreferrer"
+          target="_blank"
         >
           <ExternalLink className="w-4 h-4" />
           <span>FPL API</span>
@@ -104,25 +103,27 @@ const FPLDataSync = () => {
         {/* Last Sync Info */}
         {lastSync && (
           <div className="text-sm text-gray-600">
-            Last sync: {lastSync}
+            Last sync:
+            {' '}
+            {lastSync}
           </div>
         )}
 
         {/* Action Buttons */}
         <div className="flex space-x-3">
           <button
-            onClick={handleTestConnection}
-            disabled={loading}
             className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+            onClick={handleTestConnection}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Test FPL API</span>
           </button>
 
           <button
-            onClick={handleSyncPlayers}
-            disabled={loading}
             className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading}
+            onClick={handleSyncPlayers}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             <span>Sync Chelsea Players</span>

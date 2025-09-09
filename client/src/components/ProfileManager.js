@@ -26,7 +26,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
   const [showInitialPasswordForm, setShowInitialPasswordForm] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async() => {
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -57,10 +57,10 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     }
   }, [userId, fetchProfile]);
 
-  const handleProfileUpdate = async (updates) => {
+  const handleProfileUpdate = async(updates) => {
     try {
       setLoading(true);
-      
+
       // Add updated_at timestamp
       const updatesWithTimestamp = {
         ...updates,
@@ -73,7 +73,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         .eq('id', userId)
         .select()
         .single();
-      
+
       if (error) {
         throw error;
       }
@@ -98,9 +98,9 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     }
   };
 
-  const handlePasswordChange = async (e) => {
+  const handlePasswordChange = async(e) => {
     e.preventDefault();
-    
+
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       setMessage({
         type: 'error',
@@ -152,9 +152,9 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     }
   };
 
-  const handleUsernameChange = async (e) => {
+  const handleUsernameChange = async(e) => {
     e.preventDefault();
-    
+
     if (usernameForm.newUsername.length < 3) {
       setMessage({
         type: 'error',
@@ -184,7 +184,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
       // Update username in the users table
       const { error: updateError } = await supabase
         .from('users')
-        .update({ 
+        .update({
           username: usernameForm.newUsername,
           updated_at: new Date().toISOString()
         })
@@ -221,9 +221,9 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     }
   };
 
-  const handleInitialPasswordSet = async (e) => {
+  const handleInitialPasswordSet = async(e) => {
     e.preventDefault();
-    
+
     if (initialPasswordForm.newPassword !== initialPasswordForm.confirmPassword) {
       setMessage({
         type: 'error',
@@ -296,12 +296,12 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     try {
       const updates = {};
       const form = document.getElementById('profile-form');
-      
+
       if (!form) {
         console.error('Profile form not found');
         return;
       }
-      
+
       const formData = new FormData(form);
 
       for (const [key, value] of formData.entries()) {
@@ -325,7 +325,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -348,8 +348,8 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         </h2>
         {!editing && (
           <button
-            onClick={() => setEditing(true)}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => setEditing(true)}
           >
             <Edit3 className="mr-2 h-4 w-4" />
             Edit Profile
@@ -359,11 +359,13 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
       {/* Message Display */}
       {message.text && (
-        <div className={`mb-4 p-3 rounded-lg ${
-          message.type === 'success' 
-            ? 'bg-green-100 text-green-800 border border-green-200' 
-            : 'bg-red-100 text-red-800 border border-red-200'
-        }`}>
+        <div
+          className={`mb-4 p-3 rounded-lg ${
+            message.type === 'success' ?
+              'bg-green-100 text-green-800 border border-green-200' :
+              'bg-red-100 text-red-800 border border-red-200'
+          }`}
+        >
           {message.text}
         </div>
       )}
@@ -372,18 +374,18 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         {/* Profile Picture Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-700">Profile Picture</h3>
-          
+
           <div className="text-center">
             {profile.profilePicture ? (
               <div className="relative inline-block">
                 <img
-                  src={profile.profilePicture}
                   alt="Profile"
                   className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                  src={profile.profilePicture}
                 />
                 <button
-                  onClick={() => setShowPictureUpload(true)}
                   className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 transition-colors"
+                  onClick={() => setShowPictureUpload(true)}
                   title="Update profile picture"
                 >
                   <Camera className="h-4 w-4" />
@@ -398,8 +400,8 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
           <div className="text-center">
             <button
-              onClick={() => setShowPictureUpload(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => setShowPictureUpload(true)}
             >
               <Camera className="mr-2 h-4 w-4" />
               {profile.profilePicture ? 'Update Picture' : 'Add Picture'}
@@ -410,18 +412,18 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         {/* Profile Information Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-700">Profile Information</h3>
-          
-          <form id="profile-form" className="space-y-4">
+
+          <form className="space-y-4" id="profile-form">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Username
               </label>
               <input
-                type="text"
-                name="username"
-                value={profile.username}
-                disabled
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                disabled
+                name="username"
+                type="text"
+                value={profile.username}
               />
             </div>
 
@@ -430,15 +432,15 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 Display Name
               </label>
               <input
-                type="text"
-                name="displayName"
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  editing ?
+                    'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' :
+                    'border-gray-300 bg-gray-50'
+                }`}
                 defaultValue={profile.displayName}
                 disabled={!editing}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  editing 
-                    ? 'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
-                    : 'border-gray-300 bg-gray-50'
-                }`}
+                name="displayName"
+                type="text"
               />
             </div>
 
@@ -447,32 +449,32 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 Email
               </label>
               <input
-                type="email"
-                name="email"
+                className={`w-full px-3 py-2 border rounded-lg ${
+                  editing ?
+                    'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' :
+                    'border-gray-300 bg-gray-50'
+                }`}
                 defaultValue={profile.email || ''}
                 disabled={!editing}
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  editing 
-                    ? 'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' 
-                    : 'border-gray-300 bg-gray-50'
-                }`}
+                name="email"
+                type="email"
               />
             </div>
 
             {editing && (
               <div className="flex space-x-3 pt-2">
                 <button
-                  type="button"
-                  onClick={handleSaveProfile}
                   className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  onClick={handleSaveProfile}
+                  type="button"
                 >
                   <Save className="mr-2 h-4 w-4" />
                   Save Changes
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setEditing(false)}
                   className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  onClick={() => setEditing(false)}
+                  type="button"
                 >
                   Cancel
                 </button>
@@ -490,28 +492,28 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
             Change Password
           </h3>
           <button
-            onClick={() => setShowPasswordForm(!showPasswordForm)}
             className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+            onClick={() => setShowPasswordForm(!showPasswordForm)}
           >
             {showPasswordForm ? 'Cancel' : 'Change Password'}
           </button>
         </div>
 
         {showPasswordForm && (
-          <form onSubmit={handlePasswordChange} className="max-w-md space-y-4">
+          <form className="max-w-md space-y-4" onSubmit={handlePasswordChange}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Current Password
               </label>
               <input
-                type="password"
-                value={passwordForm.currentPassword}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 onChange={(e) => setPasswordForm({
                   ...passwordForm,
                   currentPassword: e.target.value
                 })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                type="password"
+                value={passwordForm.currentPassword}
               />
             </div>
 
@@ -520,15 +522,15 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 New Password
               </label>
               <input
-                type="password"
-                value={passwordForm.newPassword}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                minLength="6"
                 onChange={(e) => setPasswordForm({
                   ...passwordForm,
                   newPassword: e.target.value
                 })}
                 required
-                minLength="6"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                type="password"
+                value={passwordForm.newPassword}
               />
             </div>
 
@@ -537,25 +539,25 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 Confirm New Password
               </label>
               <input
-                type="password"
-                value={passwordForm.confirmPassword}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                minLength="6"
                 onChange={(e) => setPasswordForm({
                   ...passwordForm,
                   confirmPassword: e.target.value
                 })}
                 required
-                minLength="6"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                type="password"
+                value={passwordForm.confirmPassword}
               />
             </div>
 
             <button
-              type="submit"
-              disabled={loading}
               className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              disabled={loading}
+              type="submit"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
               ) : (
                 <>
                   <Lock className="mr-2 h-4 w-4" />
@@ -575,28 +577,28 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
             Change Username
           </h3>
           <button
-            onClick={() => setShowUsernameForm(!showUsernameForm)}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            onClick={() => setShowUsernameForm(!showUsernameForm)}
           >
             {showUsernameForm ? 'Cancel' : 'Change Username'}
           </button>
         </div>
 
         {showUsernameForm && (
-          <form onSubmit={handleUsernameChange} className="max-w-md space-y-4">
+          <form className="max-w-md space-y-4" onSubmit={handleUsernameChange}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Current Password
               </label>
               <input
-                type="password"
-                value={usernameForm.currentPassword}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 onChange={(e) => setUsernameForm({
                   ...usernameForm,
                   currentPassword: e.target.value
                 })}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                type="password"
+                value={usernameForm.currentPassword}
               />
             </div>
 
@@ -605,17 +607,17 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 New Username
               </label>
               <input
-                type="text"
-                value={usernameForm.newUsername}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                maxLength="20"
+                minLength="3"
                 onChange={(e) => setUsernameForm({
                   ...usernameForm,
                   newUsername: e.target.value
                 })}
-                required
-                minLength="3"
-                maxLength="20"
                 pattern="[a-zA-Z0-9_]+"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                required
+                type="text"
+                value={usernameForm.newUsername}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Username must be 3-20 characters long and can only contain letters, numbers, and underscores.
@@ -623,12 +625,12 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
             </div>
 
             <button
-              type="submit"
-              disabled={loading}
               className="w-full flex items-center justify-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+              disabled={loading}
+              type="submit"
             >
               {loading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
               ) : (
                 <>
                   <User className="mr-2 h-4 w-4" />
@@ -649,29 +651,29 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
               Set Initial Password
             </h3>
             <button
-              onClick={() => setShowInitialPasswordForm(!showInitialPasswordForm)}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              onClick={() => setShowInitialPasswordForm(!showInitialPasswordForm)}
             >
               {showInitialPasswordForm ? 'Cancel' : 'Set Password'}
             </button>
           </div>
 
           {showInitialPasswordForm && (
-            <form onSubmit={handleInitialPasswordSet} className="max-w-md space-y-4">
+            <form className="max-w-md space-y-4" onSubmit={handleInitialPasswordSet}>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   New Password
                 </label>
                 <input
-                  type="password"
-                  value={initialPasswordForm.newPassword}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  minLength="6"
                   onChange={(e) => setInitialPasswordForm({
                     ...initialPasswordForm,
                     newPassword: e.target.value
                   })}
                   required
-                  minLength="6"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  type="password"
+                  value={initialPasswordForm.newPassword}
                 />
               </div>
 
@@ -680,25 +682,25 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                   Confirm New Password
                 </label>
                 <input
-                  type="password"
-                  value={initialPasswordForm.confirmPassword}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  minLength="6"
                   onChange={(e) => setInitialPasswordForm({
                     ...initialPasswordForm,
                     confirmPassword: e.target.value
                   })}
                   required
-                  minLength="6"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  type="password"
+                  value={initialPasswordForm.confirmPassword}
                 />
               </div>
 
               <button
-                type="submit"
-                disabled={loading}
                 className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                disabled={loading}
+                type="submit"
               >
                 {loading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
                 ) : (
                   <>
                     <Lock className="mr-2 h-4 w-4" />
@@ -708,19 +710,19 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
               </button>
             </form>
           )}
-                </div>
+        </div>
       )}
-      
+
       {/* Profile Picture Upload Modal */}
       {showPictureUpload && (
         <ProfilePictureUpload
-          userId={userId}
           currentPicture={profile?.profilePicture}
-          onPictureUpdate={handleProfilePictureUpdate}
           onClose={() => setShowPictureUpload(false)}
+          onPictureUpdate={handleProfilePictureUpdate}
+          userId={userId}
         />
       )}
-      
+
       {/* User Activity Section - Admin Only */}
       {profile && profile.isAdmin && (
         <div className="mt-8 pt-6 border-t border-gray-200">
@@ -733,11 +735,11 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
               View detailed activity logs for all users (Admin only)
             </p>
           </div>
-          
-          <UserActivity userId={userId} isAdmin={true} />
+
+          <UserActivity isAdmin={true} userId={userId} />
         </div>
       )}
-      
+
       {/* Stats Section */}
       <div className="mt-8 pt-6 border-t border-gray-200">
         <h3 className="text-lg font-semibold text-gray-700 mb-4">Account Statistics</h3>

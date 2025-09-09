@@ -5,6 +5,7 @@ const ToastContext = createContext();
 
 export const useToast = () => {
   const context = useContext(ToastContext);
+
   if (!context) {
     throw new Error('useToast must be used within a ToastProvider');
   }
@@ -17,9 +18,9 @@ export const ToastProvider = ({ children }) => {
   const addToast = useCallback((message, type = 'info', duration = 5000) => {
     const id = Date.now() + Math.random();
     const newToast = { id, message, type, duration };
-    
+
     setToasts(prev => [...prev, newToast]);
-    
+
     return id;
   }, []);
 
@@ -49,22 +50,22 @@ export const ToastProvider = ({ children }) => {
     showSuccess,
     showError,
     showWarning,
-    showInfo,
+    showInfo
   };
 
   return (
     <ToastContext.Provider value={value}>
       {children}
-      
+
       {/* Toast container */}
       <div className="fixed top-4 right-4 z-50 space-y-2">
         {toasts.map(toast => (
           <Toast
+            duration={toast.duration}
             key={toast.id}
             message={toast.message}
-            type={toast.type}
-            duration={toast.duration}
             onClose={() => removeToast(toast.id)}
+            type={toast.type}
           />
         ))}
       </div>

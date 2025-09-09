@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  TrendingUp, 
-  Users, 
-  Trophy, 
-  Clock, 
-  Zap, 
+import {
+  TrendingUp,
+  Users,
+  Trophy,
+  Clock,
+  Zap,
   Activity,
   ChevronRight,
   RefreshCw
@@ -20,12 +20,12 @@ function Dashboard({ wsService }) {
 
   useEffect(() => {
     fetchDashboardData();
-    
+
     // Subscribe to WebSocket updates
     if (wsService) {
       const unsubscribeLive = wsService.subscribe('liveUpdate', handleLiveUpdate);
       const unsubscribeQuick = wsService.subscribe('quickLiveUpdate', handleQuickUpdate);
-      
+
       return () => {
         unsubscribeLive();
         unsubscribeQuick();
@@ -33,12 +33,12 @@ function Dashboard({ wsService }) {
     }
   }, [wsService]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async() => {
     try {
       setLoading(true);
       const response = await fetch('/api/fpl?action=dashboard');
       const data = await response.json();
-      
+
       if (data && data.success) {
         setDashboardData(data.data);
         setLastUpdate(new Date());
@@ -88,8 +88,8 @@ function Dashboard({ wsService }) {
           <p className="text-sm">{error}</p>
         </div>
         <button
-          onClick={fetchDashboardData}
           className="fpl-button-primary"
+          onClick={fetchDashboardData}
         >
           <RefreshCw className="w-4 h-4 inline mr-2" />
           Retry
@@ -108,18 +108,24 @@ function Dashboard({ wsService }) {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">FPL Dashboard</h1>
           <p className="text-gray-600 mt-1">
-            Gameweek {currentGameweek} {isLive && (
+            Gameweek
+            {' '}
+            {currentGameweek}
+            {' '}
+            {isLive && (
               <span className="inline-flex items-center px-2 py-1 ml-2 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                <span className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse"></span>
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-1 animate-pulse" />
                 LIVE
               </span>
             )}
           </p>
         </div>
-        
+
         {lastUpdate && (
           <div className="text-sm text-gray-500">
-            Last updated: {lastUpdate.toLocaleTimeString()}
+            Last updated:
+            {' '}
+            {lastUpdate.toLocaleTimeString()}
           </div>
         )}
       </div>
@@ -127,32 +133,32 @@ function Dashboard({ wsService }) {
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
+          color="blue"
           icon={Users}
+          subtitle="in database"
           title="Total Players"
           value={summary.totalPlayers.toLocaleString()}
-          subtitle="in database"
-          color="blue"
         />
         <StatCard
+          color="green"
           icon={Trophy}
+          subtitle="Premier League"
           title="Teams"
           value={summary.totalTeams}
-          subtitle="Premier League"
-          color="green"
         />
         <StatCard
+          color="purple"
           icon={Clock}
+          subtitle="completed"
           title="Gameweeks"
           value={`${currentGameweek}/${summary.totalGameweeks}`}
-          subtitle="completed"
-          color="purple"
         />
         <StatCard
+          color={isLive ? 'red' : 'gray'}
           icon={Zap}
+          subtitle={isLive ? 'in progress' : 'completed'}
           title="Live Fixtures"
           value={fixtures.length}
-          subtitle={isLive ? "in progress" : "completed"}
-          color={isLive ? "red" : "gray"}
         />
       </div>
 
@@ -168,7 +174,7 @@ function Dashboard({ wsService }) {
               </span>
             )}
           </div>
-          
+
           {liveData.liveStats && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-white rounded-lg p-4">
@@ -199,25 +205,30 @@ function Dashboard({ wsService }) {
         <div className="fpl-card p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Top Performers</h2>
-            <Link 
-              to="/players" 
+            <Link
               className="text-fpl-primary hover:text-fpl-primary/80 flex items-center space-x-1"
+              to="/players"
             >
               <span>View all</span>
               <ChevronRight className="w-4 h-4" />
             </Link>
           </div>
-          
+
           <div className="space-y-4">
             {topPerformers.map((player, index) => (
-              <div key={player.id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50">
+              <div className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50" key={player.id}>
                 <div className="flex-shrink-0 w-8 h-8 bg-fpl-primary text-white rounded-full flex items-center justify-center font-medium">
                   {index + 1}
                 </div>
                 <div className="flex-1">
                   <div className="font-medium text-gray-900">{player.name}</div>
                   <div className="text-sm text-gray-500">
-                    {player.goals} goals, {player.assists} assists
+                    {player.goals}
+                    {' '}
+                    goals,
+                    {player.assists}
+                    {' '}
+                    assists
                   </div>
                 </div>
                 <div className="text-right">
@@ -234,15 +245,15 @@ function Dashboard({ wsService }) {
       <div className="fpl-card p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-900">Recent Fixtures</h2>
-          <Link 
-            to="/live" 
+          <Link
             className="text-fpl-primary hover:text-fpl-primary/80 flex items-center space-x-1"
+            to="/live"
           >
             <span>Live tracker</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
-        
+
         {fixtures.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -251,7 +262,7 @@ function Dashboard({ wsService }) {
         ) : (
           <div className="space-y-3">
             {fixtures.slice(0, 5).map((fixture) => (
-              <FixtureCard key={fixture.id} fixture={fixture} teams={dashboardData?.summary?.teams || []} />
+              <FixtureCard fixture={fixture} key={fixture.id} teams={dashboardData?.summary?.teams || []} />
             ))}
           </div>
         )}
@@ -260,25 +271,25 @@ function Dashboard({ wsService }) {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <ActionCard
-          to="/live"
+          color="red"
+          description="Follow live scores and player performance"
           icon={TrendingUp}
           title="Live Tracker"
-          description="Follow live scores and player performance"
-          color="red"
+          to="/live"
         />
         <ActionCard
-          to="/leagues"
+          color="green"
+          description="Check your mini-league positions"
           icon={Trophy}
           title="League Standings"
-          description="Check your mini-league positions"
-          color="green"
+          to="/leagues"
         />
         <ActionCard
-          to="/players"
+          color="blue"
+          description="Detailed stats and performance data"
           icon={Users}
           title="Player Analysis"
-          description="Detailed stats and performance data"
-          color="blue"
+          to="/players"
         />
       </div>
     </div>
@@ -313,16 +324,17 @@ function StatCard({ icon: Icon, title, value, subtitle, color }) {
 function FixtureCard({ fixture, teams = [] }) {
   const isFinished = fixture.finished;
   const hasStarted = fixture.started;
-  
+
   // Get team names from the teams data
   const getTeamName = (teamId) => {
     const team = teams.find(t => t.id === teamId);
+
     return team ? team.short_name : `Team ${teamId}`;
   };
-  
+
   const homeTeam = getTeamName(fixture.team_h);
   const awayTeam = getTeamName(fixture.team_a);
-  
+
   return (
     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
       <div className="flex items-center space-x-4">
@@ -332,11 +344,14 @@ function FixtureCard({ fixture, teams = [] }) {
           <div className="font-medium text-gray-900 truncate">{awayTeam}</div>
         </div>
       </div>
-      
+
       <div className="text-right">
         {isFinished ? (
           <div className="text-lg font-bold text-gray-900">
-            {fixture.team_h_score} - {fixture.team_a_score}
+            {fixture.team_h_score}
+            {' '}
+            -
+            {fixture.team_a_score}
           </div>
         ) : hasStarted ? (
           <div className="text-sm font-medium text-red-600">LIVE</div>
@@ -358,7 +373,7 @@ function ActionCard({ to, icon: Icon, title, description, color }) {
   };
 
   return (
-    <Link to={to} className="group">
+    <Link className="group" to={to}>
       <div className="fpl-card p-6 group-hover:shadow-lg transition-all duration-200">
         <div className={`p-3 rounded-lg ${colorClasses[color]} inline-flex mb-4`}>
           <Icon className="w-6 h-6" />

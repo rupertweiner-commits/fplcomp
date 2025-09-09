@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  TrendingUp, 
-  Clock, 
-  Zap, 
-  RefreshCw, 
+import {
+  Activity,
+  TrendingUp,
+  Clock,
+  Zap,
+  RefreshCw,
   Users,
   Target,
   Award
@@ -24,12 +24,12 @@ function LiveTracker({ wsService }) {
 
   useEffect(() => {
     fetchInitialData();
-    
+
     // Subscribe to WebSocket updates
     if (wsService) {
       const unsubscribeLive = wsService.subscribe('liveUpdate', handleLiveUpdate);
       const unsubscribeQuick = wsService.subscribe('quickLiveUpdate', handleQuickUpdate);
-      
+
       return () => {
         unsubscribeLive();
         unsubscribeQuick();
@@ -37,14 +37,15 @@ function LiveTracker({ wsService }) {
     }
   }, [wsService]);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = async() => {
     try {
       setLoading(true);
-      
+
       // Get current gameweek
       const gwResponse = await fetch('/api/fpl?action=current-gameweek');
       const gwData = await gwResponse.json();
       const gameweek = gwData.data || 1;
+
       setCurrentGameweek(gameweek);
 
       // Fetch gameweek data in parallel
@@ -59,11 +60,12 @@ function LiveTracker({ wsService }) {
       setFixtures(fixturesResponse.data);
       setTopPerformers(performersResponse.data);
       setTeams(bootstrapResponse.data.teams);
-      
+
       // Check if any fixtures are live
       const liveFixtures = fixturesResponse.data.filter(f => f.started && !f.finished);
+
       setIsLive(liveFixtures.length > 0);
-      
+
       setError(null);
     } catch (err) {
       console.error('Error fetching live data:', err);
@@ -75,17 +77,17 @@ function LiveTracker({ wsService }) {
 
   const handleLiveUpdate = (data) => {
     console.log('Live update received:', data);
-    
+
     setIsLive(data.isLive);
     setLastUpdate(new Date(data.timestamp));
-    
+
     if (data.liveStats) {
       // Update top performers if available
       if (data.liveStats.topPerformers) {
         setTopPerformers(data.liveStats.topPerformers);
       }
     }
-    
+
     // Add to live updates feed
     setLiveUpdates(prev => [
       {
@@ -101,9 +103,9 @@ function LiveTracker({ wsService }) {
 
   const handleQuickUpdate = (data) => {
     console.log('Quick update received:', data);
-    
+
     setLastUpdate(new Date(data.timestamp));
-    
+
     // Add to live updates feed
     setLiveUpdates(prev => [
       {
@@ -144,7 +146,7 @@ function LiveTracker({ wsService }) {
           <p className="text-lg font-medium">Failed to load live data</p>
           <p className="text-sm">{error}</p>
         </div>
-        <button onClick={refreshData} className="fpl-button-primary">
+        <button className="fpl-button-primary" onClick={refreshData}>
           <RefreshCw className="w-4 h-4 inline mr-2" />
           Retry
         </button>
@@ -162,25 +164,31 @@ function LiveTracker({ wsService }) {
             <span>Live Tracker</span>
             {isLive && (
               <span className="inline-flex items-center px-3 py-1 text-sm font-medium bg-red-100 text-red-800 rounded-full">
-                <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse"></span>
+                <span className="w-2 h-2 bg-red-500 rounded-full mr-2 animate-pulse" />
                 LIVE
               </span>
             )}
           </h1>
           <p className="text-gray-600 mt-1">
-            Gameweek {currentGameweek} - Real-time player performance
+            Gameweek
+            {' '}
+            {currentGameweek}
+            {' '}
+            - Real-time player performance
           </p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           {lastUpdate && (
             <div className="text-sm text-gray-500">
-              Last update: {lastUpdate.toLocaleTimeString()}
+              Last update:
+              {' '}
+              {lastUpdate.toLocaleTimeString()}
             </div>
           )}
-          <button 
-            onClick={refreshData}
+          <button
             className="fpl-button-secondary"
+            onClick={refreshData}
           >
             <RefreshCw className="w-4 h-4 inline mr-2" />
             Refresh
@@ -191,37 +199,37 @@ function LiveTracker({ wsService }) {
       {/* Live Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <LiveStatCard
+          color="blue"
           icon={Users}
+          isLive={isLive}
+          subtitle="scoring today"
           title="Players with Points"
           value={gameweekData?.elements.filter(p => p.stats.total_points > 0).length || 0}
-          subtitle="scoring today"
-          color="blue"
-          isLive={isLive}
         />
         <LiveStatCard
+          color="green"
           icon={Target}
+          isLive={isLive}
+          subtitle="total goals"
           title="Goals Scored"
           value={gameweekData?.elements.reduce((sum, p) => sum + (p.stats.goals_scored || 0), 0) || 0}
-          subtitle="total goals"
-          color="green"
-          isLive={isLive}
         />
         <LiveStatCard
+          color="purple"
           icon={Award}
+          isLive={isLive}
+          subtitle="total assists"
           title="Assists"
           value={gameweekData?.elements.reduce((sum, p) => sum + (p.stats.assists || 0), 0) || 0}
-          subtitle="total assists"
-          color="purple"
-          isLive={isLive}
         />
         <LiveStatCard
-          icon={Zap}
-          title="Average Score"
-          value={gameweekData?.elements.length > 0 ? 
-            Math.round(gameweekData.elements.reduce((sum, p) => sum + (p.stats.total_points || 0), 0) / gameweekData.elements.length * 10) / 10 : 0}
-          subtitle="points per player"
           color="orange"
+          icon={Zap}
           isLive={isLive}
+          subtitle="points per player"
+          title="Average Score"
+          value={gameweekData?.elements.length > 0 ?
+            Math.round(gameweekData.elements.reduce((sum, p) => sum + (p.stats.total_points || 0), 0) / gameweekData.elements.length * 10) / 10 : 0}
         />
       </div>
 
@@ -233,7 +241,7 @@ function LiveTracker({ wsService }) {
               <TrendingUp className="w-5 h-5 text-fpl-primary" />
               <span>Top Performers</span>
             </h2>
-            
+
             {topPerformers.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Users className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -242,11 +250,11 @@ function LiveTracker({ wsService }) {
             ) : (
               <div className="space-y-4">
                 {topPerformers.map((player, index) => (
-                  <PlayerPerformanceCard 
-                    key={player.id} 
-                    player={player} 
-                    rank={index + 1}
+                  <PlayerPerformanceCard
                     isLive={isLive}
+                    key={player.id}
+                    player={player}
+                    rank={index + 1}
                   />
                 ))}
               </div>
@@ -260,7 +268,7 @@ function LiveTracker({ wsService }) {
             <Activity className="w-5 h-5 text-fpl-primary" />
             <span>Live Updates</span>
           </h2>
-          
+
           {liveUpdates.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -281,9 +289,14 @@ function LiveTracker({ wsService }) {
       <div className="fpl-card p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center space-x-2">
           <Clock className="w-5 h-5 text-fpl-primary" />
-          <span>Gameweek {currentGameweek} Fixtures</span>
+          <span>
+            Gameweek
+            {currentGameweek}
+            {' '}
+            Fixtures
+          </span>
         </h2>
-        
+
         {fixtures.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -292,7 +305,7 @@ function LiveTracker({ wsService }) {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {fixtures.map((fixture) => (
-              <FixtureCard key={fixture.id} fixture={fixture} teams={teams} />
+              <FixtureCard fixture={fixture} key={fixture.id} teams={teams} />
             ))}
           </div>
         )}
@@ -328,24 +341,35 @@ function LiveStatCard({ icon: Icon, title, value, subtitle, color, isLive }) {
 function PlayerPerformanceCard({ player, rank, isLive }) {
   return (
     <div className={`flex items-center space-x-4 p-4 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors ${isLive ? 'animate-fade-in' : ''}`}>
-      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
-        rank === 1 ? 'bg-yellow-500' : 
-        rank === 2 ? 'bg-gray-400' : 
-        rank === 3 ? 'bg-amber-600' : 
-        'bg-fpl-primary'
-      }`}>
+      <div
+        className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-bold text-white ${
+          rank === 1 ? 'bg-yellow-500' :
+            rank === 2 ? 'bg-gray-400' :
+              rank === 3 ? 'bg-amber-600' :
+                'bg-fpl-primary'
+        }`}
+      >
         {rank}
       </div>
-      
+
       <div className="flex-1">
         <div className="font-medium text-gray-900">{player.name || `Player ${player.id}`}</div>
         <div className="text-sm text-gray-500 space-x-4">
-          <span>⚽ {player.goals || 0}</span>
-          <span>🅰️ {player.assists || 0}</span>
-          {player.saves && <span>🧤 {player.saves}</span>}
+          <span>
+            ⚽
+            {player.goals || 0}
+          </span>
+          <span>
+            🅰️
+            {player.assists || 0}
+          </span>
+          {player.saves && <span>
+            🧤
+            {player.saves}
+                           </span>}
         </div>
       </div>
-      
+
       <div className="text-right">
         <div className={`text-xl font-bold ${rank <= 3 ? 'text-fpl-primary' : 'text-gray-900'}`}>
           {player.points}
@@ -386,37 +410,43 @@ function LiveUpdateCard({ update }) {
 function FixtureCard({ fixture, teams = [] }) {
   const isLive = fixture.started && !fixture.finished;
   const isFinished = fixture.finished;
-  
+
   // Get team names from the teams data
   const getTeamName = (teamId) => {
     const team = teams.find(t => t.id === teamId);
+
     return team ? team.short_name : `Team ${teamId}`;
   };
-  
+
   const homeTeam = getTeamName(fixture.team_h);
   const awayTeam = getTeamName(fixture.team_a);
-  
+
   return (
-    <div className={`p-4 rounded-lg border-2 transition-colors ${
-      isLive ? 'border-red-300 bg-red-50' : 
-      isFinished ? 'border-gray-200 bg-white' : 
-      'border-blue-200 bg-blue-50'
-    }`}>
+    <div
+      className={`p-4 rounded-lg border-2 transition-colors ${
+        isLive ? 'border-red-300 bg-red-50' :
+          isFinished ? 'border-gray-200 bg-white' :
+            'border-blue-200 bg-blue-50'
+      }`}
+    >
       <div className="text-center">
         <div className="flex items-center justify-between mb-2">
           <div className="text-sm font-medium">{homeTeam}</div>
           <div className="text-xs text-gray-500">vs</div>
           <div className="text-sm font-medium">{awayTeam}</div>
         </div>
-        
+
         {isFinished ? (
           <div className="text-lg font-bold text-gray-900">
-            {fixture.team_h_score} - {fixture.team_a_score}
+            {fixture.team_h_score}
+            {' '}
+            -
+            {fixture.team_a_score}
           </div>
         ) : isLive ? (
           <div className="flex items-center justify-center space-x-2">
             <span className="text-sm font-medium text-red-600">LIVE</span>
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           </div>
         ) : (
           <div className="text-sm text-gray-500">

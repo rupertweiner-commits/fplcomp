@@ -9,7 +9,7 @@ export class WebSocketService {
     // Do absolutely nothing - prevent any instantiation side effects
     console.log('🚫 WebSocketService: Constructor called - service is disabled');
     console.log('🚫 WebSocketService: No connections will be attempted');
-    
+
     // Override any properties that might be accessed
     this.ws = null;
     this.reconnectAttempts = 0;

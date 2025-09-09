@@ -14,6 +14,7 @@ function LeagueStandings() {
   useEffect(() => {
     // Load search history from localStorage
     const saved = localStorage.getItem('fpl-league-history');
+
     if (saved) {
       try {
         setSearchHistory(JSON.parse(saved));
@@ -23,7 +24,7 @@ function LeagueStandings() {
     }
   }, []);
 
-  const fetchLeagueData = async (id = leagueId, page = 1) => {
+  const fetchLeagueData = async(id = leagueId, page = 1) => {
     if (!id || !id.trim()) {
       setError('Please enter a league ID');
       return;
@@ -32,23 +33,24 @@ function LeagueStandings() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await fetch(`/api/fpl?action=league&id=${id.trim()}&page=${page}`);
       const data = await response.json();
+
       setLeagueData(data.data);
       setCurrentPage(page);
-      
+
       // Add to search history
       const historyItem = {
         id: id.trim(),
         name: response.data.data.league.name,
         timestamp: new Date().toISOString()
       };
-      
+
       const newHistory = [historyItem, ...searchHistory.filter(item => item.id !== id.trim())].slice(0, 5);
+
       setSearchHistory(newHistory);
       localStorage.setItem('fpl-league-history', JSON.stringify(newHistory));
-      
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to fetch league data');
       setLeagueData(null);
@@ -80,12 +82,12 @@ function LeagueStandings() {
 
   const getSortedStandings = () => {
     if (!leagueData?.standings?.results) return [];
-    
+
     const sorted = [...leagueData.standings.results];
-    
+
     sorted.sort((a, b) => {
-      let aVal, bVal;
-      
+      let aVal; let bVal;
+
       switch (sortBy) {
         case 'rank':
           aVal = a.rank;
@@ -110,27 +112,27 @@ function LeagueStandings() {
         default:
           return 0;
       }
-      
+
       if (sortOrder === 'asc') {
         return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
       } else {
         return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
       }
     });
-    
+
     return sorted;
   };
 
   const SortHeader = ({ field, children, className = '' }) => (
-    <th 
+    <th
       className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 ${className}`}
       onClick={() => handleSort(field)}
     >
       <div className="flex items-center space-x-1">
         <span>{children}</span>
         {sortBy === field && (
-          sortOrder === 'asc' ? 
-            <ChevronUp className="w-4 h-4" /> : 
+          sortOrder === 'asc' ?
+            <ChevronUp className="w-4 h-4" /> :
             <ChevronDown className="w-4 h-4" />
         )}
       </div>
@@ -152,30 +154,30 @@ function LeagueStandings() {
 
       {/* Search Form */}
       <div className="fpl-card p-6">
-        <form onSubmit={handleSearch} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSearch}>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
             <div className="flex-1">
-              <label htmlFor="leagueId" className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="leagueId">
                 League ID
               </label>
               <input
-                type="text"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fpl-primary focus:border-transparent"
                 id="leagueId"
-                value={leagueId}
                 onChange={(e) => setLeagueId(e.target.value)}
                 placeholder="Enter league ID (e.g., 314)"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-fpl-primary focus:border-transparent"
+                type="text"
+                value={leagueId}
               />
               <p className="text-xs text-gray-500 mt-1">
                 Find your league ID in the URL when viewing your league on the FPL website
               </p>
             </div>
-            
+
             <div className="flex-shrink-0 flex items-end">
               <button
-                type="submit"
-                disabled={loading}
                 className="fpl-button-primary flex items-center space-x-2"
+                disabled={loading}
+                type="submit"
               >
                 {loading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -195,11 +197,15 @@ function LeagueStandings() {
             <div className="flex flex-wrap gap-2">
               {searchHistory.map((item) => (
                 <button
+                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
                   key={item.id}
                   onClick={() => handleHistoryClick(item.id)}
-                  className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
                 >
-                  {item.name} (ID: {item.id})
+                  {item.name}
+                  {' '}
+                  (ID:
+                  {item.id}
+                  )
                 </button>
               ))}
             </div>
@@ -227,13 +233,23 @@ function LeagueStandings() {
                 <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                   <span className="flex items-center space-x-1">
                     <Users className="w-4 h-4" />
-                    <span>{leagueData.standings.results.length} managers</span>
+                    <span>
+                      {leagueData.standings.results.length}
+                      {' '}
+                      managers
+                    </span>
                   </span>
-                  <span>League ID: {leagueData.league.id}</span>
-                  <span>Admin: {leagueData.league.admin_entry || 'N/A'}</span>
+                  <span>
+                    League ID:
+                    {leagueData.league.id}
+                  </span>
+                  <span>
+                    Admin:
+                    {leagueData.league.admin_entry || 'N/A'}
+                  </span>
                 </div>
               </div>
-              
+
               <div className="text-right">
                 <div className="text-sm text-gray-500">Created</div>
                 <div className="font-medium">
@@ -248,10 +264,16 @@ function LeagueStandings() {
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Current Standings</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Page {currentPage} of {Math.ceil((leagueData.standings.has_next ? 50 : leagueData.standings.results.length) / 50)}
+                Page
+                {' '}
+                {currentPage}
+                {' '}
+                of
+                {' '}
+                {Math.ceil((leagueData.standings.has_next ? 50 : leagueData.standings.results.length) / 50)}
               </p>
             </div>
-            
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -268,11 +290,11 @@ function LeagueStandings() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {getSortedStandings().map((entry, index) => (
-                    <StandingsRow 
-                      key={entry.entry} 
-                      entry={entry} 
+                    <StandingsRow
+                      entry={entry}
                       index={index}
                       isTopThree={entry.rank <= 3}
+                      key={entry.entry}
                     />
                   ))}
                 </tbody>
@@ -283,21 +305,23 @@ function LeagueStandings() {
             {(leagueData.standings.has_next || currentPage > 1) && (
               <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                 <button
-                  onClick={() => fetchLeagueData(leagueId, currentPage - 1)}
-                  disabled={currentPage === 1 || loading}
                   className="fpl-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === 1 || loading}
+                  onClick={() => fetchLeagueData(leagueId, currentPage - 1)}
                 >
                   Previous
                 </button>
-                
+
                 <span className="text-sm text-gray-700">
-                  Page {currentPage}
+                  Page
+                  {' '}
+                  {currentPage}
                 </span>
-                
+
                 <button
-                  onClick={() => fetchLeagueData(leagueId, currentPage + 1)}
-                  disabled={!leagueData.standings.has_next || loading}
                   className="fpl-button-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!leagueData.standings.has_next || loading}
+                  onClick={() => fetchLeagueData(leagueId, currentPage + 1)}
                 >
                   Next
                 </button>
@@ -323,7 +347,11 @@ function LeagueStandings() {
               <div className="w-6 h-6 bg-fpl-primary text-white rounded-full flex items-center justify-center text-xs font-bold">2</div>
               <div>
                 <p className="font-medium">Check the URL</p>
-                <p>The league ID is the number in the URL: /leagues-classic/<strong>123456</strong>/standings/</p>
+                <p>
+                  The league ID is the number in the URL: /leagues-classic/
+                  <strong>123456</strong>
+                  /standings/
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
@@ -367,30 +395,33 @@ function StandingsRow({ entry, index, isTopThree }) {
           {getChangeIndicator()}
         </div>
       </td>
-      
+
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-gray-900">{entry.player_name}</div>
-        <div className="text-xs text-gray-500">ID: {entry.entry}</div>
+        <div className="text-xs text-gray-500">
+          ID:
+          {entry.entry}
+        </div>
       </td>
-      
+
       <td className="px-6 py-4">
         <div className="text-sm text-gray-900">{entry.entry_name}</div>
       </td>
-      
+
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-gray-900">{entry.event_total}</div>
       </td>
-      
+
       <td className="px-6 py-4 whitespace-nowrap">
         <div className={`text-sm font-bold ${isTopThree ? 'text-fpl-primary' : 'text-gray-900'}`}>
           {entry.total.toLocaleString()}
         </div>
       </td>
-      
+
       <td className="px-6 py-4 whitespace-nowrap text-sm">
         <a
-          href={`/manager/${entry.entry}`}
           className="text-fpl-primary hover:text-fpl-primary/80 font-medium"
+          href={`/manager/${entry.entry}`}
         >
           View Team
         </a>

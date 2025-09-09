@@ -18,11 +18,11 @@ const TeamAssignment = ({ currentUser }) => {
     }
   }, [currentUser]);
 
-  const fetchUserTeam = async () => {
+  const fetchUserTeam = async() => {
     try {
       const response = await fetch(`/api/teams?action=user&userId=${currentUser.id}`);
       const data = await response.json();
-      
+
       if (response.ok) {
         setUserTeam(data.team);
       } else {
@@ -33,11 +33,11 @@ const TeamAssignment = ({ currentUser }) => {
     }
   };
 
-  const fetchAllTeams = async () => {
+  const fetchAllTeams = async() => {
     try {
       const response = await fetch('/api/teams?action=all');
       const data = await response.json();
-      
+
       if (response.ok) {
         setAllTeams(data.teams);
       }
@@ -46,15 +46,15 @@ const TeamAssignment = ({ currentUser }) => {
     }
   };
 
-  const fetchAllocations = async () => {
+  const fetchAllocations = async() => {
     try {
       const response = await fetch('/api/admin?action=allocations', {
         headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
       const data = await response.json();
-      
+
       if (response.ok) {
         setAllocations(data.data.allocations);
       }
@@ -63,7 +63,7 @@ const TeamAssignment = ({ currentUser }) => {
     }
   };
 
-  const assignTeams = async () => {
+  const assignTeams = async() => {
     if (!currentUser?.isAdmin) {
       setError('Only admins can assign teams');
       return;
@@ -77,8 +77,8 @@ const TeamAssignment = ({ currentUser }) => {
       const response = await fetch('/api/teams?action=assign', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-        },
+          'Content-Type': 'application/json'
+        }
       });
 
       const data = await response.json();
@@ -122,7 +122,7 @@ const TeamAssignment = ({ currentUser }) => {
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          <Trophy className="inline w-8 h-8 mr-2" style={{color: '#034694'}} />
+          <Trophy className="inline w-8 h-8 mr-2" style={{ color: '#034694' }} />
           Draft Allocations
         </h2>
         <p className="text-gray-600">
@@ -151,20 +151,27 @@ const TeamAssignment = ({ currentUser }) => {
       {userTeam && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-xl font-semibold mb-4">
-            Your Team ({userTeam.totalValue}M)
+            Your Team (
+            {userTeam.totalValue}
+            M)
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userTeam.players.map((player, index) => (
-              <div key={player.id} className="border rounded-lg p-3">
+              <div className="border rounded-lg p-3" key={player.id}>
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium">{player.name}</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(player.position)}`}>
-                    {getPositionIcon(player.position)} {player.position}
+                    {getPositionIcon(player.position)}
+                    {' '}
+                    {player.position}
                   </span>
                 </div>
                 <div className="text-sm text-gray-600">
-                  Price: {player.price}M
+                  Price:
+                  {' '}
+                  {player.price}
+                  M
                 </div>
               </div>
             ))}
@@ -176,11 +183,12 @@ const TeamAssignment = ({ currentUser }) => {
       {allocations.length > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-xl font-semibold mb-4">Draft Allocations</h3>
-          
+
           <div className="space-y-4">
             {Object.entries(
               allocations.reduce((acc, allocation) => {
                 const userId = allocation.target_user_id;
+
                 if (!acc[userId]) {
                   acc[userId] = {
                     user: allocation.target_user,
@@ -192,24 +200,40 @@ const TeamAssignment = ({ currentUser }) => {
               }, {})
             ).map(([userId, userData]) => {
               const totalValue = userData.allocations.reduce((sum, a) => sum + parseFloat(a.player_price), 0);
+
               return (
-                <div key={userId} className="border rounded-lg p-4">
+                <div className="border rounded-lg p-4" key={userId}>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium">{userData.user.first_name} {userData.user.last_name}</h4>
+                    <h4 className="font-medium">
+                      {userData.user.first_name}
+                      {' '}
+                      {userData.user.last_name}
+                    </h4>
                     <span className="text-sm text-gray-600">
-                      {userData.allocations.length}/5 players • Total Value: {totalValue.toFixed(1)}M
+                      {userData.allocations.length}
+                      /5 players • Total Value:
+                      {totalValue.toFixed(1)}
+                      M
                     </span>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                     {userData.allocations.map((allocation) => (
-                      <div key={allocation.id} className="text-center">
+                      <div className="text-center" key={allocation.id}>
                         <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getPositionColor(allocation.player_position)}`}>
-                          {getPositionIcon(allocation.player_position)} {allocation.player_position}
+                          {getPositionIcon(allocation.player_position)}
+                          {' '}
+                          {allocation.player_position}
                         </div>
                         <div className="text-sm font-medium mt-1">{allocation.player_name}</div>
-                        <div className="text-xs text-gray-600">{allocation.player_price}M</div>
-                        <div className="text-xs text-gray-500">R{allocation.allocation_round}</div>
+                        <div className="text-xs text-gray-600">
+                          {allocation.player_price}
+                          M
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          R
+                          {allocation.allocation_round}
+                        </div>
                       </div>
                     ))}
                   </div>

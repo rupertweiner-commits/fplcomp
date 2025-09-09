@@ -4,11 +4,11 @@ import { RefreshCw, Home, AlertTriangle, Bug } from 'lucide-react';
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
+    this.state = {
+      hasError: false,
+      error: null,
       errorInfo: null,
-      errorCount: 0 
+      errorCount: 0
     };
   }
 
@@ -19,7 +19,7 @@ class ErrorBoundary extends React.Component {
   componentDidCatch(error, errorInfo) {
     // Log error to console for debugging
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Update state with error details
     this.setState(prevState => ({
       error: error,
@@ -40,27 +40,27 @@ class ErrorBoundary extends React.Component {
   }
 
   handleRefresh = () => {
-    this.setState({ 
-      hasError: false, 
-      error: null, 
-      errorInfo: null 
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
     });
     window.location.reload();
   };
 
   handleGoHome = () => {
-    this.setState({ 
-      hasError: false, 
-      error: null, 
-      errorInfo: null 
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null
     });
     window.location.href = '/';
   };
 
   handleReset = () => {
-    this.setState({ 
-      hasError: false, 
-      error: null, 
+    this.setState({
+      hasError: false,
+      error: null,
       errorInfo: null,
       errorCount: 0
     });
@@ -104,16 +104,16 @@ class ErrorBoundary extends React.Component {
 
             <div className="space-y-3">
               <button
-                onClick={this.handleRefresh}
                 className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={this.handleRefresh}
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh Page
               </button>
-              
+
               <button
-                onClick={this.handleGoHome}
                 className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                onClick={this.handleGoHome}
               >
                 <Home className="w-4 h-4 mr-2" />
                 Go to Home
@@ -121,8 +121,8 @@ class ErrorBoundary extends React.Component {
 
               {this.state.errorCount > 1 && (
                 <button
-                  onClick={this.handleReset}
                   className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  onClick={this.handleReset}
                 >
                   <Bug className="w-4 h-4 mr-2" />
                   Reset Error State
@@ -131,8 +131,14 @@ class ErrorBoundary extends React.Component {
             </div>
 
             <div className="mt-6 text-xs text-gray-500">
-              <p>Error ID: {this.state.errorCount}</p>
-              <p>Time: {new Date().toLocaleString()}</p>
+              <p>
+                Error ID:
+                {this.state.errorCount}
+              </p>
+              <p>
+                Time:
+                {new Date().toLocaleString()}
+              </p>
               {process.env.NODE_ENV === 'development' && (
                 <p className="text-blue-600">Development Mode - Check console for details</p>
               )}

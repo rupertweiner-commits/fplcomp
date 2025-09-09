@@ -25,7 +25,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
   const [showPictureUpload, setShowPictureUpload] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async() => {
     try {
       // Use Supabase to fetch user profile
       const { data: userProfile, error } = await supabase
@@ -79,26 +79,27 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     const isProfileComplete = required.every(field => {
       return userProfile[field] && userProfile[field].trim() !== '';
     });
+
     setIsComplete(isProfileComplete);
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!profile.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(profile.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     if (!profile.firstName.trim()) {
       newErrors.firstName = 'First name is required';
     }
-    
+
     if (!profile.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
     }
-    
+
     // Profile picture is optional - no validation needed
 
     setErrors(newErrors);
@@ -130,15 +131,15 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    
+
     // Debug logging
     const formData = {
       email: profile.email.trim(),
@@ -147,13 +148,13 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
       profilePicture: profile.profilePicture,
       notificationPreferences: profile.notificationPreferences
     };
-    
+
     console.log('🔍 Submitting profile data:');
     console.log('  - Form data:', formData);
     console.log('  - Email value:', JSON.stringify(formData.email));
     console.log('  - Email type:', typeof formData.email);
     console.log('  - Email length:', formData.email.length);
-    
+
     try {
       // Update profile in Supabase
       const { data, error } = await supabase
@@ -175,17 +176,17 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
       }
 
       console.log('✅ Profile update successful');
-      
+
       // Update the current user with new profile data
-      const updatedUser = { 
-        ...currentUser, 
+      const updatedUser = {
+        ...currentUser,
         ...formData,
-        profileComplete: true 
+        profileComplete: true
       };
-      
+
       // Store in localStorage for persistence
       localStorage.setItem('user', JSON.stringify(updatedUser));
-      
+
       onProfileComplete(updatedUser);
     } catch (error) {
       console.error('❌ Profile update failed:', error);
@@ -200,6 +201,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
     const completed = fields.filter(field => {
       return profile[field] && profile[field].trim() !== '';
     }).length;
+
     return Math.round((completed / fields.length) * 100);
   };
 
@@ -223,20 +225,22 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
         <div className="mb-8">
           <div className="flex justify-between text-sm text-gray-600 mb-2">
             <span>Profile Completion</span>
-            <span>{getCompletionPercentage()}%</span>
+            <span>
+              {getCompletionPercentage()}
+              %
+            </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3">
-            <div 
+            <div
               className="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-500"
               style={{ width: `${getCompletionPercentage()}%` }}
-            ></div>
+            />
           </div>
         </div>
 
 
-
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -244,13 +248,13 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
               Email Address *
             </label>
             <input
-              type="email"
-              value={profile.email}
-              onChange={(e) => handleInputChange('email', e.target.value)}
               className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                 errors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
+              onChange={(e) => handleInputChange('email', e.target.value)}
               placeholder="Enter your email address"
+              type="email"
+              value={profile.email}
             />
             {errors.email && (
               <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -267,13 +271,13 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
                 First Name *
               </label>
               <input
-                type="text"
-                value={profile.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.firstName ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
+                onChange={(e) => handleInputChange('firstName', e.target.value)}
                 placeholder="Enter your first name"
+                type="text"
+                value={profile.firstName}
               />
               {errors.firstName && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -288,13 +292,13 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
                 Last Name *
               </label>
               <input
-                type="text"
-                value={profile.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                   errors.lastName ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
+                onChange={(e) => handleInputChange('lastName', e.target.value)}
                 placeholder="Enter your last name"
+                type="text"
+                value={profile.lastName}
               />
               {errors.lastName && (
                 <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -306,21 +310,20 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
           </div>
 
 
-
           {/* Profile Picture */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Camera className="inline w-4 h-4 mr-2" />
               Profile Picture (Optional)
             </label>
-            
+
             <div className="text-center">
               {profile.profilePicture ? (
                 <div className="relative inline-block">
                   <img
-                    src={profile.profilePicture}
                     alt="Profile"
                     className="w-32 h-32 rounded-full object-cover border-4 border-green-200"
+                    src={profile.profilePicture}
                   />
                   <div className="absolute -top-2 -right-2 bg-green-500 text-white rounded-full p-2">
                     <CheckCircle className="w-4 h-4" />
@@ -335,9 +338,9 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
 
             <div className="text-center mt-4">
               <button
-                type="button"
-                onClick={() => setShowPictureUpload(true)}
                 className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={() => setShowPictureUpload(true)}
+                type="button"
               >
                 <Camera className="w-5 h-5 mr-2" />
                 {profile.profilePicture ? 'Change Picture' : 'Upload Picture'}
@@ -357,7 +360,7 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
             <label className="block text-sm font-medium text-gray-700 mb-3">
               🔔 Notification Preferences
             </label>
-            
+
             <div className="bg-gray-50 rounded-lg p-4 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Deadline Notifications */}
@@ -366,19 +369,19 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
                   <div className="space-y-2">
                     <label className="flex items-center space-x-3">
                       <input
-                        type="checkbox"
                         checked={profile.notificationPreferences.deadlineReminders}
-                        onChange={(e) => handleNotificationPreferenceChange('deadlineReminders', e.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        onChange={(e) => handleNotificationPreferenceChange('deadlineReminders', e.target.checked)}
+                        type="checkbox"
                       />
                       <span className="text-sm text-gray-700">Deadline reminders (24h & 1h before)</span>
                     </label>
                     <label className="flex items-center space-x-3">
                       <input
-                        type="checkbox"
                         checked={profile.notificationPreferences.deadlineSummaries}
-                        onChange={(e) => handleNotificationPreferenceChange('deadlineSummaries', e.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        onChange={(e) => handleNotificationPreferenceChange('deadlineSummaries', e.target.checked)}
+                        type="checkbox"
                       />
                       <span className="text-sm text-gray-700">Post-deadline summaries</span>
                     </label>
@@ -391,28 +394,28 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
                   <div className="space-y-2">
                     <label className="flex items-center space-x-3">
                       <input
-                        type="checkbox"
                         checked={profile.notificationPreferences.transferNotifications}
-                        onChange={(e) => handleNotificationPreferenceChange('transferNotifications', e.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        onChange={(e) => handleNotificationPreferenceChange('transferNotifications', e.target.checked)}
+                        type="checkbox"
                       />
                       <span className="text-sm text-gray-700">Transfer confirmations</span>
                     </label>
                     <label className="flex items-center space-x-3">
                       <input
-                        type="checkbox"
                         checked={profile.notificationPreferences.chipNotifications}
-                        onChange={(e) => handleNotificationPreferenceChange('chipNotifications', e.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        onChange={(e) => handleNotificationPreferenceChange('chipNotifications', e.target.checked)}
+                        type="checkbox"
                       />
                       <span className="text-sm text-gray-700">Chip usage alerts</span>
                     </label>
                     <label className="flex items-center space-x-3">
                       <input
-                        type="checkbox"
                         checked={profile.notificationPreferences.liveScoreUpdates}
-                        onChange={(e) => handleNotificationPreferenceChange('liveScoreUpdates', e.target.checked)}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                        onChange={(e) => handleNotificationPreferenceChange('liveScoreUpdates', e.target.checked)}
+                        type="checkbox"
                       />
                       <span className="text-sm text-gray-700">Live score updates</span>
                     </label>
@@ -424,10 +427,10 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
               <div className="pt-3 border-t border-gray-200">
                 <label className="flex items-center space-x-3">
                   <input
-                    type="checkbox"
                     checked={profile.notificationPreferences.weeklyReports}
-                    onChange={(e) => handleNotificationPreferenceChange('weeklyReports', e.target.checked)}
                     className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={(e) => handleNotificationPreferenceChange('weeklyReports', e.target.checked)}
+                    type="checkbox"
                   />
                   <span className="text-sm text-gray-700">Weekly performance reports</span>
                 </label>
@@ -439,19 +442,19 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <label className="flex items-center space-x-3">
                     <input
-                      type="checkbox"
                       checked={profile.notificationPreferences.emailNotifications}
-                      onChange={(e) => handleNotificationPreferenceChange('emailNotifications', e.target.checked)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      onChange={(e) => handleNotificationPreferenceChange('emailNotifications', e.target.checked)}
+                      type="checkbox"
                     />
                     <span className="text-sm text-gray-700">Email notifications</span>
                   </label>
                   <label className="flex items-center space-x-3">
                     <input
-                      type="checkbox"
                       checked={profile.notificationPreferences.pushNotifications}
-                      onChange={(e) => handleNotificationPreferenceChange('pushNotifications', e.target.checked)}
                       className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      onChange={(e) => handleNotificationPreferenceChange('pushNotifications', e.target.checked)}
+                      type="checkbox"
                     />
                     <span className="text-sm text-gray-700">Push notifications</span>
                   </label>
@@ -472,17 +475,17 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
 
           {/* Submit Button */}
           <button
-            type="submit"
-            disabled={loading || !isComplete}
             className={`w-full py-4 px-6 rounded-lg font-medium transition-all duration-200 ${
-              isComplete && !loading
-                ? 'bg-gradient-to-r from-blue-600 to-green-600 text-white hover:from-blue-700 hover:to-green-700 transform hover:scale-105'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              isComplete && !loading ?
+                'bg-gradient-to-r from-blue-600 to-green-600 text-white hover:from-blue-700 hover:to-green-700 transform hover:scale-105' :
+                'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
+            disabled={loading || !isComplete}
+            type="submit"
           >
             {loading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2" />
                 Completing Profile...
               </div>
             ) : (
@@ -498,8 +501,8 @@ const ProfileCompletion = ({ currentUser, onProfileComplete }) => {
         {showPictureUpload && (
           <ProfilePictureUpload
             currentPicture={profile.profilePicture}
-            onPictureUpdate={handleProfilePictureUpdate}
             onClose={() => setShowPictureUpload(false)}
+            onPictureUpdate={handleProfilePictureUpdate}
           />
         )}
       </div>

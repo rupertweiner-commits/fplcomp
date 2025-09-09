@@ -12,6 +12,7 @@ class FPLApiService {
     try {
       const response = await fetch(`${this.baseUrl}/bootstrap-static/`);
       const data = await response.json();
+
       return data.teams;
     } catch (error) {
       console.error('Failed to fetch teams:', error);
@@ -24,6 +25,7 @@ class FPLApiService {
     try {
       const response = await fetch(`${this.baseUrl}/bootstrap-static/`);
       const data = await response.json();
+
       return data.elements; // All players
     } catch (error) {
       console.error('Failed to fetch players:', error);
@@ -36,9 +38,9 @@ class FPLApiService {
     try {
       const response = await fetch(`${this.baseUrl}/bootstrap-static/`);
       const data = await response.json();
-      
+
       // Filter for Chelsea players (team_id = 4)
-      const chelseaPlayers = data.elements.filter(player => 
+      const chelseaPlayers = data.elements.filter(player =>
         player.team === this.chelseaTeamId
       );
 
@@ -78,6 +80,7 @@ class FPLApiService {
       3: 'MID', // Midfielder
       4: 'FWD'  // Forward
     };
+
     return positionMap[elementType] || 'UNKNOWN';
   }
 
@@ -85,9 +88,10 @@ class FPLApiService {
   async syncChelseaPlayersToDatabase() {
     try {
       console.log('🔄 Fetching Chelsea players from FPL API...');
-      
+
       // Fetch Chelsea players from FPL API
       const fplPlayers = await this.fetchChelseaPlayers();
+
       console.log(`📊 Found ${fplPlayers.length} Chelsea players in FPL API`);
 
       // Transform the data
@@ -117,7 +121,6 @@ class FPLApiService {
 
       console.log(`✅ Successfully synced ${data.length} Chelsea players to database`);
       return data;
-
     } catch (error) {
       console.error('Failed to sync Chelsea players:', error);
       throw error;
@@ -127,12 +130,13 @@ class FPLApiService {
   // Get player stats for a specific gameweek
   async getPlayerStats(playerId, gameweek = null) {
     try {
-      const url = gameweek 
-        ? `${this.baseUrl}/element-summary/${playerId}/`
-        : `${this.baseUrl}/element-summary/${playerId}/`;
-      
+      const url = gameweek ?
+        `${this.baseUrl}/element-summary/${playerId}/` :
+        `${this.baseUrl}/element-summary/${playerId}/`;
+
       const response = await fetch(url);
       const data = await response.json();
+
       return data;
     } catch (error) {
       console.error(`Failed to fetch stats for player ${playerId}:`, error);
@@ -145,8 +149,9 @@ class FPLApiService {
     try {
       const response = await fetch(`${this.baseUrl}/bootstrap-static/`);
       const data = await response.json();
-      
+
       const currentEvent = data.events.find(event => event.is_current);
+
       return currentEvent ? currentEvent.id : 1;
     } catch (error) {
       console.error('Failed to fetch current gameweek:', error);

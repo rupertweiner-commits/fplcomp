@@ -1,11 +1,11 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 
-const LoadingSpinner = ({ 
-  size = 'md', 
-  text = 'Loading...', 
+const LoadingSpinner = ({
+  size = 'md',
+  text = 'Loading...',
   fullScreen = false,
-  overlay = false 
+  overlay = false
 }) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
@@ -58,12 +58,12 @@ export const InlineSpinner = ({ size = 'sm' }) => (
 
 // Page loading
 export const PageSpinner = ({ text = 'Loading page...' }) => (
-  <LoadingSpinner size="xl" text={text} fullScreen />
+  <LoadingSpinner fullScreen size="xl" text={text} />
 );
 
 // Overlay loading
 export const OverlaySpinner = ({ text = 'Processing...' }) => (
-  <LoadingSpinner size="lg" text={text} overlay />
+  <LoadingSpinner overlay size="lg" text={text} />
 );
 
 export default LoadingSpinner;

@@ -7,6 +7,7 @@ const Toast = ({ message, type = 'info', onClose, duration = 5000 }) => {
       const timer = setTimeout(() => {
         onClose();
       }, duration);
+
       return () => clearTimeout(timer);
     }
   }, [duration, onClose]);
@@ -48,8 +49,8 @@ const Toast = ({ message, type = 'info', onClose, duration = 5000 }) => {
         </div>
         <div className="ml-4 flex-shrink-0">
           <button
-            onClick={onClose}
             className="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
+            onClick={onClose}
           >
             <X className="w-4 h-4" />
           </button>

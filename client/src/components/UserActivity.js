@@ -8,20 +8,20 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const [error, setError] = useState(null);
   const [selectedPeriod, setSelectedPeriod] = useState(30);
 
-  const fetchUserActivity = useCallback(async () => {
+  const fetchUserActivity = useCallback(async() => {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (!userId) {
         console.warn('No userId provided for activity fetch');
         setActivityData([]);
         return;
       }
-      
+
       const response = await fetch(`/api/activity?action=user&userId=${userId}&days=${selectedPeriod}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setActivityData(data.data.activities);
         setStats(data.data.stats);
@@ -37,19 +37,19 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     }
   }, [userId, selectedPeriod]);
 
-  const fetchRecentActivity = useCallback(async () => {
+  const fetchRecentActivity = useCallback(async() => {
     try {
       setError(null);
-      
+
       if (!userId) {
         console.warn('No userId provided for recent activity fetch');
         setRecentActivity([]);
         return;
       }
-      
+
       const response = await fetch('/api/activity?action=recent&limit=10');
       const data = await response.json();
-      
+
       if (data.success) {
         setRecentActivity(data.data.activities);
       } else {
@@ -64,16 +64,16 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     }
   }, [userId]);
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async() => {
     try {
       setError(null);
-      
+
       if (!userId) {
         console.warn('No userId provided for stats fetch');
         setStats([]);
         return;
       }
-      
+
       // TODO: Implement stats fetching with Supabase
       console.log('Stats fetch requested for user:', userId, 'days:', selectedPeriod);
       setStats([]);
@@ -105,7 +105,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
 
   const getActionIcon = (actionType) => {
     if (!actionType) return <Activity className="w-4 h-4 text-gray-400" />;
-    
+
     switch (actionType) {
       case 'LOGIN':
         return <User className="w-4 h-4 text-green-500" />;
@@ -130,7 +130,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
 
   const getActionColor = (actionType) => {
     if (!actionType) return 'bg-gray-100 text-gray-800';
-    
+
     switch (actionType) {
       case 'LOGIN':
         return 'bg-green-100 text-green-800';
@@ -156,6 +156,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   const handlePeriodChange = (e) => {
     try {
       const value = parseInt(e.target.value);
+
       if (!isNaN(value) && value > 0) {
         setSelectedPeriod(value);
       }
@@ -176,7 +177,7 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -185,9 +186,9 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-800">{error}</p>
-        <button 
-          onClick={fetchUserActivity}
+        <button
           className="mt-2 px-3 py-1 bg-red-100 text-red-800 rounded hover:bg-red-200"
+          onClick={fetchUserActivity}
         >
           Retry
         </button>
@@ -198,118 +199,124 @@ const UserActivity = ({ userId, isAdmin = false }) => {
   try {
     return (
       <div className="space-y-6">
-      {/* Period Selector */}
-      <div className="flex items-center space-x-4">
-        <label className="text-sm font-medium text-gray-700">Activity Period:</label>
-        <select
-          value={selectedPeriod}
-          onChange={handlePeriodChange}
-          className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-        >
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
-          <option value={365}>Last year</option>
-        </select>
-      </div>
-
-      {/* Activity Summary */}
-      {activityData && Array.isArray(activityData) && activityData.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            Activity Summary ({selectedPeriod} days)
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {activityData.map((item, index) => (
-              <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{item?.count || 0}</div>
-                <div className="text-sm text-gray-600 capitalize">
-                  {item?.action_type ? item.action_type.replace(/_/g, ' ').toLowerCase() : 'Unknown'}
-                </div>
-                <div className="text-xs text-gray-500">{item?.date || 'Unknown date'}</div>
-              </div>
-            ))}
-          </div>
+        {/* Period Selector */}
+        <div className="flex items-center space-x-4">
+          <label className="text-sm font-medium text-gray-700">Activity Period:</label>
+          <select
+            className="border border-gray-300 rounded-md px-3 py-1 text-sm"
+            onChange={handlePeriodChange}
+            value={selectedPeriod}
+          >
+            <option value={7}>Last 7 days</option>
+            <option value={30}>Last 30 days</option>
+            <option value={90}>Last 90 days</option>
+            <option value={365}>Last year</option>
+          </select>
         </div>
-      )}
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <Clock className="w-5 h-5 mr-2" />
-          Recent Activity
-        </h3>
-        
-        {recentActivity && Array.isArray(recentActivity) && recentActivity.length > 0 ? (
-          <div className="space-y-3">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0">
-                  {getActionIcon(activity?.action_type)}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getActionColor(activity?.action_type)}`}>
-                      {activity?.action_type ? activity.action_type.replace(/_/g, ' ') : 'Unknown'}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {formatTimestamp(activity?.timestamp)}
-                    </span>
+        {/* Activity Summary */}
+        {activityData && Array.isArray(activityData) && activityData.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <BarChart3 className="w-5 h-5 mr-2" />
+              Activity Summary (
+              {selectedPeriod}
+              {' '}
+              days)
+            </h3>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {activityData.map((item, index) => (
+                <div className="text-center p-4 bg-gray-50 rounded-lg" key={index}>
+                  <div className="text-2xl font-bold text-blue-600">{item?.count || 0}</div>
+                  <div className="text-sm text-gray-600 capitalize">
+                    {item?.action_type ? item.action_type.replace(/_/g, ' ').toLowerCase() : 'Unknown'}
                   </div>
-                  
-                  {activity?.action_details && (
-                    <div className="text-sm text-gray-700 mt-1">
-                      {(() => {
-                        try {
-                          const details = JSON.parse(activity.action_details);
-                          if (details && typeof details === 'object') {
-                            return Object.entries(details)
-                              .map(([key, value]) => `${key}: ${value}`)
-                              .join(', ');
-                          }
-                          return activity.action_details;
-                        } catch {
-                          return activity.action_details;
-                        }
-                      })()}
-                    </div>
-                  )}
+                  <div className="text-xs text-gray-500">{item?.date || 'Unknown date'}</div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        ) : (
-          <p className="text-gray-500 text-center py-4">No recent activity found</p>
         )}
-      </div>
 
-      {/* Admin Stats */}
-      {isAdmin && stats && Array.isArray(stats) && stats.length > 0 && (
+        {/* Recent Activity */}
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2" />
-            Overall Activity Statistics
+            <Clock className="w-5 h-5 mr-2" />
+            Recent Activity
           </h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{stat?.total_count || 0}</div>
-                <div className="text-sm text-gray-600 capitalize">
-                  {stat?.action_type ? stat.action_type.replace(/_/g, ' ').toLowerCase() : 'Unknown'}
+
+          {recentActivity && Array.isArray(recentActivity) && recentActivity.length > 0 ? (
+            <div className="space-y-3">
+              {recentActivity.map((activity, index) => (
+                <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg" key={index}>
+                  <div className="flex-shrink-0">
+                    {getActionIcon(activity?.action_type)}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getActionColor(activity?.action_type)}`}>
+                        {activity?.action_type ? activity.action_type.replace(/_/g, ' ') : 'Unknown'}
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        {formatTimestamp(activity?.timestamp)}
+                      </span>
+                    </div>
+
+                    {activity?.action_details && (
+                      <div className="text-sm text-gray-700 mt-1">
+                        {(() => {
+                          try {
+                            const details = JSON.parse(activity.action_details);
+
+                            if (details && typeof details === 'object') {
+                              return Object.entries(details)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join(', ');
+                            }
+                            return activity.action_details;
+                          } catch {
+                            return activity.action_details;
+                          }
+                        })()}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">
-                  {stat?.unique_users || 0} unique users
-                </div>
-                <div className="text-xs text-gray-500">{stat?.date || 'Unknown date'}</div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-4">No recent activity found</p>
+          )}
         </div>
-      )}
+
+        {/* Admin Stats */}
+        {isAdmin && stats && Array.isArray(stats) && stats.length > 0 && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 mr-2" />
+              Overall Activity Statistics
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {stats.map((stat, index) => (
+                <div className="text-center p-4 bg-gray-50 rounded-lg" key={index}>
+                  <div className="text-2xl font-bold text-blue-600">{stat?.total_count || 0}</div>
+                  <div className="text-sm text-gray-600 capitalize">
+                    {stat?.action_type ? stat.action_type.replace(/_/g, ' ').toLowerCase() : 'Unknown'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {stat?.unique_users || 0}
+                    {' '}
+                    unique users
+                  </div>
+                  <div className="text-xs text-gray-500">{stat?.date || 'Unknown date'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   } catch (error) {
@@ -317,7 +324,10 @@ const UserActivity = ({ userId, isAdmin = false }) => {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <p className="text-red-800">An error occurred while loading user activity.</p>
-        <p className="text-red-600 text-sm mt-1">Error: {error.message}</p>
+        <p className="text-red-600 text-sm mt-1">
+          Error:
+          {error.message}
+        </p>
       </div>
     );
   }
