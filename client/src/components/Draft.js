@@ -1381,17 +1381,29 @@ function PlayerCard({ player, onSelect, onDraft, isSelected, canDraft, isDraftin
           <span>Price:</span>
           <span className="font-medium">
             £
-            {player.price}
+            {(player.now_cost / 10).toFixed(1)}
             m
           </span>
         </div>
         <div className="flex justify-between">
           <span>Points:</span>
-          <span className="font-medium">{player.total_points}</span>
+          <span className="font-medium">{player.total_points || 0}</span>
         </div>
         <div className="flex justify-between">
           <span>Form:</span>
           <span className="font-medium">{player.form || '0.0'}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Goals:</span>
+          <span className="font-medium">{player.goals_scored || 0}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Assists:</span>
+          <span className="font-medium">{player.assists || 0}</span>
+        </div>
+        <div className="flex justify-between">
+          <span>Minutes:</span>
+          <span className="font-medium">{player.minutes || 0}</span>
         </div>
       </div>
 
@@ -2987,7 +2999,12 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
                   const playerDetails = {
                     name: player.player_name,
                     position: player.position,
-                    price: player.price
+                    price: player.price,
+                    total_points: player.total_points || 0,
+                    form: player.form || '0.0',
+                    goals_scored: player.goals_scored || 0,
+                    assists: player.assists || 0,
+                    minutes: player.minutes || 0
                   };
 
                   return (
@@ -3007,6 +3024,12 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
                           - £
                           {playerDetails.price}
                           m
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {playerDetails.total_points} pts • {playerDetails.form} form
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {playerDetails.goals_scored}G {playerDetails.assists}A • {playerDetails.minutes}min
                         </div>
                         <div className="text-sm text-gray-600 mt-2">
                           {isCaptain && <Star className="w-4 h-4 inline text-yellow-500 mr-1" />}

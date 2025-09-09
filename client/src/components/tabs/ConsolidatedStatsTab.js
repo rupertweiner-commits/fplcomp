@@ -277,10 +277,22 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
                       Price
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Points
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      FPL ID
+                      Form
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Goals
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Assists
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Minutes
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
                     </th>
                   </tr>
                 </thead>
@@ -289,7 +301,10 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
                     <tr key={player.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {player.name}
+                          {player.web_name || player.name}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {player.first_name} {player.second_name}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -298,7 +313,22 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        £{player.price || 0}m
+                        £{((player.now_cost || 0) / 10).toFixed(1)}m
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
+                        {player.total_points || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.form || '0.0'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.goals_scored || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.assists || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {player.minutes || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -308,9 +338,6 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
                         }`}>
                           {player.is_available ? 'Available' : 'Unavailable'}
                         </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {player.fpl_id || 'N/A'}
                       </td>
                     </tr>
                   ))}

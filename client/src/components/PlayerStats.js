@@ -18,31 +18,31 @@ function PlayerStats() {
     try {
       setLoading(true);
 
-      // Fetch live data from FPL API via our Vercel API route
-      const response = await fetch('/api/fpl?action=bootstrap');
+      // Fetch synced Chelsea players from our database
+      const response = await fetch('/api/check-chelsea-players');
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const bootstrap = await response.json();
+      const data = await response.json();
 
-      setCurrentGameweek(bootstrap.current_event || 1);
+      if (!data.success || !data.players) {
+        throw new Error('No Chelsea players found in database');
+      }
 
-      // Filter to show only Chelsea players (team ID = 7)
-      const chelseaPlayers = bootstrap.elements.filter(player => player.team === 7);
+      // Use the synced Chelsea players data
+      const chelseaPlayers = data.players;
 
       if (chelseaPlayers.length === 0) {
-        throw new Error('No Chelsea players found in FPL API');
+        throw new Error('No Chelsea players found in database. Please sync FPL data first.');
       }
 
       setPlayers(chelseaPlayers);
-      setTeams(bootstrap.teams);
-      setPositions(bootstrap.element_types);
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch player data from FPL API:', err);
-      setError('Failed to load live player data from FPL API');
+      console.error('Failed to fetch Chelsea players from database:', err);
+      setError('Failed to load Chelsea players. Please sync FPL data first.');
     } finally {
       setLoading(false);
     }
@@ -249,13 +249,20 @@ function PlayerStats() {
             >
               <option value="total_points-desc">Total Points (High to Low)</option>
               <option value="total_points-asc">Total Points (Low to High)</option>
-              <option value="value-desc">Price (High to Low)</option>
-              <option value="value-asc">Price (Low to High)</option>
+              <option value="now_cost-desc">Price (High to Low)</option>
+              <option value="now_cost-asc">Price (Low to High)</option>
               <option value="form-desc">Form (Best to Worst)</option>
               <option value="selected_by_percent-desc">Ownership % (High to Low)</option>
               <option value="goals_scored-desc">Goals Scored</option>
               <option value="assists-desc">Assists</option>
               <option value="clean_sheets-desc">Clean Sheets</option>
+              <option value="minutes-desc">Minutes Played</option>
+              <option value="bonus-desc">Bonus Points</option>
+              <option value="bps-desc">BPS Score</option>
+              <option value="ict_index-desc">ICT Index</option>
+              <option value="influence-desc">Influence</option>
+              <option value="creativity-desc">Creativity</option>
+              <option value="threat-desc">Threat</option>
             </select>
           </div>
         </div>
@@ -378,20 +385,55 @@ function PlayerCard({ player, getTeamName, getPositionName, formatPrice, getPlay
         <div className="grid grid-cols-3 gap-4 pt-3 border-t border-gray-100">
           <div className="text-center">
             <Target className="w-4 h-4 text-green-600 mx-auto mb-1" />
-            <div className="text-sm font-semibold text-gray-900">{player.goals_scored}</div>
+            <div className="text-sm font-semibold text-gray-900">{player.goals_scored || 0}</div>
             <div className="text-xs text-gray-500">Goals</div>
           </div>
 
           <div className="text-center">
             <Award className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-            <div className="text-sm font-semibold text-gray-900">{player.assists}</div>
+            <div className="text-sm font-semibold text-gray-900">{player.assists || 0}</div>
             <div className="text-xs text-gray-500">Assists</div>
           </div>
 
           <div className="text-center">
             <Shield className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-            <div className="text-sm font-semibold text-gray-900">{player.clean_sheets}</div>
+            <div className="text-sm font-semibold text-gray-900">{player.clean_sheets || 0}</div>
             <div className="text-xs text-gray-500">CS</div>
+          </div>
+        </div>
+
+        {/* Additional Stats */}
+        <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+          <div className="text-center">
+            <div className="text-sm font-semibold text-gray-900">{player.minutes || 0}</div>
+            <div className="text-xs text-gray-500">Minutes</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm font-semibold text-gray-900">{player.bonus || 0}</div>
+            <div className="text-xs text-gray-500">Bonus</div>
+          </div>
+        </div>
+
+        {/* Advanced Stats */}
+        <div className="pt-3 border-t border-gray-100">
+          <div className="text-xs text-gray-500 mb-2">Advanced Stats</div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex justify-between">
+              <span>Influence:</span>
+              <span className="font-medium">{player.influence || '0.0'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Creativity:</span>
+              <span className="font-medium">{player.creativity || '0.0'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Threat:</span>
+              <span className="font-medium">{player.threat || '0.0'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>ICT Index:</span>
+              <span className="font-medium">{player.ict_index || '0.0'}</span>
+            </div>
           </div>
         </div>
 
