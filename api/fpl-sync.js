@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Use service role key for admin operations like sync
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
 export default async function handler(req, res) {
@@ -54,6 +55,7 @@ async function handleSyncChelseaPlayers(req, res) {
 
   try {
     console.log('🔄 Starting FPL sync...');
+    console.log('🔑 Using service role key:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
     // Fetch FPL bootstrap data
     console.log('🌐 Fetching FPL bootstrap data...');
