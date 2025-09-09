@@ -56,13 +56,16 @@ async function handleSyncChelseaPlayers(req, res) {
     console.log('🔄 Starting FPL sync...');
 
     // Fetch FPL bootstrap data
+    console.log('🌐 Fetching FPL bootstrap data...');
     const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
     if (!fplResponse.ok) {
+      console.error('❌ FPL API response not OK:', fplResponse.status, fplResponse.statusText);
       throw new Error(`FPL API error: ${fplResponse.status}`);
     }
     
+    console.log('📥 Parsing FPL JSON data...');
     const fplData = await fplResponse.json();
-    console.log('✅ FPL data fetched successfully');
+    console.log('✅ FPL data fetched successfully, elements count:', fplData.elements?.length || 0);
 
     // Get Chelsea players (team ID 4)
     const chelseaPlayers = fplData.elements.filter(player => player.team === 4);
@@ -76,6 +79,7 @@ async function handleSyncChelseaPlayers(req, res) {
       .neq('id', 0);
 
     if (deleteError) {
+      console.error('❌ Delete error:', deleteError);
       throw new Error(`Failed to clear existing data: ${deleteError.message}`);
     }
     console.log('✅ Cleared existing data');
@@ -94,12 +98,14 @@ async function handleSyncChelseaPlayers(req, res) {
     }));
 
     console.log(`📝 Inserting ${playersToInsert.length} players...`);
+    console.log('📝 Sample player data:', JSON.stringify(playersToInsert[0], null, 2));
     const { data: insertedPlayers, error: insertError } = await supabase
       .from('chelsea_players')
       .insert(playersToInsert)
       .select();
 
     if (insertError) {
+      console.error('❌ Insert error:', insertError);
       throw new Error(`Failed to insert players: ${insertError.message}`);
     }
 
@@ -133,10 +139,12 @@ async function handleSyncChelseaPlayers(req, res) {
 
   } catch (error) {
     console.error('❌ Sync Chelsea players error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: 'Failed to sync Chelsea players',
-      details: error.message
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
