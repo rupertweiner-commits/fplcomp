@@ -7,6 +7,7 @@ import {
   Trophy,
   Target
 } from 'lucide-react';
+import { useRefresh } from '../../contexts/RefreshContext';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import LoadingSpinner from '../ui/LoadingSpinner';
@@ -16,6 +17,8 @@ import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../utils/constants';
 function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   const [loading, setLoading] = useState(false);
   const [simulationData, setSimulationData] = useState(null);
+
+  const { registerRefreshCallback } = useRefresh();
 
   const fetchSimulationData = async() => {
     try {
@@ -36,6 +39,15 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   useEffect(() => {
     fetchSimulationData();
   }, []);
+
+  // Register for refresh callbacks
+  useEffect(() => {
+    const cleanup = registerRefreshCallback(() => {
+      console.log('🔄 Refreshing stats data...');
+      fetchSimulationData();
+    });
+    return cleanup;
+  }, [registerRefreshCallback]);
 
   const safeExtract = (obj, path, defaultValue = 0) => {
     try {

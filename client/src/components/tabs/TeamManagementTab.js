@@ -8,6 +8,7 @@ import {
   XCircle,
   AlertCircle
 } from 'lucide-react';
+import { useRefresh } from '../../contexts/RefreshContext';
 import supabase from '../../config/supabase';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
@@ -23,6 +24,8 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
   const [loading, setLoading] = useState(false);
   const [userTeamPlayers, setUserTeamPlayers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+
+  const { registerRefreshCallback } = useRefresh();
 
   // Fetch available players from database
   const fetchAvailablePlayers = async () => {
@@ -83,19 +86,26 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     }
   }, [draftStatus]);
 
-  // Refresh function that can be called externally
-  const refreshData = () => {
-    fetchAvailablePlayers();
-    fetchUserTeams();
-  };
-
-  // Expose refresh function to parent component
+  // Register for refresh callbacks
   useEffect(() => {
-    if (onRefresh) {
-      // Store the refresh function so parent can call it
-      onRefresh.refreshTeamData = refreshData;
+    const cleanup = registerRefreshCallback(refreshData);
+    return cleanup;
+  }, [registerRefreshCallback]);
+
+  // Refresh function that can be called externally
+  const refreshData = async () => {
+    console.log('🔄 Refreshing team management data...');
+    setLoading(true);
+    try {
+      await fetchAvailablePlayers();
+      await fetchUserTeams();
+      console.log('✅ Team management data refreshed');
+    } catch (error) {
+      console.error('❌ Error refreshing team data:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [onRefresh]);
+  };
 
   const handlePlayerSelect = (player) => {
     if (selectedTeamPlayers.length >= 5) {

@@ -12,6 +12,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useDraftState } from '../hooks/useDraftState';
+import { useRefresh } from '../contexts/RefreshContext';
 import supabase from '../config/supabase';
 import AuthForm from './AuthForm';
 import ProfileCompletion from './ProfileCompletion';
@@ -36,6 +37,8 @@ function DraftRefactored({ wsService, currentUser }) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [profileComplete, setProfileComplete] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
+
+  const { refreshAll } = useRefresh();
 
   const {
     draftStatus,
@@ -121,9 +124,9 @@ function DraftRefactored({ wsService, currentUser }) {
   };
 
   const handleFPLSyncComplete = (syncData) => {
-    console.log('🔄 FPL sync completed, refreshing data...', syncData);
+    console.log('🔄 FPL sync completed, refreshing all data...', syncData);
     // Refresh all data when FPL sync completes
-    fetchDraftData();
+    refreshAll();
   };
 
   // Show auth form if not logged in

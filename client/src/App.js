@@ -18,6 +18,7 @@ import { supabase } from './config/supabase';
 
 // Import contexts
 import { ToastProvider } from './contexts/ToastContext';
+import { RefreshProvider } from './contexts/RefreshContext';
 
 // Debug: Log which version is running
 console.log('🚀 App version: v24 - Fixed sign in hanging with timeouts - 2024-09-02 23:30');
@@ -265,7 +266,8 @@ function App() {
 
   return (
     <ToastProvider>
-      <Router>
+      <RefreshProvider>
+        <Router>
         <div className="min-h-screen bg-gray-50">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200">
@@ -370,6 +372,7 @@ function App() {
           </footer>
         </div>
       </Router>
+      </RefreshProvider>
     </ToastProvider>
   );
 }
