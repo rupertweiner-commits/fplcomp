@@ -65,8 +65,7 @@ async function handleSyncChelseaPlayers(req, res) {
       .insert({
         sync_type: 'chelsea_players',
         status: 'in_progress',
-        sync_started_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
+        sync_started_at: new Date().toISOString()
       })
       .select()
       .single();
@@ -178,19 +177,23 @@ async function handleSyncChelseaPlayers(req, res) {
 
     console.log(`✅ Successfully inserted ${insertedPlayers.length} players`);
 
-    // Update sync log
-    const { error: updateLogError } = await supabase
-      .from('fpl_sync_log')
-      .update({
-        status: 'completed',
-        sync_completed_at: new Date().toISOString(),
-        players_created: insertedPlayers.length,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', syncLog.id);
+    // Update sync log if it exists
+    if (syncLog && syncLog.id) {
+      const { error: updateLogError } = await supabase
+        .from('fpl_sync_log')
+        .update({
+          status: 'completed',
+          sync_completed_at: new Date().toISOString(),
+          players_created: insertedPlayers.length,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', syncLog.id);
 
-    if (updateLogError) {
-      console.warn('Failed to update sync log:', updateLogError);
+      if (updateLogError) {
+        console.warn('Failed to update sync log:', updateLogError);
+      }
+    } else {
+      console.warn('No sync log to update - sync log creation failed');
     }
 
     res.status(200).json({
