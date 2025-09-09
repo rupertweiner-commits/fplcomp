@@ -18,6 +18,9 @@ function APITester({ currentUser }) {
     { method: 'GET', url: '/api/fpl-sync?action=sync-status', name: 'FPL Sync Status', public: true },
     { method: 'POST', url: '/api/fpl-sync?action=sync-chelsea-players', name: 'FPL Sync Chelsea Players', public: false },
     { method: 'GET', url: '/api/fpl-sync?action=test', name: 'FPL Sync Test', public: true },
+    { method: 'GET', url: '/api/fpl-sync-minimal?action=test', name: 'FPL Sync Minimal Test', public: true },
+    { method: 'GET', url: '/api/fpl-sync-minimal?action=sync-status', name: 'FPL Sync Minimal Status', public: true },
+    { method: 'POST', url: '/api/fpl-sync-minimal?action=sync-chelsea-players', name: 'FPL Sync Minimal Players', public: false },
   ];
 
   const testEndpoint = async (endpoint) => {
