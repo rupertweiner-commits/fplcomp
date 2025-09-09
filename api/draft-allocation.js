@@ -107,7 +107,7 @@ async function handleAllocatePlayer(req, res) {
     }
 
     if (userPicks.length >= 5) {
-      return res.status(400).json({ error: 'User already has 5 players allocated' });
+      return res.status(400).json({ error: 'User already has 5 players allocated. Teams must have exactly 5 players at all times.' });
     }
 
     // Get available players for team composition validation
@@ -376,6 +376,40 @@ async function handleCompleteDraft(req, res) {
   }
 
   try {
+    // Validate that all teams have exactly 5 players
+    const { data: allDraftPicks, error: picksError } = await supabase
+      .from('draft_picks')
+      .select('user_id')
+      .order('user_id');
+
+    if (picksError) {
+      throw picksError;
+    }
+
+    // Group picks by user
+    const picksByUser = {};
+    allDraftPicks.forEach(pick => {
+      if (!picksByUser[pick.user_id]) {
+        picksByUser[pick.user_id] = [];
+      }
+      picksByUser[pick.user_id].push(pick);
+    });
+
+    // Check that all users have exactly 5 players
+    const usersWithIncompleteTeams = Object.entries(picksByUser)
+      .filter(([userId, picks]) => picks.length !== 5)
+      .map(([userId, picks]) => ({ userId, count: picks.length }));
+
+    if (usersWithIncompleteTeams.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot complete draft: All teams must have exactly 5 players',
+        details: usersWithIncompleteTeams.map(u => 
+          `User ${u.userId} has ${u.count} players (needs 5)`
+        )
+      });
+    }
+
     // Mark draft as complete
     const { data: draftStatus, error: statusError } = await supabase
       .from('draft_status')
@@ -409,7 +443,7 @@ async function handleCompleteDraft(req, res) {
 
     res.status(200).json({
       success: true,
-      message: 'Draft completed successfully',
+      message: 'Draft completed successfully - All teams have exactly 5 players',
       data: {
         draftStatus,
         simStatus

@@ -142,7 +142,11 @@ function AdminDraftAllocation({ currentUser }) {
   };
 
   const getUsersWithCompleteTeams = () => {
-    return allocations.filter(user => user.picks.length >= 2).length;
+    return allocations.filter(user => user.picks.length === 5).length;
+  };
+
+  const getUsersWithIncompleteTeams = () => {
+    return allocations.filter(user => user.picks.length < 5).length;
   };
 
   if (!currentUser?.isAdmin) {
@@ -282,11 +286,12 @@ function AdminDraftAllocation({ currentUser }) {
         <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
           <h4 className="text-sm font-medium text-yellow-800 mb-2">Team Composition Rules</h4>
           <ul className="text-sm text-yellow-700 space-y-1">
-            <li>• Each team must have exactly 5 players</li>
-            <li>• 2 players from GK/DEF positions</li>
-            <li>• 3 players from MID/FWD positions</li>
+            <li>• <strong>Each team must have exactly 5 players at all times</strong></li>
+            <li>• 2 players from GK/DEF positions (no more, no less)</li>
+            <li>• 3 players from MID/FWD positions (no more, no less)</li>
             <li>• One player must be set as Captain</li>
             <li>• One player must be set as Vice Captain</li>
+            <li>• <strong>Draft cannot be completed until all teams have exactly 5 players</strong></li>
           </ul>
         </div>
       </div>
@@ -346,12 +351,12 @@ function AdminDraftAllocation({ currentUser }) {
       </div>
 
       {/* Complete Draft Button */}
-      {getTotalAllocations() >= 15 && (
+      {getUsersWithCompleteTeams() === 3 && getTotalAllocations() === 15 && (
         <div className="bg-white shadow rounded-lg p-6">
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Complete Draft?</h3>
             <p className="text-gray-600 mb-4">
-              All users have been allocated 5 players each (15 total). Complete the draft to start simulation.
+              All 3 users have exactly 5 players each (15 total). Complete the draft to start simulation.
             </p>
             <button
               onClick={handleCompleteDraft}
@@ -360,6 +365,23 @@ function AdminDraftAllocation({ currentUser }) {
             >
               {loading ? 'Completing...' : 'Complete Draft'}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Incomplete Teams Warning */}
+      {getUsersWithIncompleteTeams() > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-8 w-8 text-red-500 mb-2" />
+            <h3 className="text-lg font-medium text-red-900 mb-2">Teams Incomplete</h3>
+            <p className="text-red-700 mb-4">
+              {getUsersWithIncompleteTeams()} user(s) have fewer than 5 players. 
+              All teams must have exactly 5 players before the draft can be completed.
+            </p>
+            <div className="text-sm text-red-600">
+              Complete teams: {getUsersWithCompleteTeams()}/3
+            </div>
           </div>
         </div>
       )}
