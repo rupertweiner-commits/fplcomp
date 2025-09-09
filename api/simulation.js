@@ -239,6 +239,13 @@ async function handleSimulateGameweek(req, res) {
       status
     }
   });
+  } catch (error) {
+    console.error('❌ Simulate gameweek error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
+  }
 }
 
 async function handleGetLeaderboard(req, res) {
