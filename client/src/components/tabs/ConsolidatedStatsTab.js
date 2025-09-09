@@ -18,7 +18,7 @@ import { handleApiError } from '../../utils/errorHandler';
 import { SUCCESS_MESSAGES, ERROR_MESSAGES } from '../../utils/constants';
 import { getPositionColor } from '../../utils/helpers';
 
-function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers, leaderboard }) {
+function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers, leaderboard, onRefresh }) {
   const [loading, setLoading] = useState(false);
   const [simulationData, setSimulationData] = useState(null);
   const [activeSection, setActiveSection] = useState('leaderboard'); // 'leaderboard' or 'player-stats'
@@ -49,10 +49,14 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
   useEffect(() => {
     const cleanup = registerRefreshCallback(() => {
       console.log('🔄 Refreshing consolidated stats data...');
+      // Refresh both simulation data and parent data (Chelsea players, leaderboard)
       fetchSimulationData();
+      if (onRefresh) {
+        onRefresh();
+      }
     });
     return cleanup;
-  }, [registerRefreshCallback]);
+  }, [registerRefreshCallback, onRefresh]);
 
   const safeExtract = (obj, path, defaultValue = 0) => {
     try {
@@ -112,7 +116,10 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
               </div>
             </div>
             <Button
-              onClick={fetchSimulationData}
+              onClick={() => {
+                fetchSimulationData();
+                if (onRefresh) onRefresh();
+              }}
               disabled={loading}
               variant="secondary"
               size="small"
@@ -229,7 +236,10 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
               </div>
             </div>
             <Button
-              onClick={fetchSimulationData}
+              onClick={() => {
+                fetchSimulationData();
+                if (onRefresh) onRefresh();
+              }}
               disabled={loading}
               variant="secondary"
               size="small"

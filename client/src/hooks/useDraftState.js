@@ -144,7 +144,10 @@ export function useDraftState(currentUser) {
 
       const response = await fetch('/api/simulation?action=start', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.access_token || ''}`
+        }
       });
 
       const data = await response.json();
@@ -174,7 +177,10 @@ export function useDraftState(currentUser) {
 
       const response = await fetch('/api/simulation?action=simulate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.access_token || ''}`
+        },
         body: JSON.stringify({
           gameweek: simulationStatus?.current_gameweek || 1
         })

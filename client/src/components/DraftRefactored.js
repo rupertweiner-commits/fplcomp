@@ -327,6 +327,7 @@ function DraftRefactored({ wsService, currentUser }) {
               draftStatus={draftStatus}
               liveScores={liveScores}
               leaderboard={leaderboard}
+              onRefresh={fetchDraftData}
             />
           )}
 

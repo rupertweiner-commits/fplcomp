@@ -50,9 +50,13 @@ function App() {
 
         if (isAuthenticated) {
           const user = authService.getCurrentUser();
+          const token = authService.getToken();
 
           console.log('✅ User authenticated:', user?.email);
-          setCurrentUser(user);
+          setCurrentUser({
+            ...user,
+            access_token: token
+          });
         } else {
           console.log('❌ No valid session found');
           setCurrentUser(null);
@@ -110,7 +114,8 @@ function App() {
               firstName: userProfile.first_name || '',
               lastName: userProfile.last_name || '',
               isAdmin: userProfile.is_admin || false,
-              profileComplete: !!(userProfile.first_name && userProfile.last_name)
+              profileComplete: !!(userProfile.first_name && userProfile.last_name),
+              access_token: authService.getToken()
             };
 
             setCurrentUser(user);
@@ -141,7 +146,8 @@ function App() {
                   firstName: newUserProfile.first_name || '',
                   lastName: newUserProfile.last_name || '',
                   isAdmin: newUserProfile.is_admin || false,
-                  profileComplete: !!(newUserProfile.first_name && newUserProfile.last_name)
+                  profileComplete: !!(newUserProfile.first_name && newUserProfile.last_name),
+                  access_token: authService.getToken()
                 };
 
                 setCurrentUser(user);
@@ -159,7 +165,8 @@ function App() {
                 firstName: isAdminEmail ? 'Rupert' : '',
                 lastName: isAdminEmail ? 'Weiner' : '',
                 isAdmin: isAdminEmail,
-                profileComplete: isAdminEmail // Admin users are always considered complete
+                profileComplete: isAdminEmail, // Admin users are always considered complete
+                access_token: session.access_token
               };
 
               setCurrentUser(basicUser);
@@ -176,7 +183,8 @@ function App() {
             firstName: isAdminEmail ? 'Rupert' : '',
             lastName: isAdminEmail ? 'Weiner' : '',
             isAdmin: isAdminEmail,
-            profileComplete: isAdminEmail // Admin users are always considered complete
+            profileComplete: isAdminEmail, // Admin users are always considered complete
+            access_token: session.access_token
           };
 
           setCurrentUser(basicUser);
