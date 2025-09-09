@@ -6,6 +6,8 @@
 - **Database**: Supabase PostgreSQL
 - **Authentication**: Supabase Auth (NOT custom auth)
 - **Deployment**: Vercel auto-deploys from GitHub main branch
+- **Live URL**: https://pleaase.vercel.app
+- **Deployment Dashboard**: https://vercel.com/rupert-weiners-projects/pleaase
 
 ## CRITICAL ARCHITECTURAL CONSTRAINTS
 
@@ -99,7 +101,8 @@ Before making changes:
 2. **Test build**: `cd client && npm run build`
 3. **Commit and push** to GitHub
 4. **Vercel auto-deploys** from main branch
-5. **Test deployed app** at Vercel URL
+5. **Test deployed app** at https://pleaase.vercel.app
+6. **Monitor deployments** at https://vercel.com/rupert-weiners-projects/pleaase
 
 ## ENVIRONMENT VARIABLES
 - **SUPABASE_URL**: Set in Vercel dashboard
@@ -123,7 +126,7 @@ Before making changes:
 - **API errors**: Verify endpoint exists in /api directory
 - **Build failures**: Check for undefined references and unused imports
 - **Database errors**: Check if tables exist and user sync is working
-- **Deployment issues**: Check Vercel logs and environment variables
+- **Deployment issues**: Check Vercel logs and environment variables at https://vercel.com/rupert-weiners-projects/pleaase
 
 ## SUCCESS PATTERNS
 - **Authentication works**: User can sign in and access main app

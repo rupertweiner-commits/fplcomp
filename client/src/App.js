@@ -133,7 +133,7 @@ function App() {
                   first_name: session.user.user_metadata?.first_name || '',
                   last_name: session.user.user_metadata?.last_name || '',
                   is_active: true,
-                  is_admin: false,
+                  is_admin: session.user.email === 'rupertweiner@gmail.com',
                   created_at: new Date().toISOString()
                 })
                 .select()
@@ -151,12 +151,25 @@ function App() {
                 };
 
                 setCurrentUser(user);
-                console.log('✅ Created and loaded new user profile:', user.email);
+                console.log('✅ Created and loaded new user profile:', user.email, 'isAdmin:', user.isAdmin);
               } else {
+                console.error('❌ Failed to create user profile:', createError);
+                console.error('❌ Create error details:', {
+                  code: createError?.code,
+                  message: createError?.message,
+                  details: createError?.details,
+                  hint: createError?.hint
+                });
                 throw createError;
               }
             } catch (createError) {
               console.error('❌ Failed to create user profile:', createError);
+              console.error('❌ Create error details:', {
+                code: createError?.code,
+                message: createError?.message,
+                details: createError?.details,
+                hint: createError?.hint
+              });
               // Fallback to basic user - if it's the admin email, give admin privileges
               const isAdminEmail = session.user.email === 'rupertweiner@gmail.com';
               const basicUser = {
