@@ -8,7 +8,8 @@ import {
   BarChart3,
   Users,
   Bell,
-  Activity
+  Activity,
+  RefreshCw
 } from 'lucide-react';
 import { useDraftState } from '../hooks/useDraftState';
 import supabase from '../config/supabase';
@@ -17,6 +18,7 @@ import ProfileCompletion from './ProfileCompletion';
 import ForgotPassword from './ForgotPassword';
 import NotificationPreferences from './NotificationPreferences';
 import UserActivity from './UserActivity';
+import FPLSync from './FPLSync';
 import PWAStatus from './PWAStatus';
 import PWAInstallPrompt from './PWAInstallPrompt';
 import MobileNavigation from './MobileNavigation';
@@ -281,6 +283,20 @@ function DraftRefactored({ wsService, currentUser }) {
               <Activity className="w-4 h-4" />
               <span>User Activity</span>
             </button>
+
+            {currentUser?.isAdmin && (
+              <button
+                className={`flex items-center space-x-2 py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'fpl-sync' ?
+                    'border-blue-500 text-blue-600' :
+                    'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+                onClick={() => setActiveTab('fpl-sync')}
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>FPL Sync</span>
+              </button>
+            )}
           </nav>
         </div>
 
@@ -331,6 +347,10 @@ function DraftRefactored({ wsService, currentUser }) {
 
           {activeTab === 'activity' && (
             <UserActivity currentUser={currentUser} />
+          )}
+
+          {activeTab === 'fpl-sync' && (
+            <FPLSync currentUser={currentUser} />
           )}
         </div>
 
