@@ -147,7 +147,6 @@ function Draft({ wsService, currentUser }) {
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true)
         .order('id');
 
       if (usersError) {
@@ -188,7 +187,7 @@ function Draft({ wsService, currentUser }) {
 
       // Transform draft status data
       const transformedDraftStatus = {
-        isActive: draftStatusData.is_active,
+        isActive: draftStatusData.is_draft_active,
         isDraftActive: draftStatusData.is_draft_active,
         isDraftComplete: draftStatusData.is_draft_complete,
         currentTurn: draftStatusData.current_turn,
@@ -293,7 +292,7 @@ function Draft({ wsService, currentUser }) {
       const { data: users, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true);
+;
 
       if (usersError) {
         console.error('Error fetching users:', usersError);
@@ -543,7 +542,6 @@ function Draft({ wsService, currentUser }) {
           user_id: currentUser.id,
           player_id: playerId,
           gameweek: 1,
-          is_active: true,
           created_at: new Date().toISOString()
         });
 
@@ -559,7 +557,6 @@ function Draft({ wsService, currentUser }) {
           user_id: currentUser.id,
           player_id: playerId,
           gameweek: 1,
-          is_active: true,
           created_at: new Date().toISOString()
         });
 
@@ -572,7 +569,6 @@ function Draft({ wsService, currentUser }) {
       const { data: allUsers, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true)
         .order('id');
 
       if (usersError) {
@@ -890,7 +886,6 @@ function DraftTab({ draftStatus, chelseaPlayers, currentUser, onDraftPlayer, err
       const { data: users, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true)
         .order('id');
 
       if (usersError) {
@@ -1987,7 +1982,7 @@ function SimulationTab({
       let { data: users, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true);
+;
 
       if (usersError) {
         console.error('Error fetching users for leaderboard:', usersError);

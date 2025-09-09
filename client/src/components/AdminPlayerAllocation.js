@@ -37,7 +37,6 @@ const AdminPlayerAllocation = ({ currentUser }) => {
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true)
         .order('first_name');
 
       if (usersError) throw usersError;

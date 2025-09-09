@@ -78,16 +78,18 @@ class AuthService {
         return { success: false, error: authError.message };
       }
 
-      // Create user record in users table
+      // Create user record in user_profiles table
       const { data: userData, error: userError } = await supabase
         .from('user_profiles')
         .insert({
           id: authData.user.id,
           email: email,
+          username: email.split('@')[0], // Use email prefix as username
           first_name: firstName || '',
           last_name: lastName || '',
-          is_active: true,
-          created_at: new Date().toISOString()
+          is_admin: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .select()
         .single();

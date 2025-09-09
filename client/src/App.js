@@ -130,11 +130,12 @@ function App() {
                 .insert({
                   id: session.user.id,
                   email: session.user.email,
+                  username: session.user.email.split('@')[0],
                   first_name: session.user.user_metadata?.first_name || '',
                   last_name: session.user.user_metadata?.last_name || '',
-                  is_active: true,
                   is_admin: session.user.email === 'rupertweiner@gmail.com',
-                  created_at: new Date().toISOString()
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
                 })
                 .select()
                 .single();

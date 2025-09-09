@@ -68,7 +68,7 @@ export function useDraftState(currentUser) {
       const { data: usersData, error: usersError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('is_active', true);
+;
 
       if (usersError) {
         console.warn('⚠️ Users not found (non-critical):', usersError);

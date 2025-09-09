@@ -112,7 +112,6 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         .insert({
           id: authData.user.id,
           email: formData.email,
-          is_active: true,
           created_at: new Date().toISOString()
         })
         .select()
