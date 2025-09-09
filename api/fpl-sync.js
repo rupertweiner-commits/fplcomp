@@ -24,23 +24,25 @@ export default async function handler(req, res) {
         return await handleSyncChelseaPlayers(req, res);
       case 'sync-status':
         return await handleSyncStatus(req, res);
+      case 'get-chelsea-players':
+        return await handleGetChelseaPlayers(req, res);
       case 'test':
         return res.status(200).json({ 
           success: true, 
-          message: 'FPL Sync API is working - VERSION 2.0',
+          message: 'FPL Consolidated API is working - VERSION 3.0',
           timestamp: new Date().toISOString(),
-          version: '2.0',
+          version: '3.0',
           environment: {
             hasSupabaseUrl: !!process.env.SUPABASE_URL,
             hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
           }
         });
       default:
-        return res.status(400).json({ error: 'Invalid action' });
+        return res.status(400).json({ error: 'Invalid action. Available actions: sync-chelsea-players, sync-status, get-chelsea-players, test' });
     }
 
   } catch (error) {
-    console.error('FPL Sync API error:', error);
+    console.error('FPL Consolidated API error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Internal server error',
@@ -56,163 +58,176 @@ async function handleSyncChelseaPlayers(req, res) {
 
   try {
     console.log('🔄 Starting FPL sync...');
-    console.log('🔑 Using service role key:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch FPL bootstrap data
-    console.log('🌐 Fetching FPL bootstrap data...');
-    const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
-    if (!fplResponse.ok) {
-      console.error('❌ FPL API response not OK:', fplResponse.status, fplResponse.statusText);
-      throw new Error(`FPL API error: ${fplResponse.status}`);
+    // Log sync start
+    const { data: syncLog, error: logError } = await supabase
+      .from('fpl_sync_log')
+      .insert({
+        sync_type: 'chelsea_players',
+        status: 'in_progress',
+        sync_started_at: new Date().toISOString(),
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (logError) {
+      console.warn('Failed to log sync start:', logError);
     }
-    
-    console.log('📥 Parsing FPL JSON data...');
-    const fplData = await fplResponse.json();
-    console.log('✅ FPL data fetched successfully, elements count:', fplData.elements?.length || 0);
 
-    // Debug: Check what teams are available
-    const teams = fplData.teams || [];
-    console.log('🏟️ Available teams:', teams.map(t => `${t.id}: ${t.name}`));
+    console.log('🌐 Fetching FPL bootstrap data...');
     
+    // Fetch FPL bootstrap data
+    const response = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+    if (!response.ok) {
+      throw new Error(`FPL API error: ${response.status} ${response.statusText}`);
+    }
+
+    console.log('📥 Parsing FPL JSON data...');
+    const data = await response.json();
+    console.log(`✅ FPL data fetched successfully, elements count: ${data.elements.length}`);
+
     // Find Chelsea team ID
-    const chelseaTeam = teams.find(team => 
-      team.name.toLowerCase().includes('chelsea') || 
-      team.short_name.toLowerCase().includes('che')
+    const chelseaTeam = data.teams.find(team => 
+      team.name.toLowerCase().includes('chelsea')
     );
-    console.log('🔵 Chelsea team found:', chelseaTeam);
-    
+
     if (!chelseaTeam) {
       throw new Error('Chelsea team not found in FPL data');
     }
-    
-    // Get Chelsea players
-    const chelseaPlayers = fplData.elements.filter(player => player.team === chelseaTeam.id);
-    console.log(`📊 Found ${chelseaPlayers.length} Chelsea players in FPL data`);
-    console.log('📊 Sample Chelsea players:', chelseaPlayers.slice(0, 3).map(p => `${p.first_name} ${p.second_name} (Team: ${p.team})`));
 
-    // Clear existing data
+    console.log(`📊 Found Chelsea team: ${chelseaTeam.name} (ID: ${chelseaTeam.id})`);
+
+    // Filter Chelsea players
+    const chelseaPlayers = data.elements.filter(player => 
+      player.team === chelseaTeam.id && 
+      player.status !== 'u' && // Not unavailable
+      !player.news // No injury news
+    );
+
+    console.log(`📊 Found ${chelseaPlayers.length} Chelsea players in FPL data`);
+
+    // Clear existing Chelsea players
     console.log('🗑️ Clearing existing Chelsea players...');
     const { error: deleteError } = await supabase
       .from('chelsea_players')
       .delete()
-      .neq('id', 0);
+      .neq('id', 0); // Delete all records
 
     if (deleteError) {
-      console.error('❌ Delete error:', deleteError);
       throw new Error(`Failed to clear existing data: ${deleteError.message}`);
     }
-    console.log('✅ Cleared existing data');
 
-    // Insert new data with comprehensive FPL statistics
+    console.log('✅ Existing data cleared successfully');
+
+    // Prepare players data for insertion
     const playersToInsert = chelseaPlayers.map(player => ({
-      // Basic info
-      id: player.id, // FPL ID as primary key
-      fpl_id: player.id, // Also store in fpl_id column
-      name: player.web_name || `${player.first_name} ${player.second_name}`,
-      full_name: `${player.first_name} ${player.second_name}`,
-      web_name: player.web_name,
+      id: player.id,
+      fpl_id: player.id,
+      name: player.web_name,
       first_name: player.first_name,
       second_name: player.second_name,
+      web_name: player.web_name,
+      position: player.element_type === 1 ? 'GK' : 
+                player.element_type === 2 ? 'DEF' : 
+                player.element_type === 3 ? 'MID' : 'FWD',
       element_type: player.element_type,
-      position: mapFPLPosition(player.element_type),
-      position_name: mapFPLPosition(player.element_type),
+      position_name: player.element_type === 1 ? 'Goalkeeper' : 
+                     player.element_type === 2 ? 'Defender' : 
+                     player.element_type === 3 ? 'Midfielder' : 'Forward',
       team: player.team,
       team_name: chelseaTeam.name,
-      team_id: player.team,
-      
-      // Pricing
-      price: (player.now_cost / 10).toFixed(1), // Convert to decimal
+      price: player.now_cost,
       now_cost: player.now_cost,
-      
-      // Scoring statistics
-      total_points: player.total_points || 0,
-      event_points: player.event_points || 0,
-      form: player.form || 0.0,
-      selected_by_percent: parseFloat(player.selected_by_percent) || 0.0,
-      
-      // Performance stats
-      minutes: player.minutes || 0,
-      goals_scored: player.goals_scored || 0,
-      assists: player.assists || 0,
-      clean_sheets: player.clean_sheets || 0,
-      goals_conceded: player.goals_conceded || 0,
-      own_goals: player.own_goals || 0,
-      penalties_saved: player.penalties_saved || 0,
-      penalties_missed: player.penalties_missed || 0,
-      yellow_cards: player.yellow_cards || 0,
-      red_cards: player.red_cards || 0,
-      saves: player.saves || 0,
-      bonus: player.bonus || 0,
-      bps: player.bps || 0,
-      starts: player.starts || 0,
-      
-      // Advanced stats
-      influence: player.influence || '0.0',
-      creativity: player.creativity || '0.0',
-      threat: player.threat || '0.0',
-      ict_index: player.ict_index || '0.0',
-      
-      // Status and news
-      news: player.news || '',
-      news_added: player.news_added ? new Date(player.news_added).toISOString() : null,
-      chance_of_playing_this_round: player.chance_of_playing_this_round,
-      chance_of_playing_next_round: player.chance_of_playing_next_round,
+      total_points: player.total_points,
+      form: player.form,
+      goals_scored: player.goals_scored,
+      assists: player.assists,
+      clean_sheets: player.clean_sheets,
+      goals_conceded: player.goals_conceded,
+      own_goals: player.own_goals,
+      penalties_saved: player.penalties_saved,
+      penalties_missed: player.penalties_missed,
+      yellow_cards: player.yellow_cards,
+      red_cards: player.red_cards,
+      saves: player.saves,
+      bonus: player.bonus,
+      bps: player.bps,
+      influence: player.influence,
+      creativity: player.creativity,
+      threat: player.threat,
+      ict_index: player.ict_index,
+      starts: player.starts,
+      minutes: player.minutes,
       is_available: true,
-      last_updated: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
 
-    console.log(`📝 Inserting ${playersToInsert.length} players...`);
-    console.log('📝 Sample player data:', JSON.stringify(playersToInsert[0], null, 2));
+    console.log(`💾 Inserting ${playersToInsert.length} Chelsea players...`);
+
+    // Insert new players
     const { data: insertedPlayers, error: insertError } = await supabase
       .from('chelsea_players')
       .insert(playersToInsert)
       .select();
 
     if (insertError) {
-      console.error('❌ Insert error:', insertError);
       throw new Error(`Failed to insert players: ${insertError.message}`);
     }
 
-    console.log(`✅ Successfully inserted ${insertedPlayers?.length || 0} players`);
+    console.log(`✅ Successfully inserted ${insertedPlayers.length} players`);
 
-    // Log sync activity
-    const { error: logError } = await supabase
+    // Update sync log
+    const { error: updateLogError } = await supabase
       .from('fpl_sync_log')
-      .insert({
-        sync_type: 'players',
+      .update({
         status: 'completed',
-        players_created: insertedPlayers?.length || 0,
-        players_updated: 0,
-        sync_started_at: new Date().toISOString(),
-        sync_completed_at: new Date().toISOString()
-      });
+        sync_completed_at: new Date().toISOString(),
+        players_created: insertedPlayers.length,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', syncLog.id);
 
-    if (logError) {
-      console.warn('⚠️ Failed to log sync activity:', logError.message);
+    if (updateLogError) {
+      console.warn('Failed to update sync log:', updateLogError);
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       success: true,
-      message: `Chelsea players sync completed - ${insertedPlayers?.length || 0} players synced`,
+      message: 'Chelsea players synced successfully',
       data: {
-        playersCreated: insertedPlayers?.length || 0,
-        totalPlayers: chelseaPlayers.length,
-        chelseaTeamId: chelseaTeam.id,
-        chelseaTeamName: chelseaTeam.name,
-        players: insertedPlayers || []
+        players_created: insertedPlayers.length,
+        chelsea_team: chelseaTeam.name,
+        sync_log_id: syncLog.id,
+        players: insertedPlayers
       }
     });
 
   } catch (error) {
     console.error('❌ Sync Chelsea players error:', error);
-    console.error('❌ Error stack:', error.stack);
+
+    // Update sync log with error
+    try {
+      await supabase
+        .from('fpl_sync_log')
+        .update({
+          status: 'failed',
+          error_message: error.message,
+          sync_completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('sync_type', 'chelsea_players')
+        .order('created_at', { ascending: false })
+        .limit(1);
+    } catch (logError) {
+      console.error('Failed to log sync error:', logError);
+    }
+
     res.status(500).json({
       success: false,
       error: 'Failed to sync Chelsea players',
-      details: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      details: error.message
     });
   }
 }
@@ -223,24 +238,40 @@ async function handleSyncStatus(req, res) {
   }
 
   try {
-    const { data: status, error } = await supabase
+    // Get latest sync log
+    const { data: syncLog, error: syncError } = await supabase
       .from('fpl_sync_log')
       .select('*')
-      .order('sync_started_at', { ascending: false })
+      .eq('sync_type', 'chelsea_players')
+      .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      throw error;
+    if (syncError && syncError.code !== 'PGRST116') {
+      throw syncError;
+    }
+
+    // Get current player count
+    const { count: playerCount, error: countError } = await supabase
+      .from('chelsea_players')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) {
+      throw countError;
     }
 
     res.status(200).json({
       success: true,
-      data: status || null
+      data: {
+        sync_log: syncLog,
+        current_player_count: playerCount,
+        last_sync: syncLog?.sync_completed_at || null,
+        status: syncLog?.status || 'never_synced'
+      }
     });
 
   } catch (error) {
-    console.error('❌ Get sync status error:', error);
+    console.error('Sync status error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to get sync status',
@@ -249,13 +280,36 @@ async function handleSyncStatus(req, res) {
   }
 }
 
-// Helper function to map FPL position codes
-function mapFPLPosition(elementType) {
-  const positionMap = {
-    1: 'GK',
-    2: 'DEF', 
-    3: 'MID',
-    4: 'FWD'
-  };
-  return positionMap[elementType] || 'MID';
+async function handleGetChelseaPlayers(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { data: players, error: playersError } = await supabase
+      .from('chelsea_players')
+      .select('*')
+      .eq('is_available', true)
+      .order('total_points', { ascending: false });
+
+    if (playersError) {
+      throw playersError;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        players,
+        count: players.length
+      }
+    });
+
+  } catch (error) {
+    console.error('Get Chelsea players error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get Chelsea players',
+      details: error.message
+    });
+  }
 }

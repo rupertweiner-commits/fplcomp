@@ -36,7 +36,7 @@ function AdminDraftAllocation({ currentUser }) {
       }
 
       // Fetch available players
-      const playersResponse = await fetch('/api/draft-allocation?action=get-available-players', {
+      const playersResponse = await fetch('/api/fpl-sync?action=get-chelsea-players', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
