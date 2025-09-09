@@ -106,8 +106,43 @@ async function handleAllocatePlayer(req, res) {
       throw userPicksError;
     }
 
-    if (userPicks.length >= 2) {
-      return res.status(400).json({ error: 'User already has 2 players allocated' });
+    if (userPicks.length >= 5) {
+      return res.status(400).json({ error: 'User already has 5 players allocated' });
+    }
+
+    // Get available players for team composition validation
+    const { data: allPlayers, error: allPlayersError } = await supabase
+      .from('chelsea_players')
+      .select('*')
+      .eq('is_available', true);
+
+    if (allPlayersError) {
+      throw allPlayersError;
+    }
+
+    // Check team composition rules
+    const currentTeam = userPicks.map(pick => {
+      const player = allPlayers.find(p => p.id === pick.player_id);
+      return player ? player.position : 'UNKNOWN';
+    });
+
+    const gkDefCount = currentTeam.filter(pos => pos === 'GK' || pos === 'DEF').length;
+    const midFwdCount = currentTeam.filter(pos => pos === 'MID' || pos === 'FWD').length;
+    const newPlayerPosition = player.position;
+
+    // Validate team composition
+    if (newPlayerPosition === 'GK' || newPlayerPosition === 'DEF') {
+      if (gkDefCount >= 2) {
+        return res.status(400).json({ 
+          error: 'User already has 2 GK/DEF players. Team must have exactly 2 GK/DEF and 3 MID/FWD players.' 
+        });
+      }
+    } else if (newPlayerPosition === 'MID' || newPlayerPosition === 'FWD') {
+      if (midFwdCount >= 3) {
+        return res.status(400).json({ 
+          error: 'User already has 3 MID/FWD players. Team must have exactly 2 GK/DEF and 3 MID/FWD players.' 
+        });
+      }
     }
 
     // Create draft pick

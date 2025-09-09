@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trophy, Target, CheckCircle, AlertCircle } from 'lucide-react';
+import TeamCompositionValidator from './TeamCompositionValidator';
 
 function AdminDraftAllocation({ currentUser }) {
   const [mockUsers, setMockUsers] = useState([]);
@@ -168,13 +169,13 @@ function AdminDraftAllocation({ currentUser }) {
               Allocate Chelsea players to mock users for testing
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-sm text-gray-500">Total Allocations</div>
-            <div className="text-2xl font-bold text-blue-600">{getTotalAllocations()}</div>
-            <div className="text-sm text-gray-500">
-              {getUsersWithCompleteTeams()}/3 users with complete teams
+            <div className="text-right">
+              <div className="text-sm text-gray-500">Total Allocations</div>
+              <div className="text-2xl font-bold text-blue-600">{getTotalAllocations()}</div>
+              <div className="text-sm text-gray-500">
+                {getUsersWithCompleteTeams()}/3 users with complete teams (5 players each)
+              </div>
             </div>
-          </div>
         </div>
       </div>
 
@@ -276,6 +277,18 @@ function AdminDraftAllocation({ currentUser }) {
             {loading ? 'Allocating...' : 'Allocate Player'}
           </button>
         </div>
+
+        {/* Team Composition Rules */}
+        <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <h4 className="text-sm font-medium text-yellow-800 mb-2">Team Composition Rules</h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            <li>• Each team must have exactly 5 players</li>
+            <li>• 2 players from GK/DEF positions</li>
+            <li>• 3 players from MID/FWD positions</li>
+            <li>• One player must be set as Captain</li>
+            <li>• One player must be set as Vice Captain</li>
+          </ul>
+        </div>
       </div>
 
       {/* Current Allocations */}
@@ -295,25 +308,36 @@ function AdminDraftAllocation({ currentUser }) {
                   <h4 className="font-medium text-gray-900">
                     {userAllocation.user.username} ({userAllocation.user.first_name} {userAllocation.user.last_name})
                   </h4>
-                  <span className="text-sm text-gray-500">
-                    {userAllocation.picks.length}/2 players
-                  </span>
+                  <div className="flex items-center space-x-4">
+                    <span className="text-sm text-gray-500">
+                      {userAllocation.picks.length}/5 players
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {getTeamComposition(userAllocation.picks).gkDef} GK/DEF, {getTeamComposition(userAllocation.picks).midFwd} MID/FWD
+                    </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {userAllocation.picks.map((pick, pickIndex) => (
-                    <div key={pickIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm font-medium">{pick.player_name}</span>
-                      <div className="flex space-x-2">
-                        {pick.is_captain && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">C</span>
-                        )}
-                        {pick.is_vice_captain && (
-                          <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">VC</span>
-                        )}
-                        <span className="text-xs text-gray-500">{pick.total_score} pts</span>
+                <div className="space-y-3">
+                  <TeamCompositionValidator 
+                    picks={userAllocation.picks} 
+                    availablePlayers={availablePlayers} 
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {userAllocation.picks.map((pick, pickIndex) => (
+                      <div key={pickIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm font-medium">{pick.player_name}</span>
+                        <div className="flex space-x-2">
+                          {pick.is_captain && (
+                            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">C</span>
+                          )}
+                          {pick.is_vice_captain && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">VC</span>
+                          )}
+                          <span className="text-xs text-gray-500">{pick.total_score} pts</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
@@ -322,12 +346,12 @@ function AdminDraftAllocation({ currentUser }) {
       </div>
 
       {/* Complete Draft Button */}
-      {getTotalAllocations() >= 6 && (
+      {getTotalAllocations() >= 15 && (
         <div className="bg-white shadow rounded-lg p-6">
           <div className="text-center">
             <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Complete Draft?</h3>
             <p className="text-gray-600 mb-4">
-              All users have been allocated 2 players each. Complete the draft to start simulation.
+              All users have been allocated 5 players each (15 total). Complete the draft to start simulation.
             </p>
             <button
               onClick={handleCompleteDraft}
