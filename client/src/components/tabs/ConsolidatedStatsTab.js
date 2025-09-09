@@ -58,6 +58,11 @@ function ConsolidatedStatsTab({ liveScores, draftStatus, currentUser, chelseaPla
     return cleanup;
   }, [registerRefreshCallback, onRefresh]);
 
+  // Debug: Log when Chelsea players data changes
+  useEffect(() => {
+    console.log('📊 Chelsea players data updated:', chelseaPlayers?.length || 0, 'players');
+  }, [chelseaPlayers]);
+
   const safeExtract = (obj, path, defaultValue = 0) => {
     try {
       return path.split('.').reduce((current, key) => current?.[key], obj) ?? defaultValue;

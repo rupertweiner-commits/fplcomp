@@ -55,16 +55,7 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
       console.log('🔄 Fetching user teams...');
       const { data, error } = await supabase
         .from('user_teams')
-        .select(`
-          *,
-          chelsea_players (
-            id,
-            name,
-            position,
-            price,
-            is_available
-          )
-        `)
+        .select('*')
         .order('user_id');
 
       if (error) {

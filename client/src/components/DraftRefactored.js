@@ -123,7 +123,8 @@ function DraftRefactored({ wsService, currentUser }) {
   const handleFPLSyncComplete = (syncData) => {
     console.log('🔄 FPL sync completed, refreshing all data...', syncData);
     // Refresh all data when FPL sync completes
-    refreshAll();
+    fetchDraftData(); // Refresh parent data first
+    refreshAll(); // Then trigger component refresh callbacks
   };
 
   // Show auth form if not logged in

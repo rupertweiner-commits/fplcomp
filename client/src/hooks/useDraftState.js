@@ -52,6 +52,8 @@ export function useDraftState(currentUser) {
         return;
       }
 
+      console.log('✅ Chelsea players fetched:', playersData?.length || 0, 'players');
+
       // Fetch draft picks
       const { data: picksData, error: picksError } = await supabase
         .from('draft_picks')
