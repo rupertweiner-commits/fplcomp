@@ -139,6 +139,16 @@ async function handleSyncChelseaPlayers(req, res) {
         .eq('id', syncLog.id);
     }
     
+    // Fetch the synced players from database to return them
+    const { data: syncedPlayers, error: fetchError } = await supabase
+      .from('chelsea_players')
+      .select('*')
+      .order('name');
+
+    if (fetchError) {
+      console.error('Failed to fetch synced players:', fetchError);
+    }
+
     res.status(200).json({
       success: true,
       message: 'Chelsea players synced successfully',
@@ -146,7 +156,8 @@ async function handleSyncChelseaPlayers(req, res) {
         playersUpdated,
         playersCreated,
         totalPlayers: chelseaPlayers.length,
-        syncLogId: syncLog?.id
+        syncLogId: syncLog?.id,
+        players: syncedPlayers || []
       }
     });
     

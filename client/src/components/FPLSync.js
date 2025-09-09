@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { RefreshCw, Download, CheckCircle, AlertCircle } from 'lucide-react';
+import { RefreshCw, Download, CheckCircle, AlertCircle, Users, Eye, EyeOff } from 'lucide-react';
 import Button from './ui/Button';
 import Card from './ui/Card';
 import LoadingSpinner from './ui/LoadingSpinner';
+import { getPositionColor } from '../utils/helpers';
 
 function FPLSync({ currentUser, onSyncComplete }) {
   const [loading, setLoading] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [error, setError] = useState(null);
+  const [showDataTable, setShowDataTable] = useState(false);
+  const [syncedPlayers, setSyncedPlayers] = useState([]);
 
   const handleSyncPlayers = async () => {
     if (!currentUser?.isAdmin) {
@@ -38,7 +41,9 @@ function FPLSync({ currentUser, onSyncComplete }) {
 
       if (data.success) {
         setSyncResult(data.data);
+        setSyncedPlayers(data.data.players || []);
         console.log('✅ FPL sync completed:', data.data);
+        console.log('📊 Synced players:', data.data.players?.length || 0);
         
         // Notify parent component that sync completed
         if (onSyncComplete) {
@@ -123,7 +128,88 @@ function FPLSync({ currentUser, onSyncComplete }) {
               <p>• Players updated: <strong>{syncResult.playersUpdated}</strong></p>
               <p>• Total players: <strong>{syncResult.totalPlayers}</strong></p>
             </div>
+            
+            {/* Data Table Toggle */}
+            <div className="mt-4 pt-4 border-t border-green-200">
+              <Button
+                onClick={() => setShowDataTable(!showDataTable)}
+                variant="secondary"
+                size="small"
+              >
+                {showDataTable ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                {showDataTable ? 'Hide' : 'Show'} Synced Data
+              </Button>
+            </div>
           </div>
+        )}
+
+        {/* Data Table */}
+        {syncResult && showDataTable && syncedPlayers.length > 0 && (
+          <Card className="mb-6">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Users className="w-5 h-5 mr-2" />
+                  Synced Chelsea Players ({syncedPlayers.length})
+                </h3>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Player
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Position
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Price
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        FPL ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {syncedPlayers.map((player, index) => (
+                      <tr key={player.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {player.name}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPositionColor(player.position)}`}>
+                            {player.position}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          £{player.price || 0}m
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {player.fpl_id || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            player.is_available 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {player.is_available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </Card>
         )}
 
         <div className="space-y-4">
