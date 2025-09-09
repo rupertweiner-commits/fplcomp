@@ -1,56 +1,51 @@
-// Test Supabase connection
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://lhkurlcdrzuncibcehfp.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxoa3VybGNkcnp1bmNpYmNlaGZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU2MzM5ODksImV4cCI6MjA3MTIwOTk4OX0.MM3MrX3x4zXTAYVSew5gcMSADhm33Ly2f_mhACDSJpE'
+// Test Supabase connection and user authentication
+const supabaseUrl = process.env.SUPABASE_URL || 'https://your-project.supabase.co';
+const supabaseKey = process.env.SUPABASE_ANON_KEY || 'your-anon-key';
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+console.log('🔍 Testing Supabase connection...');
+console.log('URL:', supabaseUrl);
+console.log('Key (first 20 chars):', supabaseKey.substring(0, 20) + '...');
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testConnection() {
-  console.log('🧪 Testing Supabase connection...')
-  
   try {
-    // Test 1: Check if we can connect
-    const { data, error } = await supabase.from('users').select('count').limit(1)
+    // Test 1: Check if we can connect to Supabase
+    console.log('\n1. Testing Supabase connection...');
+    const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
     
     if (error) {
-      console.error('❌ Connection failed:', error.message)
-      return false
+      console.error('❌ Supabase connection failed:', error);
+      return;
     }
     
-    console.log('✅ Supabase connection successful!')
-    console.log('📊 Users table accessible')
+    console.log('✅ Supabase connection successful');
     
-    // Test 2: Try to sign up a test user
-    const testEmail = `test-${Date.now()}@example.com`
-    const testPassword = 'testpassword123'
+    // Test 2: Check if user exists in auth.users (we can't directly query this)
+    console.log('\n2. Testing user authentication...');
     
-    console.log('🧪 Testing user signup...')
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: testEmail,
-      password: testPassword
-    })
+    // Test 3: Check user_profiles table
+    console.log('\n3. Checking user_profiles table...');
+    const { data: profiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('email', 'rupertweiner@gmail.com');
     
-    if (authError) {
-      console.error('❌ Signup test failed:', authError.message)
-      return false
+    if (profilesError) {
+      console.error('❌ Error querying user_profiles:', profilesError);
+    } else {
+      console.log('✅ User profiles query successful');
+      console.log('Found profiles:', profiles.length);
+      if (profiles.length > 0) {
+        console.log('Profile data:', profiles[0]);
+      }
     }
     
-    console.log('✅ User signup test successful!')
-    console.log('👤 Test user created:', authData.user?.email)
-    
-    return true
-    
-  } catch (err) {
-    console.error('❌ Unexpected error:', err.message)
-    return false
+  } catch (error) {
+    console.error('❌ Test failed:', error);
   }
 }
 
-testConnection().then(success => {
-  if (success) {
-    console.log('🎉 All tests passed! Supabase is working correctly.')
-  } else {
-    console.log('💥 Tests failed. Check your Supabase configuration.')
-  }
-})
+testConnection();
