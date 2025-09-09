@@ -83,6 +83,20 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
     }
   }, [draftStatus]);
 
+  // Refresh function that can be called externally
+  const refreshData = () => {
+    fetchAvailablePlayers();
+    fetchUserTeams();
+  };
+
+  // Expose refresh function to parent component
+  useEffect(() => {
+    if (onRefresh) {
+      // Store the refresh function so parent can call it
+      onRefresh.refreshTeamData = refreshData;
+    }
+  }, [onRefresh]);
+
   const handlePlayerSelect = (player) => {
     if (selectedTeamPlayers.length >= 5) {
       alert('Maximum 5 players allowed per team');
@@ -362,6 +376,15 @@ function TeamManagementTab({ currentUser, draftStatus, onRefresh }) {
               <p className="text-gray-600">Assign players to teams and manage transfers.</p>
             </div>
           </div>
+          <Button
+            onClick={refreshData}
+            disabled={loading}
+            variant="secondary"
+            size="small"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Players
+          </Button>
         </div>
 
         {/* User Selection */}

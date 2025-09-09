@@ -120,6 +120,12 @@ function DraftRefactored({ wsService, currentUser }) {
     }
   };
 
+  const handleFPLSyncComplete = (syncData) => {
+    console.log('🔄 FPL sync completed, refreshing data...', syncData);
+    // Refresh all data when FPL sync completes
+    fetchDraftData();
+  };
+
   // Show auth form if not logged in
   if (!currentUser) {
     if (showForgotPassword) {
@@ -365,7 +371,7 @@ function DraftRefactored({ wsService, currentUser }) {
           )}
 
           {activeTab === 'fpl-sync' && (
-            <FPLSync currentUser={currentUser} />
+            <FPLSync currentUser={currentUser} onSyncComplete={handleFPLSyncComplete} />
           )}
 
           {activeTab === 'api-test' && (

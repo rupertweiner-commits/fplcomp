@@ -4,7 +4,7 @@ import Button from './ui/Button';
 import Card from './ui/Card';
 import LoadingSpinner from './ui/LoadingSpinner';
 
-function FPLSync({ currentUser }) {
+function FPLSync({ currentUser, onSyncComplete }) {
   const [loading, setLoading] = useState(false);
   const [syncResult, setSyncResult] = useState(null);
   const [error, setError] = useState(null);
@@ -39,6 +39,11 @@ function FPLSync({ currentUser }) {
       if (data.success) {
         setSyncResult(data.data);
         console.log('✅ FPL sync completed:', data.data);
+        
+        // Notify parent component that sync completed
+        if (onSyncComplete) {
+          onSyncComplete(data.data);
+        }
       } else {
         throw new Error(data.error || 'Sync failed');
       }
