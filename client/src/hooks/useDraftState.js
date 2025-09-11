@@ -66,7 +66,7 @@ export function useDraftState(currentUser) {
 
       // Fetch users for leaderboard
       const { data: usersData, error: usersError } = await supabase
-        .from('users')
+        .from('user_profiles')
         .select('*')
 ;
 
