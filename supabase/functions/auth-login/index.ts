@@ -37,7 +37,7 @@ serve(async (req) => {
 
     // Check if user exists
     const { data: user, error } = await supabaseClient
-      .from('users')
+      .from('user_profiles')
       .select('*')
       .eq('username', username)
       .single()
