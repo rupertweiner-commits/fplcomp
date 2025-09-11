@@ -97,10 +97,12 @@ async function handleGetAvailablePlayers(req, res) {
   }
 
   try {
+    // Get unassigned players (available for draft)
     const { data: players, error: playersError } = await supabase
       .from('chelsea_players')
       .select('*')
       .eq('is_available', true)
+      .is('assigned_to_user_id', null)
       .order('total_points', { ascending: false });
 
     if (playersError) {
@@ -128,35 +130,45 @@ async function handleGetAllocations(req, res) {
   }
 
   try {
-    // Get all draft picks with player details
-    const { data: draftPicks, error: picksError } = await supabase
-      .from('draft_picks')
+    // Get all assigned players with user details
+    const { data: assignedPlayers, error: playersError } = await supabase
+      .from('chelsea_players')
       .select(`
         *,
-        player:chelsea_players!draft_picks_player_id_fkey(*),
-        user:user_profiles!draft_picks_user_id_fkey(*)
+        user:user_profiles!assigned_to_user_id(*)
       `)
-      .order('user_id, created_at');
+      .not('assigned_to_user_id', 'is', null)
+      .order('assigned_to_user_id, total_points', { ascending: false });
 
-    if (picksError) {
-      throw picksError;
+    if (playersError) {
+      throw playersError;
     }
 
-    // Group picks by user
-    const allocations = {};
-    draftPicks.forEach(pick => {
-      if (!allocations[pick.user_id]) {
-        allocations[pick.user_id] = {
-          user: pick.user,
-          picks: []
+    // Group by user
+    const allocationsByUser = {};
+    assignedPlayers.forEach(player => {
+      if (!allocationsByUser[player.assigned_to_user_id]) {
+        allocationsByUser[player.assigned_to_user_id] = {
+          user: player.user,
+          players: []
         };
       }
-      allocations[pick.user_id].picks.push(pick);
+      allocationsByUser[player.assigned_to_user_id].players.push({
+        id: player.id,
+        fpl_id: player.fpl_id,
+        name: player.name,
+        position: player.position,
+        price: player.price,
+        total_points: player.total_points,
+        is_captain: player.is_captain,
+        is_vice_captain: player.is_vice_captain,
+        is_available: player.is_available
+      });
     });
 
     res.status(200).json({
       success: true,
-      data: { allocations: Object.values(allocations) }
+      data: { allocations: Object.values(allocationsByUser) }
     });
 
   } catch (error) {

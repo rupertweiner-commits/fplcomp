@@ -65,10 +65,36 @@ class FPLApiService {
       total_points: fplPlayer.total_points,
       form: fplPlayer.form,
       selected_by_percent: fplPlayer.selected_by_percent,
-      news: fplPlayer.news,
-      news_added: fplPlayer.news_added,
-      chance_of_playing_this_round: fplPlayer.chance_of_playing_this_round,
-      chance_of_playing_next_round: fplPlayer.chance_of_playing_next_round
+      
+      // Enhanced injury/availability data
+      status: fplPlayer.status, // 'a' = available, 'i' = injured, 's' = suspended, 'u' = unavailable
+      news: fplPlayer.news, // Injury/suspension details and updates
+      news_added: fplPlayer.news_added, // When the news was last updated
+      chance_of_playing_this_round: fplPlayer.chance_of_playing_this_round, // Percentage chance for current gameweek
+      chance_of_playing_next_round: fplPlayer.chance_of_playing_next_round, // Percentage chance for next gameweek
+      
+      // Additional strategic data
+      minutes: fplPlayer.minutes || 0,
+      goals_scored: fplPlayer.goals_scored || 0,
+      assists: fplPlayer.assists || 0,
+      clean_sheets: fplPlayer.clean_sheets || 0,
+      yellow_cards: fplPlayer.yellow_cards || 0,
+      red_cards: fplPlayer.red_cards || 0,
+      saves: fplPlayer.saves || 0,
+      bonus: fplPlayer.bonus || 0,
+      bps: fplPlayer.bps || 0, // Bonus points system
+      
+      // Advanced stats for strategic analysis
+      influence: fplPlayer.influence || '0.0',
+      creativity: fplPlayer.creativity || '0.0',
+      threat: fplPlayer.threat || '0.0',
+      ict_index: fplPlayer.ict_index || '0.0',
+      
+      // Transfer data
+      transfers_in: fplPlayer.transfers_in || 0,
+      transfers_out: fplPlayer.transfers_out || 0,
+      transfers_in_event: fplPlayer.transfers_in_event || 0,
+      transfers_out_event: fplPlayer.transfers_out_event || 0
     };
   }
 

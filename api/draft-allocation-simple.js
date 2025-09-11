@@ -88,21 +88,28 @@ async function handleGetAvailablePlayers(req, res) {
   }
 
   try {
-    // Get unassigned players (available for draft)
+    // Get ALL Chelsea players (including injured/unavailable) but only unassigned ones
     const { data: players, error: playersError } = await supabase
       .from('chelsea_players')
       .select('*')
-      .eq('is_available', true)
-      .is('assigned_to_user_id', null)
+      .is('assigned_to_user_id', null) // Only unassigned players
       .order('total_points', { ascending: false });
 
     if (playersError) {
       throw playersError;
     }
 
+    // Add availability context to each player
+    const playersWithContext = players.map(player => ({
+      ...player,
+      availability_status: getAvailabilityStatus(player),
+      availability_reason: getAvailabilityReason(player),
+      is_strategic_pick: isStrategicPick(player)
+    }));
+
     res.status(200).json({
       success: true,
-      data: { players }
+      data: { players: playersWithContext }
     });
 
   } catch (error) {
@@ -113,6 +120,46 @@ async function handleGetAvailablePlayers(req, res) {
       details: error.message
     });
   }
+}
+
+// Helper function to determine availability status
+function getAvailabilityStatus(player) {
+  if (player.status === 'a') return 'Available';
+  if (player.status === 'i') return 'Injured';
+  if (player.status === 's') return 'Suspended';
+  if (player.status === 'u') return 'Unavailable';
+  return 'Unknown';
+}
+
+// Helper function to get availability reason
+function getAvailabilityReason(player) {
+  if (player.status === 'a') return 'Fully fit and ready to play';
+  
+  if (player.status === 'i') {
+    const chance = player.chance_of_playing_this_round;
+    if (chance && chance > 0) {
+      return `Injured - ${chance}% chance of playing this round`;
+    }
+    return 'Injured - return date unknown';
+  }
+  
+  if (player.status === 's') {
+    return 'Suspended - serving ban';
+  }
+  
+  if (player.status === 'u') {
+    return 'Unavailable - reason unknown';
+  }
+  
+  return 'Status unknown';
+}
+
+// Helper function to determine if player is a strategic pick
+function isStrategicPick(player) {
+  // High-value players who are temporarily unavailable
+  return (player.status === 'i' || player.status === 's') && 
+         player.total_points > 50 && 
+         player.chance_of_playing_next_round > 50;
 }
 
 // Get current allocations

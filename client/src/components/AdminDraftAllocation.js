@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trophy, Target, CheckCircle, AlertCircle } from 'lucide-react';
 import TeamCompositionValidator from './TeamCompositionValidator';
+import InjuryStatusDisplay from './InjuryStatusDisplay';
 
 function AdminDraftAllocation({ currentUser }) {
   const [mockUsers, setMockUsers] = useState([]);
@@ -245,7 +246,7 @@ function AdminDraftAllocation({ currentUser }) {
               <option value="">Choose a player...</option>
               {availablePlayers.map(player => (
                 <option key={player.id} value={player.id}>
-                  {player.web_name || player.name} ({player.position}) - {player.total_points || 0} pts
+                  {player.web_name || player.name} ({player.position}) - {player.total_points || 0} pts - {player.availability_status || 'Available'}
                 </option>
               ))}
             </select>
@@ -279,6 +280,48 @@ function AdminDraftAllocation({ currentUser }) {
             <span className="text-sm text-gray-700">Vice Captain</span>
           </label>
         </div>
+
+        {/* Player Details and Availability Context */}
+        {selectedPlayer && (
+          <div className="mt-4">
+            {(() => {
+              const player = availablePlayers.find(p => p.id === parseInt(selectedPlayer));
+              if (!player) return null;
+              
+              return (
+                <div className="bg-gray-50 p-4 rounded-lg border">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {player.web_name || player.name} ({player.position})
+                    </h3>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{player.total_points || 0} pts</span>
+                      {player.is_strategic_pick && (
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                          💡 Strategic Pick
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <InjuryStatusDisplay player={player} />
+                  
+                  {player.availability_reason && (
+                    <div className="mt-3 text-sm text-gray-600">
+                      <strong>Status:</strong> {player.availability_reason}
+                    </div>
+                  )}
+                  
+                  {player.news && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <strong>Latest News:</strong> {player.news}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* Allocate Button */}
         <div className="mt-6">

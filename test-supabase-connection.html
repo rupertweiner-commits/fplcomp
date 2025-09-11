@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Supabase Connection Test</h1>
+    <div id="status">Testing connection...</div>
+    <div id="user-info"></div>
+    
+    <form id="login-form">
+        <input type="email" id="email" placeholder="Email" value="rupertweiner@gmail.com" required>
+        <input type="password" id="password" placeholder="Password" value="password123" required>
+        <button type="submit">Test Login</button>
+    </form>
+
+    <script>
+        // Replace with your actual Supabase credentials
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // Test connection
+        async function testConnection() {
+            try {
+                const { data, error } = await supabase.from('user_profiles').select('count').limit(1);
+                if (error) {
+                    document.getElementById('status').innerHTML = `❌ Connection failed: ${error.message}`;
+                } else {
+                    document.getElementById('status').innerHTML = '✅ Supabase connection successful!';
+                }
+            } catch (err) {
+                document.getElementById('status').innerHTML = `❌ Connection error: ${err.message}`;
+            }
+        }
+        
+        // Test login
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    document.getElementById('user-info').innerHTML = `❌ Login failed: ${error.message}`;
+                } else {
+                    document.getElementById('user-info').innerHTML = `✅ Login successful! User ID: ${data.user.id}`;
+                }
+            } catch (err) {
+                document.getElementById('user-info').innerHTML = `❌ Login error: ${err.message}`;
+            }
+        });
+        
+        testConnection();
+    </script>
+</body>
+</html>
