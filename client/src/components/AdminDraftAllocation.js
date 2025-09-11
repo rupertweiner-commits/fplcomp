@@ -22,21 +22,21 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       
       // Fetch mock users
-      const usersResponse = await fetch('/api/draft-allocation?action=get-mock-users', {
+      const usersResponse = await fetch('/api/draft-allocation-simple?action=get-mock-users', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
       });
       const usersData = await usersResponse.json();
       if (usersData.success) {
-        setMockUsers(usersData.data);
-        if (usersData.data.length > 0) {
-          setSelectedUser(usersData.data[0].id);
+        setMockUsers(usersData.data.users);
+        if (usersData.data.users.length > 0) {
+          setSelectedUser(usersData.data.users[0].id);
         }
       }
 
       // Fetch available players
-      const playersResponse = await fetch('/api/fpl-sync?action=get-chelsea-players', {
+      const playersResponse = await fetch('/api/draft-allocation-simple?action=get-available-players', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -47,7 +47,7 @@ function AdminDraftAllocation({ currentUser }) {
       }
 
       // Fetch current allocations
-      const allocationsResponse = await fetch('/api/draft-allocation?action=get-allocations', {
+      const allocationsResponse = await fetch('/api/draft-allocation-simple?action=get-allocations', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -75,14 +75,14 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('/api/draft-allocation?action=allocate-player', {
+      const response = await fetch('/api/draft-allocation-simple?action=allocate-player', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         },
         body: JSON.stringify({
-          userId: selectedUser,
+          targetUserId: selectedUser,
           playerId: selectedPlayer,
           isCaptain: isCaptain,
           isViceCaptain: isViceCaptain
@@ -113,7 +113,7 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('/api/draft-allocation?action=complete-draft', {
+      const response = await fetch('/api/draft-allocation-simple?action=complete-draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
