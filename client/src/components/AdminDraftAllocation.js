@@ -28,11 +28,14 @@ function AdminDraftAllocation({ currentUser }) {
         }
       });
       const usersData = await usersResponse.json();
-      if (usersData.success) {
+      if (usersData.success && usersData.data && usersData.data.users) {
         setMockUsers(usersData.data.users);
         if (usersData.data.users.length > 0) {
           setSelectedUser(usersData.data.users[0].id);
         }
+      } else {
+        console.error('Users API error:', usersData);
+        setMockUsers([]);
       }
 
       // Fetch available players
@@ -42,8 +45,11 @@ function AdminDraftAllocation({ currentUser }) {
         }
       });
       const playersData = await playersResponse.json();
-      if (playersData.success) {
+      if (playersData.success && playersData.data && playersData.data.players) {
         setAvailablePlayers(playersData.data.players);
+      } else {
+        console.error('Players API error:', playersData);
+        setAvailablePlayers([]);
       }
 
       // Fetch current allocations
@@ -53,8 +59,11 @@ function AdminDraftAllocation({ currentUser }) {
         }
       });
       const allocationsData = await allocationsResponse.json();
-      if (allocationsData.success) {
+      if (allocationsData.success && allocationsData.data && allocationsData.data.allocations) {
         setAllocations(allocationsData.data.allocations);
+      } else {
+        console.error('Allocations API error:', allocationsData);
+        setAllocations([]);
       }
 
     } catch (error) {
@@ -138,15 +147,15 @@ function AdminDraftAllocation({ currentUser }) {
   };
 
   const getTotalAllocations = () => {
-    return allocations.reduce((total, user) => total + user.picks.length, 0);
+    return allocations.reduce((total, user) => total + (user.players ? user.players.length : 0), 0);
   };
 
   const getUsersWithCompleteTeams = () => {
-    return allocations.filter(user => user.picks.length === 5).length;
+    return allocations.filter(user => user.players && user.players.length === 5).length;
   };
 
   const getUsersWithIncompleteTeams = () => {
-    return allocations.filter(user => user.picks.length < 5).length;
+    return allocations.filter(user => !user.players || user.players.length < 5).length;
   };
 
   if (!currentUser?.isAdmin) {
@@ -315,30 +324,30 @@ function AdminDraftAllocation({ currentUser }) {
                   </h4>
                   <div className="flex items-center space-x-4">
                     <span className="text-sm text-gray-500">
-                      {userAllocation.picks.length}/5 players
+                      {userAllocation.players ? userAllocation.players.length : 0}/5 players
                     </span>
                     <span className="text-xs text-gray-400">
-                      {userAllocation.picks.filter(pick => pick.position === 'GK' || pick.position === 'DEF').length} GK/DEF, {userAllocation.picks.filter(pick => pick.position === 'MID' || pick.position === 'FWD').length} MID/FWD
+                      {userAllocation.players ? userAllocation.players.filter(player => player.position === 'GK' || player.position === 'DEF').length : 0} GK/DEF, {userAllocation.players ? userAllocation.players.filter(player => player.position === 'MID' || player.position === 'FWD').length : 0} MID/FWD
                     </span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   <TeamCompositionValidator 
-                    picks={userAllocation.picks} 
+                    picks={userAllocation.players || []} 
                     availablePlayers={availablePlayers} 
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                    {userAllocation.picks.map((pick, pickIndex) => (
-                      <div key={pickIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span className="text-sm font-medium">{pick.player_name}</span>
+                    {(userAllocation.players || []).map((player, playerIndex) => (
+                      <div key={playerIndex} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-sm font-medium">{player.name}</span>
                         <div className="flex space-x-2">
-                          {pick.is_captain && (
+                          {player.is_captain && (
                             <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">C</span>
                           )}
-                          {pick.is_vice_captain && (
+                          {player.is_vice_captain && (
                             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">VC</span>
                           )}
-                          <span className="text-xs text-gray-500">{pick.total_score} pts</span>
+                          <span className="text-xs text-gray-500">{player.total_points} pts</span>
                         </div>
                       </div>
                     ))}
