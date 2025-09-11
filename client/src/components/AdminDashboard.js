@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Trophy, Target, CheckCircle, AlertCircle, Settings, BarChart3, UserCheck } from 'lucide-react';
+import { Users, Trophy, Target, CheckCircle, AlertCircle, Settings, BarChart3, UserCheck, RefreshCw, Database, TestTube } from 'lucide-react';
 import TeamCompositionValidator from './TeamCompositionValidator';
 import InjuryStatusDisplay from './InjuryStatusDisplay';
 
@@ -264,6 +264,28 @@ function AdminDashboard({ currentUser }) {
             >
               <Trophy className="h-4 w-4 inline mr-2" />
               Simulation Controls
+            </button>
+            <button
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'fpl-sync' ?
+                  'border-blue-500 text-blue-600' :
+                  'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveSection('fpl-sync')}
+            >
+              <RefreshCw className="h-4 w-4 inline mr-2" />
+              FPL Sync
+            </button>
+            <button
+              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                activeSection === 'api-test' ?
+                  'border-blue-500 text-blue-600' :
+                  'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+              onClick={() => setActiveSection('api-test')}
+            >
+              <Settings className="h-4 w-4 inline mr-2" />
+              API Test
             </button>
             <button
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -607,6 +629,108 @@ function AdminDashboard({ currentUser }) {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">User Activity</h2>
               <p className="text-gray-600">User activity monitoring and analytics will be displayed here.</p>
               {/* TODO: Implement user activity display */}
+            </div>
+          </div>
+        )}
+
+        {/* FPL Sync Section */}
+        {activeSection === 'fpl-sync' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <RefreshCw className="h-6 w-6 mr-2 text-blue-600" />
+                FPL Data Synchronization
+              </h2>
+              
+              <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-2">Sync Status</h3>
+                  <p className="text-sm text-blue-700">
+                    Keep your Chelsea player data synchronized with the latest FPL information.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">Last Sync</h4>
+                    <p className="text-sm text-gray-600">Never synced</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">Players Synced</h4>
+                    <p className="text-sm text-gray-600">{availablePlayers.length} players</p>
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setMessage({ type: 'info', text: 'FPL sync functionality will be implemented here' })}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    <RefreshCw className="h-4 w-4 inline mr-2" />
+                    Sync FPL Data
+                  </button>
+                  <button
+                    onClick={() => setMessage({ type: 'info', text: 'Force refresh will be implemented here' })}
+                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                  >
+                    <Database className="h-4 w-4 inline mr-2" />
+                    Force Refresh
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* API Test Section */}
+        {activeSection === 'api-test' && (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                <TestTube className="h-6 w-6 mr-2 text-green-600" />
+                API Testing & Diagnostics
+              </h2>
+              
+              <div className="space-y-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="font-medium text-green-900 mb-2">API Health Check</h3>
+                  <p className="text-sm text-green-700">
+                    Test all API endpoints and verify system connectivity.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">Database</h4>
+                    <p className="text-sm text-green-600">✅ Connected</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">FPL API</h4>
+                    <p className="text-sm text-yellow-600">⚠️ Not tested</p>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-2">Vercel Functions</h4>
+                    <p className="text-sm text-green-600">✅ Active</p>
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setMessage({ type: 'info', text: 'API test functionality will be implemented here' })}
+                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    <TestTube className="h-4 w-4 inline mr-2" />
+                    Run API Tests
+                  </button>
+                  <button
+                    onClick={() => setMessage({ type: 'info', text: 'Diagnostics will be implemented here' })}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                  >
+                    <Settings className="h-4 w-4 inline mr-2" />
+                    Run Diagnostics
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

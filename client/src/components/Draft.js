@@ -28,6 +28,7 @@ import FPLDataSync from './FPLDataSync.js';
 import TeamAssignment from './TeamAssignment.js';
 import AdminPlayerAllocation from './AdminPlayerAllocation.js';
 import NotificationPreferences from './NotificationPreferences.js';
+import SimulationTab from './SimulationTab.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -1830,35 +1831,8 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
 
 // PreviewTab removed - functionality moved to Stats tab
 
-function SimulationTab({
-  currentUser,
-  draftStatus,
-  simulationStatus,
-  leaderboard,
-  onRefresh,
-  onStartSimulation,
-  onSimulateGameweek,
-  onRefreshLeaderboard
-}) {
-  const [loading, setLoading] = useState(false);
-  const [gameweekHistory, setGameweekHistory] = useState([]);
-  const simulationMode = simulationStatus?.is_simulation_mode || false;
-  const [simulationData, setSimulationData] = useState(null);
+// SimulationTab moved to separate file: SimulationTab.js
 
-  // Utility function to safely extract values from potentially malformed data
-  const safeExtract = (obj, key, fallback = 0) => {
-    if (!obj || typeof obj !== 'object') return fallback;
-    const value = obj[key];
-
-    return typeof value === 'number' ? value : fallback;
-  };
-
-  const safeExtractString = (obj, key, fallback = 'Unknown') => {
-    if (!obj || typeof obj !== 'object') return fallback;
-    const value = obj[key];
-
-    return typeof value === 'string' ? value : fallback;
-  };
 
   const fetchSimulationData = useCallback(async() => {
     try {
@@ -2242,10 +2216,6 @@ function SimulationTab({
     }
   };
 
-  const currentGameweek = simulationStatus?.current_gameweek || 1;
-  const isDraftComplete = simulationStatus?.is_draft_complete || false;
-
-  return (
     <div className="space-y-8">
       {/* Simulation Controls */}
       <div className="bg-white rounded-lg shadow p-6">
