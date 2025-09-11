@@ -41,18 +41,46 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // Fetch my assigned players from chelsea_players table
-      const { data: players, error } = await supabase
-        .from('chelsea_players')
-        .select('*')
-        .eq('assigned_to_user_id', currentUser.id)
+      // Fetch my assigned players from user_teams table
+      const { data: userTeamData, error } = await supabase
+        .from('user_teams')
+        .select(`
+          *,
+          chelsea_players (
+            id,
+            name,
+            web_name,
+            position,
+            total_points,
+            price,
+            availability_status,
+            news,
+            is_strategic_pick
+          )
+        `)
+        .eq('user_id', currentUser.id)
         .order('total_points', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      setMyTeam(players || []);
+      // Transform the data to match the expected format
+      const players = userTeamData?.map(team => ({
+        id: team.player_id,
+        name: team.player_name || team.chelsea_players?.name || 'Unknown Player',
+        web_name: team.chelsea_players?.web_name,
+        position: team.position || team.chelsea_players?.position || 'UNKNOWN',
+        total_points: team.chelsea_players?.total_points || 0,
+        price: team.price || team.chelsea_players?.price || 0,
+        availability_status: team.chelsea_players?.availability_status,
+        news: team.chelsea_players?.news,
+        is_strategic_pick: team.chelsea_players?.is_strategic_pick,
+        is_captain: team.is_captain || false,
+        is_vice_captain: team.is_vice_captain || false
+      })) || [];
+
+      setMyTeam(players);
       
       // Set captain and vice captain
       const captainPlayer = players?.find(p => p.is_captain);
@@ -126,18 +154,18 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // First, remove captain from all players
+      // First, remove captain from all players in user_teams
       await supabase
-        .from('chelsea_players')
+        .from('user_teams')
         .update({ is_captain: false })
-        .eq('assigned_to_user_id', currentUser.id);
+        .eq('user_id', currentUser.id);
 
       // Set new captain
       const { error } = await supabase
-        .from('chelsea_players')
+        .from('user_teams')
         .update({ is_captain: true })
-        .eq('id', playerId)
-        .eq('assigned_to_user_id', currentUser.id);
+        .eq('player_id', playerId)
+        .eq('user_id', currentUser.id);
 
       if (error) {
         throw error;
@@ -159,18 +187,18 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // First, remove vice captain from all players
+      // First, remove vice captain from all players in user_teams
       await supabase
-        .from('chelsea_players')
+        .from('user_teams')
         .update({ is_vice_captain: false })
-        .eq('assigned_to_user_id', currentUser.id);
+        .eq('user_id', currentUser.id);
 
       // Set new vice captain
       const { error } = await supabase
-        .from('chelsea_players')
+        .from('user_teams')
         .update({ is_vice_captain: true })
-        .eq('id', playerId)
-        .eq('assigned_to_user_id', currentUser.id);
+        .eq('player_id', playerId)
+        .eq('user_id', currentUser.id);
 
       if (error) {
         throw error;
@@ -328,7 +356,12 @@ function UserTeamManagement({ currentUser }) {
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <p className="text-gray-600">No players assigned to your team yet.</p>
-                  <p className="text-sm text-gray-500 mt-2">Contact an admin to get players allocated.</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    {currentUser?.isAdmin ? 
+                      'Go to Admin Dashboard to allocate players to users.' : 
+                      'Contact an admin to get players allocated.'
+                    }
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
