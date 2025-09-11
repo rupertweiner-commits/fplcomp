@@ -91,7 +91,7 @@ function App() {
 
           // Add timeout to profile fetch
           const profilePromise = supabase
-            .from('user_profiles')
+            .from('users')
             .select('*')
             .eq('id', session.user.id)
             .single();
@@ -126,7 +126,7 @@ function App() {
             // Try to create user profile if it doesn't exist
             try {
               const { data: newUserProfile, error: createError } = await supabase
-                .from('user_profiles')
+                .from('users')
                 .insert({
                   id: session.user.id,
                   email: session.user.email,

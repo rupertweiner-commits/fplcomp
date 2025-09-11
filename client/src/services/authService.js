@@ -20,9 +20,9 @@ class AuthService {
         return { success: false, error: authError.message };
       }
 
-      // Get user profile from user_profiles table
+      // Get user profile from users table
       const { data: userProfile, error: profileError } = await supabase
-        .from('user_profiles')
+        .from('users')
         .select('*')
         .eq('id', authData.user.id)
         .single();
@@ -59,7 +59,7 @@ class AuthService {
     try {
       // Check if email already exists
       const { data: existingEmail, error: emailError } = await supabase
-        .from('user_profiles')
+        .from('users')
         .select('email')
         .eq('email', email)
         .single();
@@ -80,7 +80,7 @@ class AuthService {
 
       // Create user record in user_profiles table
       const { data: userData, error: userError } = await supabase
-        .from('user_profiles')
+        .from('users')
         .insert({
           id: authData.user.id,
           email: email,
@@ -264,7 +264,7 @@ class AuthService {
     try {
       console.log('🔄 Fetching user profile in background...');
       const { data: userProfile, error } = await supabase
-        .from('user_profiles')
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single();

@@ -30,7 +30,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('users')
         .select('*')
         .eq('id', userId)
         .single();
@@ -68,7 +68,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
       };
 
       const { data, error } = await supabase
-        .from('user_profiles')
+        .from('users')
         .update(updatesWithTimestamp)
         .eq('id', userId)
         .select()
@@ -183,7 +183,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
       setLoading(true);
       // Update username in the users table
       const { error: updateError } = await supabase
-        .from('user_profiles')
+        .from('users')
         .update({
           username: usernameForm.newUsername,
           updated_at: new Date().toISOString()
