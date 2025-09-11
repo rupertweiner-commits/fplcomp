@@ -181,7 +181,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
 
     try {
       setLoading(true);
-      // Update username in the users table
+      // Update username in the user_profiles table
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({

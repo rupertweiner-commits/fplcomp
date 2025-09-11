@@ -1963,7 +1963,7 @@ function SimulationTab({
 
       if (usersError) {
         console.error('Error fetching users for leaderboard:', usersError);
-        // If users table doesn't exist or has issues, use empty array
+        // If user_profiles table doesn't exist or has issues, use empty array
         if (usersError.message.includes('relation "user_profiles" does not exist') ||
             usersError.message.includes('PGRST200')) {
           console.log('User profiles table not found or has issues, using empty array');
