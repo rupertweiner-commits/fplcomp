@@ -187,15 +187,20 @@ async function handleAllocatePlayer(req, res) {
     }
 
     // Check if player is already assigned
-    const { data: existingPlayer, error: playerError } = await supabase
+    const { data: players, error: playerError } = await supabase
       .from('chelsea_players')
       .select('id, name, position, price, assigned_to_user_id')
-      .eq('id', playerId)
-      .single();
+      .eq('id', playerId);
 
     if (playerError) {
       throw playerError;
     }
+
+    if (!players || players.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const existingPlayer = players[0];
 
     if (existingPlayer.assigned_to_user_id) {
       return res.status(400).json({ error: 'Player is already assigned to another user' });
@@ -254,7 +259,7 @@ async function handleAllocatePlayer(req, res) {
     }
 
     // Assign player to user
-    const { data: updatedPlayer, error: updateError } = await supabase
+    const { data: updatedPlayers, error: updateError } = await supabase
       .from('chelsea_players')
       .update({
         assigned_to_user_id: targetUserId,
@@ -262,12 +267,17 @@ async function handleAllocatePlayer(req, res) {
         is_vice_captain: isViceCaptain
       })
       .eq('id', playerId)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       throw updateError;
     }
+
+    if (!updatedPlayers || updatedPlayers.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const updatedPlayer = updatedPlayers[0];
 
     res.status(200).json({
       success: true,
@@ -301,7 +311,7 @@ async function handleRemovePlayer(req, res) {
     }
 
     // Remove player assignment
-    const { data: updatedPlayer, error: updateError } = await supabase
+    const { data: updatedPlayers, error: updateError } = await supabase
       .from('chelsea_players')
       .update({
         assigned_to_user_id: null,
@@ -309,12 +319,17 @@ async function handleRemovePlayer(req, res) {
         is_vice_captain: false
       })
       .eq('id', playerId)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       throw updateError;
     }
+
+    if (!updatedPlayers || updatedPlayers.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const updatedPlayer = updatedPlayers[0];
 
     res.status(200).json({
       success: true,
@@ -348,15 +363,20 @@ async function handleSetCaptain(req, res) {
     }
 
     // Get current player
-    const { data: player, error: playerError } = await supabase
+    const { data: players, error: playerError } = await supabase
       .from('chelsea_players')
       .select('id, name, assigned_to_user_id, is_captain, is_vice_captain')
-      .eq('id', playerId)
-      .single();
+      .eq('id', playerId);
 
     if (playerError) {
       throw playerError;
     }
+
+    if (!players || players.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const player = players[0];
 
     if (!player.assigned_to_user_id) {
       return res.status(400).json({ error: 'Player is not assigned to any user' });
@@ -379,19 +399,24 @@ async function handleSetCaptain(req, res) {
     }
 
     // Update player
-    const { data: updatedPlayer, error: updateError } = await supabase
+    const { data: updatedPlayers, error: updateError } = await supabase
       .from('chelsea_players')
       .update({
         is_captain: isCaptain,
         is_vice_captain: isViceCaptain
       })
       .eq('id', playerId)
-      .select()
-      .single();
+      .select();
 
     if (updateError) {
       throw updateError;
     }
+
+    if (!updatedPlayers || updatedPlayers.length === 0) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const updatedPlayer = updatedPlayers[0];
 
     res.status(200).json({
       success: true,
