@@ -34,6 +34,8 @@ export default async function handler(req, res) {
         return await handleSetCaptain(req, res);
       case 'complete-draft':
         return await handleCompleteDraft(req, res);
+      case 'get-draft-status':
+        return await handleGetDraftStatus(req, res);
       
       default:
         return res.status(400).json({ error: 'Invalid action' });
@@ -44,6 +46,37 @@ export default async function handler(req, res) {
     res.status(500).json({
       success: false,
       error: 'Internal server error',
+      details: error.message
+    });
+  }
+}
+
+// Get draft status
+async function handleGetDraftStatus(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    const { data: draftStatus, error } = await supabase
+      .from('draft_status')
+      .select('*')
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: draftStatus
+    });
+
+  } catch (error) {
+    console.error('Error fetching draft status:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch draft status',
       details: error.message
     });
   }

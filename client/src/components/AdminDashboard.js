@@ -75,7 +75,7 @@ function AdminDashboard({ currentUser }) {
       }
 
       // Fetch draft status
-      const draftResponse = await fetch('/api/draft-allocation?action=get-draft-status', {
+      const draftResponse = await fetch('/api/draft-allocation-simple?action=get-draft-status', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
