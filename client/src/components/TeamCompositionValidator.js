@@ -1,22 +1,20 @@
 import React from 'react';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
-function TeamCompositionValidator({ picks, availablePlayers }) {
-  const getTeamComposition = (picks) => {
-    const gkDef = picks.filter(pick => {
-      const player = availablePlayers.find(p => p.id === pick.player_id);
-      return player && (player.position === 'GK' || player.position === 'DEF');
-    }).length;
+function TeamCompositionValidator({ players, availablePlayers }) {
+  const getTeamComposition = (players) => {
+    const gkDef = players.filter(player => 
+      player.position === 'GK' || player.position === 'DEF'
+    ).length;
     
-    const midFwd = picks.filter(pick => {
-      const player = availablePlayers.find(p => p.id === pick.player_id);
-      return player && (player.position === 'MID' || player.position === 'FWD');
-    }).length;
+    const midFwd = players.filter(player => 
+      player.position === 'MID' || player.position === 'FWD'
+    ).length;
 
     return { gkDef, midFwd };
   };
 
-  const { gkDef, midFwd } = getTeamComposition(picks);
+  const { gkDef, midFwd } = getTeamComposition(players);
   const total = gkDef + midFwd;
   const isComplete = total === 5 && gkDef === 2 && midFwd === 3;
   const isValid = gkDef <= 2 && midFwd <= 3 && total <= 5;

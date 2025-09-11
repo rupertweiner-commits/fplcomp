@@ -333,7 +333,7 @@ function AdminDraftAllocation({ currentUser }) {
                 </div>
                 <div className="space-y-3">
                   <TeamCompositionValidator 
-                    picks={userAllocation.players || []} 
+                    players={userAllocation.players || []} 
                     availablePlayers={availablePlayers} 
                   />
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
