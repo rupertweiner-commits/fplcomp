@@ -18,6 +18,8 @@ import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
 import ProfileManager from './ProfileManager';
 import UserActivity from './UserActivity.js';
+import UserTeamManagement from './UserTeamManagement';
+import AdminDashboard from './AdminDashboard';
 import DraftQueue from './DraftQueue.js';
 import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
@@ -709,12 +711,10 @@ function Draft({ wsService, currentUser }) {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {(() => {
-            const baseTabs = ['simulation', 'teams', 'team-management', 'stats', 'profile', 'notifications'];
-            // Add admin-only tabs
-
+            const baseTabs = ['team-management', 'stats', 'profile', 'notifications'];
+            // Add admin-only tab
             if (currentUser?.isAdmin) {
-              baseTabs.push('admin-allocation');
-              baseTabs.push('user-activity');
+              baseTabs.push('admin');
             }
             return baseTabs;
           })().map((tab) => (
@@ -727,13 +727,11 @@ function Draft({ wsService, currentUser }) {
               key={tab}
               onClick={() => setSelectedTab(tab)}
             >
-              {tab === 'simulation' && '🎲 Simulation'}
-              {tab === 'draft' && 'Player Draft'}
-              {tab === 'team-management' && '⚽ Team Management'}
+              {tab === 'team-management' && '⚽ My Team'}
               {tab === 'stats' && '📊 Stats'}
               {tab === 'profile' && '👤 Profile'}
               {tab === 'notifications' && '🔔 Notifications'}
-              {tab === 'user-activity' && '📊 User Activity'}
+              {tab === 'admin' && '👑 Admin'}
             </button>
           ))}
         </nav>
@@ -759,33 +757,12 @@ function Draft({ wsService, currentUser }) {
       </div>
 
       {/* Content */}
-      {selectedTab === 'simulation' && (
-        <SimulationTab
-          currentUser={currentUser}
-          draftStatus={draftStatus}
-          leaderboard={leaderboard}
-          onRefresh={fetchDraftData}
-          onRefreshLeaderboard={fetchLeaderboard}
-          onSimulateGameweek={simulateGameweek}
-          onStartSimulation={startSimulation}
-          simulationStatus={simulationStatus}
-        />
-      )}
-
-      {selectedTab === 'teams' && (
-        <TeamAssignment currentUser={currentUser} />
-      )}
-
-      {selectedTab === 'admin-allocation' && (
-        <AdminPlayerAllocation currentUser={currentUser} />
-      )}
-
       {selectedTab === 'team-management' && (
-        <TeamManagementTab
-          currentUser={currentUser}
-          draftStatus={draftStatus}
-          onRefresh={fetchDraftData}
-        />
+        <UserTeamManagement currentUser={currentUser} />
+      )}
+
+      {selectedTab === 'admin' && (
+        <AdminDashboard currentUser={currentUser} />
       )}
 
       {selectedTab === 'stats' && (
