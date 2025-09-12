@@ -43,12 +43,24 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
+      console.log('Fetching team for user:', currentUser.id, 'Type:', typeof currentUser.id);
+      
+      // First, let's check what players are actually assigned to this user
+      const { data: allAssignedPlayers, error: checkError } = await supabase
+        .from('chelsea_players')
+        .select('id, name, web_name, assigned_to_user_id')
+        .not('assigned_to_user_id', 'is', null);
+      
+      console.log('All assigned players:', allAssignedPlayers);
+      
       // Fetch my assigned players from chelsea_players table where assigned_to_user_id matches current user
       const { data: userTeamData, error } = await supabase
         .from('chelsea_players')
         .select('*')
         .eq('assigned_to_user_id', currentUser.id)
         .order('total_points', { ascending: false });
+
+      console.log('Team data response:', { userTeamData, error });
 
       if (error) {
         throw error;
@@ -70,11 +82,13 @@ function UserTeamManagement({ currentUser }) {
         ...player // Include all player data for PlayerCard component
       })) || [];
 
+      console.log('Processed players:', players);
       setMyTeam(players);
       
       // Set captain and vice captain
       const captainPlayer = players?.find(p => p.is_captain);
       const viceCaptainPlayer = players?.find(p => p.is_vice_captain);
+      console.log('Captain:', captainPlayer, 'Vice Captain:', viceCaptainPlayer);
       setCaptain(captainPlayer || null);
       setViceCaptain(viceCaptainPlayer || null);
 
