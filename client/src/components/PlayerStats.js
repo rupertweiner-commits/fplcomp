@@ -2,18 +2,26 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
 import PlayingCard from './PlayerCard';
 
-function PlayerStats() {
-  const [players, setPlayers] = useState([]);
+function PlayerStats({ players: propPlayers }) {
+  const [players, setPlayers] = useState(propPlayers || []);
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [teams, setTeams] = useState([]);
   const [positions, setPositions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!propPlayers);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPosition, setSelectedPosition] = useState('');
   const [sortBy, setSortBy] = useState('total_points');
   const [sortOrder, setSortOrder] = useState('desc');
   const [currentGameweek, setCurrentGameweek] = useState(1);
+
+  // Update players when prop changes
+  useEffect(() => {
+    if (propPlayers) {
+      setPlayers(propPlayers);
+      setLoading(false);
+    }
+  }, [propPlayers]);
 
   const fetchPlayersData = async() => {
     try {
@@ -95,8 +103,11 @@ function PlayerStats() {
   }, [players, searchTerm, selectedPosition, sortBy, sortOrder]);
 
   useEffect(() => {
-    fetchPlayersData();
-  }, []);
+    // Only fetch data if no players are provided as props
+    if (!propPlayers || propPlayers.length === 0) {
+      fetchPlayersData();
+    }
+  }, [propPlayers]);
 
   useEffect(() => {
     applyFilters();
