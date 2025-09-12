@@ -25,6 +25,12 @@ function AdminDashboard({ currentUser }) {
   // API Testing state
   const [testResults, setTestResults] = useState([]);
 
+  // Bulk allocation state
+  const [bulkAllocations, setBulkAllocations] = useState({});
+  const [showBulkAllocation, setShowBulkAllocation] = useState(false);
+  const [draggedPlayer, setDraggedPlayer] = useState(null);
+  const [hoveredUser, setHoveredUser] = useState(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -320,6 +326,194 @@ function AdminDashboard({ currentUser }) {
     link.download = `api-test-results-${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  // Bulk Allocation Functions
+  const initializeBulkAllocations = () => {
+    const initialAllocations = {};
+    mockUsers.forEach(user => {
+      initialAllocations[user.id] = {
+        user: user,
+        players: [],
+        captain: null,
+        viceCaptain: null
+      };
+    });
+    setBulkAllocations(initialAllocations);
+  };
+
+  const handleDragStart = (e, player) => {
+    setDraggedPlayer(player);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, userId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setHoveredUser(userId);
+  };
+
+  const handleDragLeave = () => {
+    setHoveredUser(null);
+  };
+
+  const handleDrop = (e, userId) => {
+    e.preventDefault();
+    if (!draggedPlayer) return;
+
+    const userAllocation = bulkAllocations[userId];
+    if (!userAllocation) return;
+
+    // Check if team is full
+    if (userAllocation.players.length >= 5) {
+      setMessage({ type: 'error', text: 'Team is already full (5 players)' });
+      return;
+    }
+
+    // Check if player is already assigned
+    const isAlreadyAssigned = Object.values(bulkAllocations).some(
+      allocation => allocation.players.some(p => p.id === draggedPlayer.id)
+    );
+
+    if (isAlreadyAssigned) {
+      setMessage({ type: 'error', text: 'Player is already assigned to another team' });
+      return;
+    }
+
+    // Add player to team
+    const updatedAllocations = {
+      ...bulkAllocations,
+      [userId]: {
+        ...userAllocation,
+        players: [...userAllocation.players, draggedPlayer]
+      }
+    };
+
+    setBulkAllocations(updatedAllocations);
+    setDraggedPlayer(null);
+    setHoveredUser(null);
+  };
+
+  const removePlayerFromBulkTeam = (userId, playerId) => {
+    const userAllocation = bulkAllocations[userId];
+    if (!userAllocation) return;
+
+    const updatedPlayers = userAllocation.players.filter(p => p.id !== playerId);
+    const updatedAllocation = {
+      ...userAllocation,
+      players: updatedPlayers,
+      captain: userAllocation.captain === playerId ? null : userAllocation.captain,
+      viceCaptain: userAllocation.viceCaptain === playerId ? null : userAllocation.viceCaptain
+    };
+
+    setBulkAllocations({
+      ...bulkAllocations,
+      [userId]: updatedAllocation
+    });
+  };
+
+  const setBulkCaptain = (userId, playerId) => {
+    const userAllocation = bulkAllocations[userId];
+    if (!userAllocation) return;
+
+    setBulkAllocations({
+      ...bulkAllocations,
+      [userId]: {
+        ...userAllocation,
+        captain: userAllocation.captain === playerId ? null : playerId,
+        viceCaptain: userAllocation.viceCaptain === playerId ? null : userAllocation.viceCaptain
+      }
+    });
+  };
+
+  const setBulkViceCaptain = (userId, playerId) => {
+    const userAllocation = bulkAllocations[userId];
+    if (!userAllocation) return;
+
+    setBulkAllocations({
+      ...bulkAllocations,
+      [userId]: {
+        ...userAllocation,
+        viceCaptain: userAllocation.viceCaptain === playerId ? null : playerId,
+        captain: userAllocation.captain === playerId ? null : userAllocation.captain
+      }
+    });
+  };
+
+  const applyBulkAllocations = async () => {
+    setLoading(true);
+    try {
+      const promises = [];
+      
+      for (const [userId, allocation] of Object.entries(bulkAllocations)) {
+        for (const player of allocation.players) {
+          const isCaptain = allocation.captain === player.id;
+          const isViceCaptain = allocation.viceCaptain === player.id;
+          
+          promises.push(
+            fetch('/api/draft-allocation-simple?action=allocate-player', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${currentUser?.access_token || ''}`
+              },
+              body: JSON.stringify({
+                targetUserId: userId,
+                playerId: player.id,
+                isCaptain,
+                isViceCaptain
+              })
+            })
+          );
+        }
+      }
+
+      const results = await Promise.all(promises);
+      const failed = results.filter(r => !r.ok);
+      
+      if (failed.length === 0) {
+        setMessage({ type: 'success', text: 'All players allocated successfully!' });
+        setShowBulkAllocation(false);
+        fetchData(); // Refresh data
+      } else {
+        setMessage({ type: 'error', text: `${failed.length} allocations failed` });
+      }
+    } catch (error) {
+      console.error('Error applying bulk allocations:', error);
+      setMessage({ type: 'error', text: 'Failed to apply bulk allocations' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearBulkAllocations = () => {
+    initializeBulkAllocations();
+  };
+
+  const autoFillTeams = () => {
+    const shuffledPlayers = [...availablePlayers].sort(() => Math.random() - 0.5);
+    const newAllocations = { ...bulkAllocations };
+    let playerIndex = 0;
+
+    Object.keys(newAllocations).forEach(userId => {
+      const userAllocation = newAllocations[userId];
+      const currentCount = userAllocation.players.length;
+      const needed = 5 - currentCount;
+      
+      for (let i = 0; i < needed && playerIndex < shuffledPlayers.length; i++) {
+        const player = shuffledPlayers[playerIndex];
+        const isAlreadyAssigned = Object.values(newAllocations).some(
+          allocation => allocation.players.some(p => p.id === player.id)
+        );
+        
+        if (!isAlreadyAssigned) {
+          userAllocation.players.push(player);
+        }
+        playerIndex++;
+      }
+    });
+
+    setBulkAllocations(newAllocations);
   };
 
   if (!currentUser?.isAdmin) {
@@ -661,6 +855,192 @@ function AdminDashboard({ currentUser }) {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Bulk Allocation Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Bulk Allocation</h2>
+                  <p className="text-gray-600 mt-1">Drag and drop players to quickly assign teams</p>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowBulkAllocation(!showBulkAllocation);
+                      if (!showBulkAllocation) {
+                        initializeBulkAllocations();
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-md font-medium ${
+                      showBulkAllocation
+                        ? 'bg-gray-600 text-white hover:bg-gray-700'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                  >
+                    {showBulkAllocation ? 'Hide Bulk View' : 'Show Bulk View'}
+                  </button>
+                  {showBulkAllocation && (
+                    <>
+                      <button
+                        onClick={autoFillTeams}
+                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                      >
+                        Auto Fill Teams
+                      </button>
+                      <button
+                        onClick={clearBulkAllocations}
+                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                      >
+                        Clear All
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {showBulkAllocation && (
+                <div className="space-y-6">
+                  {/* Available Players */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-800 mb-4">Available Players</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 max-h-64 overflow-y-auto">
+                      {availablePlayers.map(player => {
+                        const isAssigned = Object.values(bulkAllocations).some(
+                          allocation => allocation.players.some(p => p.id === player.id)
+                        );
+                        
+                        return (
+                          <div
+                            key={player.id}
+                            draggable={!isAssigned}
+                            onDragStart={(e) => !isAssigned && handleDragStart(e, player)}
+                            className={`p-3 rounded-lg border-2 cursor-move transition-all ${
+                              isAssigned
+                                ? 'bg-gray-100 border-gray-300 cursor-not-allowed opacity-50'
+                                : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md'
+                            }`}
+                          >
+                            <div className="text-sm font-medium text-gray-800 truncate">
+                              {player.web_name || player.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {player.position} • {player.total_points || 0} pts
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {player.availability_status || 'Available'}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Team Assignment Areas */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Object.entries(bulkAllocations).map(([userId, allocation]) => (
+                      <div
+                        key={userId}
+                        onDragOver={(e) => handleDragOver(e, userId)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, userId)}
+                        className={`p-4 rounded-lg border-2 transition-all ${
+                          hoveredUser === userId
+                            ? 'border-blue-400 bg-blue-50'
+                            : 'border-gray-200 bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-medium text-gray-800">
+                            {allocation.user.first_name} {allocation.user.last_name}
+                          </h4>
+                          <span className="text-sm text-gray-500">
+                            {allocation.players.length}/5
+                          </span>
+                        </div>
+
+                        <div className="space-y-2 min-h-32">
+                          {allocation.players.map((player, index) => (
+                            <div
+                              key={player.id}
+                              className="flex items-center justify-between bg-white p-2 rounded border"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium text-gray-800 truncate">
+                                  {player.web_name || player.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {player.position} • {player.total_points || 0} pts
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-1 ml-2">
+                                <button
+                                  onClick={() => setBulkCaptain(userId, player.id)}
+                                  className={`p-1 rounded text-xs ${
+                                    allocation.captain === player.id
+                                      ? 'bg-yellow-100 text-yellow-800'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-yellow-50'
+                                  }`}
+                                  title="Set as Captain"
+                                >
+                                  C
+                                </button>
+                                <button
+                                  onClick={() => setBulkViceCaptain(userId, player.id)}
+                                  className={`p-1 rounded text-xs ${
+                                    allocation.viceCaptain === player.id
+                                      ? 'bg-purple-100 text-purple-800'
+                                      : 'bg-gray-100 text-gray-600 hover:bg-purple-50'
+                                  }`}
+                                  title="Set as Vice Captain"
+                                >
+                                  VC
+                                </button>
+                                <button
+                                  onClick={() => removePlayerFromBulkTeam(userId, player.id)}
+                                  className="p-1 rounded text-xs bg-red-100 text-red-600 hover:bg-red-200"
+                                  title="Remove Player"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {allocation.players.length === 0 && (
+                            <div className="text-center text-gray-400 text-sm py-8">
+                              Drop players here
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Team Composition Validation */}
+                        <div className="mt-3">
+                          <TeamCompositionValidator 
+                            players={allocation.players} 
+                            availablePlayers={availablePlayers} 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Apply Bulk Allocations Button */}
+                  <div className="flex justify-center">
+                    <button
+                      onClick={applyBulkAllocations}
+                      disabled={loading}
+                      className={`px-8 py-3 rounded-md font-medium ${
+                        loading
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                    >
+                      {loading ? 'Applying Allocations...' : 'Apply All Allocations'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Complete Draft Button */}
