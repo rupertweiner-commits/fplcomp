@@ -194,59 +194,164 @@ function FPLSync({ currentUser, onSyncComplete }) {
               </div>
               
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Player
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Position
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Price
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        FPL ID
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {syncedPlayers.map((player, index) => (
-                      <tr key={player.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {player.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPositionColor(player.position)}`}>
-                            {player.position}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          £{player.price || 0}m
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {player.fpl_id || 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            player.is_available 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {player.is_available ? 'Available' : 'Unavailable'}
-                          </span>
-                        </td>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Player
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Position
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Points
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Form
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Selected %
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Goals
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Assists
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Clean Sheets
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Availability
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {syncedPlayers.map((player, index) => (
+                        <tr key={player.id || index} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {player.web_name || player.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {player.first_name} {player.second_name}
+                            </div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPositionColor(player.position)}`}>
+                              {player.position}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            £{player.price || 0}m
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-semibold text-blue-600">{player.total_points || 0}</div>
+                            <div className="text-xs text-gray-500">BPS: {player.bps || 0}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-semibold text-purple-600">{player.form || 0}</div>
+                            <div className="text-xs text-gray-500">ICT: {player.ict_index || 0}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {player.selected_by_percent ? `${player.selected_by_percent}%` : 'N/A'}
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-semibold text-green-600">{player.goals_scored || 0}</div>
+                            <div className="text-xs text-gray-500">Threat: {player.threat || 0}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-semibold text-orange-600">{player.assists || 0}</div>
+                            <div className="text-xs text-gray-500">Creativity: {player.creativity || 0}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="font-semibold text-blue-600">{player.clean_sheets || 0}</div>
+                            <div className="text-xs text-gray-500">Saves: {player.saves || 0}</div>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              player.is_available 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {player.is_available ? 'Available' : 'Unavailable'}
+                            </span>
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
+                            <div className="text-xs">
+                              <div className={`font-medium ${
+                                player.availability_status === 'Available' ? 'text-green-600' :
+                                player.availability_status === 'Injured' ? 'text-red-600' :
+                                player.availability_status === 'Doubtful' ? 'text-yellow-600' :
+                                'text-gray-600'
+                              }`}>
+                                {player.availability_status || 'Unknown'}
+                              </div>
+                              {player.availability_reason && (
+                                <div className="text-gray-500 mt-1 max-w-xs truncate" title={player.availability_reason}>
+                                  {player.availability_reason}
+                                </div>
+                              )}
+                              {(player.chance_of_playing_this_round || player.chance_of_playing_next_round) && (
+                                <div className="text-gray-500 mt-1">
+                                  {player.chance_of_playing_this_round && (
+                                    <span>This: {player.chance_of_playing_this_round}%</span>
+                                  )}
+                                  {player.chance_of_playing_this_round && player.chance_of_playing_next_round && (
+                                    <span className="mx-1">•</span>
+                                  )}
+                                  {player.chance_of_playing_next_round && (
+                                    <span>Next: {player.chance_of_playing_next_round}%</span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+              
+              {/* Availability Summary */}
+              {syncResult && syncResult.availability_breakdown && (
+                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Availability Summary</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {syncResult.availability_breakdown.available || 0}
+                      </div>
+                      <div className="text-gray-600">Available</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {syncResult.availability_breakdown.unavailable || 0}
+                      </div>
+                      <div className="text-gray-600">Unavailable</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-yellow-600">
+                        {syncResult.availability_breakdown.doubtful || 0}
+                      </div>
+                      <div className="text-gray-600">Doubtful</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {syncResult.availability_breakdown.injured || 0}
+                      </div>
+                      <div className="text-gray-600">Injured</div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
         )}
