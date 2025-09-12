@@ -32,6 +32,16 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
     }
   };
 
+  const getInjuryEmoji = (status) => {
+    switch (status) {
+      case 'Injured': return '🤕';
+      case 'Suspended': return '🚫';
+      case 'Doubtful': return '⚠️';
+      case 'Unavailable': return '❌';
+      default: return null;
+    }
+  };
+
   const getAvailabilityColor = (status) => {
     switch (status) {
       case 'Available': return 'text-green-700 bg-green-100 border-green-200';
@@ -48,8 +58,14 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
       <div className="bg-white rounded-lg border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${getPositionColor(player.position)}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${getPositionColor(player.position)} relative`}>
               {getPositionSymbol(player.position)}
+              {/* Injury emoji overlay */}
+              {getInjuryEmoji(player.availability_status) && (
+                <span className="absolute -top-1 -right-1 text-xs">
+                  {getInjuryEmoji(player.availability_status)}
+                </span>
+              )}
             </div>
             <div>
               <div className="font-medium text-gray-900 text-sm">
@@ -74,11 +90,6 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
     >
       {/* Card Header */}
       <div className={`h-16 bg-gradient-to-r ${getPositionColor(player.position)} relative`}>
-        {/* Position Symbol */}
-        <div className="absolute top-2 left-3 text-white text-xl">
-          {getPositionSymbol(player.position)}
-        </div>
-        
         {/* Player Name */}
         <div className="absolute bottom-2 left-3 right-16">
           <h3 className="text-white font-bold text-base truncate">
@@ -89,7 +100,7 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
           </p>
         </div>
         
-        {/* Captain/Vice Captain Badges - Right side */}
+        {/* Captain/Vice Captain Badges - Top Right */}
         <div className="absolute top-2 right-3 flex space-x-1">
           {showCaptainBadge && (
             <div className="bg-yellow-400 text-yellow-900 p-1 rounded-full">
@@ -101,6 +112,20 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
               <Shield className="h-3 w-3" />
             </div>
           )}
+        </div>
+
+        {/* Position Symbol and Injury Status - Bottom Right */}
+        <div className="absolute bottom-2 right-3 flex items-center space-x-1">
+          {/* Injury emoji if present */}
+          {getInjuryEmoji(player.availability_status) && (
+            <span className="text-lg drop-shadow-sm">
+              {getInjuryEmoji(player.availability_status)}
+            </span>
+          )}
+          {/* Position emoji */}
+          <span className="text-white text-xl drop-shadow-sm">
+            {getPositionSymbol(player.position)}
+          </span>
         </div>
       </div>
 
@@ -138,18 +163,15 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
           </div>
         </div>
 
-        {/* Availability Status - Only show if not available */}
-        {player.availability_status && player.availability_status !== 'Available' && (
-          <div className={`mb-3 p-2 rounded-lg border ${getAvailabilityColor(player.availability_status)}`}>
-            <div className="flex items-center space-x-2">
+        {/* Availability Status - Fixed height for consistent card sizing */}
+        <div className="mb-3 h-8 flex items-center">
+          {player.availability_status && player.availability_status !== 'Available' && (
+            <div className={`p-2 rounded-lg border ${getAvailabilityColor(player.availability_status)} flex items-center space-x-2 w-full`}>
               <Clock className="h-3 w-3" />
-              <span className="text-sm font-medium">{player.availability_status}</span>
+              <span className="text-sm font-medium truncate">{player.availability_status}</span>
             </div>
-            {player.availability_reason && (
-              <p className="text-xs mt-1 opacity-90">{player.availability_reason}</p>
-            )}
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Expandable Details - Smaller button */}
         <button 
