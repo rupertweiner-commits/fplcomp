@@ -755,9 +755,7 @@ function AdminDashboard({ currentUser }) {
             currentUser={currentUser} 
             onSyncComplete={() => {
               setMessage({ type: 'success', text: 'FPL sync completed successfully!' });
-              // Refresh data after sync
-              fetchDraftStatus();
-              fetchAvailablePlayers();
+              // Refresh data after sync - these functions will be called by the FPLSync component
             }} 
           />
         )}
