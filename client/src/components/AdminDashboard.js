@@ -20,6 +20,9 @@ function AdminDashboard({ currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
 
+  // API Testing state
+  const [testResults, setTestResults] = useState([]);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -200,6 +203,113 @@ function AdminDashboard({ currentUser }) {
     return allocations.filter(allocation => 
       allocation.players && allocation.players.length < 5
     ).length;
+  };
+
+  // API Testing Functions
+  const testApiEndpoint = async (endpoint, action, method = 'GET') => {
+    const startTime = Date.now();
+    const testName = action ? `${endpoint}?action=${action}` : endpoint;
+    
+    try {
+      let url = `/api/${endpoint}`;
+      if (action) {
+        url += `?action=${action}`;
+      }
+
+      const options = {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      };
+
+      const response = await fetch(url, options);
+      const responseTime = Date.now() - startTime;
+      const data = await response.json();
+
+      const result = {
+        endpoint: testName,
+        method,
+        status: response.ok ? 'success' : 'error',
+        responseTime,
+        statusCode: response.status,
+        message: response.ok ? 
+          (data.message || `${method} request successful`) : 
+          (data.error || `HTTP ${response.status}: ${response.statusText}`),
+        timestamp: new Date().toISOString()
+      };
+
+      setTestResults(prev => [result, ...prev]);
+      return result;
+
+    } catch (error) {
+      const responseTime = Date.now() - startTime;
+      const result = {
+        endpoint: testName,
+        method,
+        status: 'error',
+        responseTime,
+        statusCode: 0,
+        message: error.message || 'Network error',
+        timestamp: new Date().toISOString()
+      };
+
+      setTestResults(prev => [result, ...prev]);
+      return result;
+    }
+  };
+
+  const runAllTests = async () => {
+    setLoading(true);
+    setTestResults([]);
+    
+    const tests = [
+      // Core System APIs
+      { endpoint: 'draft-allocation-simple', action: 'get-draft-status', method: 'GET' },
+      { endpoint: 'draft-allocation-simple', action: 'get-mock-users', method: 'GET' },
+      { endpoint: 'draft-allocation-simple', action: 'get-available-players', method: 'GET' },
+      { endpoint: 'draft-allocation-simple', action: 'get-allocations', method: 'GET' },
+      
+      // Simulation APIs
+      { endpoint: 'simulation', action: 'status', method: 'GET' },
+      { endpoint: 'simulation', action: 'leaderboard', method: 'GET' },
+      { endpoint: 'simulation', action: 'get-gameweek-results', method: 'GET' },
+      
+      // FPL Sync APIs
+      { endpoint: 'fpl-sync', action: 'test', method: 'GET' },
+      { endpoint: 'fpl-sync', action: 'sync-status', method: 'GET' },
+      { endpoint: 'fpl-sync', action: 'get-chelsea-players', method: 'GET' },
+      
+      // User & Activity APIs
+      { endpoint: 'activity', action: 'recent', method: 'GET' },
+      { endpoint: 'leaderboard', action: null, method: 'GET' }
+    ];
+
+    // Run tests sequentially to avoid overwhelming the server
+    for (const test of tests) {
+      await testApiEndpoint(test.endpoint, test.action, test.method);
+      // Small delay between tests
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    setLoading(false);
+    setMessage({ type: 'success', text: `Completed ${tests.length} API tests` });
+  };
+
+  const clearTestResults = () => {
+    setTestResults([]);
+  };
+
+  const exportTestResults = () => {
+    const dataStr = JSON.stringify(testResults, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `api-test-results-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   if (!currentUser?.isAdmin) {
@@ -695,39 +805,178 @@ function AdminDashboard({ currentUser }) {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                   <h3 className="font-medium text-green-900 mb-2">API Health Check</h3>
                   <p className="text-sm text-green-700">
-                    Test all API endpoints and verify system connectivity.
+                    Test all API endpoints and verify system connectivity. This tool helps identify which endpoints are working and which need attention.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Database</h4>
-                    <p className="text-sm text-green-600">✅ Connected</p>
+                {/* API Endpoint Categories */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Core System APIs */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <Database className="h-5 w-5 mr-2 text-blue-600" />
+                      Core System APIs
+                    </h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => testApiEndpoint('draft-allocation-simple', 'get-draft-status', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-blue-50 text-sm"
+                      >
+                        📊 Draft Status
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('draft-allocation-simple', 'get-mock-users', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-blue-50 text-sm"
+                      >
+                        👥 Mock Users
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('draft-allocation-simple', 'get-available-players', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-blue-50 text-sm"
+                      >
+                        ⚽ Available Players
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('draft-allocation-simple', 'get-allocations', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-blue-50 text-sm"
+                      >
+                        🎯 Current Allocations
+                      </button>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">FPL API</h4>
-                    <p className="text-sm text-yellow-600">⚠️ Not tested</p>
+
+                  {/* Simulation APIs */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <Trophy className="h-5 w-5 mr-2 text-purple-600" />
+                      Simulation APIs
+                    </h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => testApiEndpoint('simulation', 'status', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-purple-50 text-sm"
+                      >
+                        🎮 Simulation Status
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('simulation', 'leaderboard', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-purple-50 text-sm"
+                      >
+                        🏆 Leaderboard
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('simulation', 'get-gameweek-results', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-purple-50 text-sm"
+                      >
+                        📈 Gameweek Results
+                      </button>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Vercel Functions</h4>
-                    <p className="text-sm text-green-600">✅ Active</p>
+
+                  {/* FPL Sync APIs */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <RefreshCw className="h-5 w-5 mr-2 text-orange-600" />
+                      FPL Sync APIs
+                    </h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => testApiEndpoint('fpl-sync', 'test', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-orange-50 text-sm"
+                      >
+                        🔧 FPL Sync Test
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('fpl-sync', 'sync-status', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-orange-50 text-sm"
+                      >
+                        📊 Sync Status
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('fpl-sync', 'get-chelsea-players', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-orange-50 text-sm"
+                      >
+                        ⚽ Chelsea Players
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* User & Activity APIs */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <UserCheck className="h-5 w-5 mr-2 text-green-600" />
+                      User & Activity APIs
+                    </h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => testApiEndpoint('activity', 'recent', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-green-50 text-sm"
+                      >
+                        📝 Recent Activity
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('leaderboard', null, 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-green-50 text-sm"
+                      >
+                        🏆 Leaderboard (Legacy)
+                      </button>
+                    </div>
                   </div>
                 </div>
 
+                {/* Test Results */}
+                <div className="bg-white border rounded-lg p-4">
+                  <h4 className="font-medium text-gray-800 mb-3">Test Results</h4>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {testResults.map((result, index) => (
+                      <div key={index} className={`p-3 rounded border-l-4 ${
+                        result.status === 'success' ? 'bg-green-50 border-green-400' :
+                        result.status === 'error' ? 'bg-red-50 border-red-400' :
+                        'bg-yellow-50 border-yellow-400'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{result.endpoint}</span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            result.status === 'success' ? 'bg-green-100 text-green-800' :
+                            result.status === 'error' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {result.status}
+                          </span>
+                        </div>
+                        <div className="text-xs text-gray-600 mt-1">
+                          {result.method} - {result.responseTime}ms
+                        </div>
+                        {result.message && (
+                          <div className="text-xs text-gray-700 mt-1">
+                            {result.message}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Actions */}
                 <div className="flex space-x-4">
                   <button
-                    onClick={() => setMessage({ type: 'info', text: 'API test functionality will be implemented here' })}
-                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    onClick={runAllTests}
+                    className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center"
                   >
-                    <TestTube className="h-4 w-4 inline mr-2" />
-                    Run API Tests
+                    <TestTube className="h-4 w-4 mr-2" />
+                    Run All Tests
                   </button>
                   <button
-                    onClick={() => setMessage({ type: 'info', text: 'Diagnostics will be implemented here' })}
-                    className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                    onClick={clearTestResults}
+                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
                   >
-                    <Settings className="h-4 w-4 inline mr-2" />
-                    Run Diagnostics
+                    Clear Results
+                  </button>
+                  <button
+                    onClick={exportTestResults}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Export Results
                   </button>
                 </div>
               </div>
