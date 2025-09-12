@@ -17,18 +17,13 @@ import {
 import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
 import ProfileManager from './ProfileManager';
-import UserActivity from './UserActivity.js';
 import UserTeamManagement from './UserTeamManagement';
 import AdminDashboard from './AdminDashboard';
 import DraftQueue from './DraftQueue.js';
 import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
-import FPLDataSync from './FPLDataSync.js';
-import TeamAssignment from './TeamAssignment.js';
-import AdminPlayerAllocation from './AdminPlayerAllocation.js';
 import NotificationPreferences from './NotificationPreferences.js';
-import SimulationTab from './SimulationTab.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -791,82 +786,6 @@ function Draft({ wsService, currentUser }) {
           <DraftQueue currentUser={currentUser} onDraftUpdate={fetchDraftData} />
         </div>
       )}
-
-      {selectedTab === 'user-activity' && currentUser?.isAdmin && (
-        <div className="mt-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Activity className="mr-3 h-8 w-8" />
-              Admin Dashboard
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Admin tools and user activity monitoring
-            </p>
-          </div>
-
-          {/* FPL Data Sync */}
-          <div className="mb-8">
-            <FPLDataSync />
-          </div>
-
-          {/* User Activity */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">User Activity</h3>
-            {currentUser ? (
-              <UserActivity isAdmin={currentUser.isAdmin} userId={currentUser.id} />
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>Please log in to view user activity.</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {selectedTab === 'simulation' && currentUser?.isAdmin && (
-        <SimulationTab
-          currentUser={currentUser}
-          draftStatus={draftStatus}
-          simulationStatus={simulationStatus}
-          leaderboard={leaderboard}
-          onRefresh={fetchDraftData}
-          onStartSimulation={startSimulation}
-          onSimulateGameweek={simulateGameweek}
-          onRefreshLeaderboard={fetchLeaderboard}
-        />
-      )}
-
-      {selectedTab === 'team-assignment' && currentUser?.isAdmin && (
-        <div className="mt-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Users className="mr-3 h-8 w-8" />
-              Team Assignment
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Assign players to users for the draft
-            </p>
-          </div>
-
-          <TeamAssignment currentUser={currentUser} onAssignmentUpdate={fetchDraftData} />
-        </div>
-      )}
-
-      {selectedTab === 'admin-player-allocation' && currentUser?.isAdmin && (
-        <div className="mt-6">
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center">
-              <Users className="mr-3 h-8 w-8" />
-              Admin Player Allocation
-            </h2>
-            <p className="text-gray-600 mt-2">
-              Admin tools for player allocation and draft management
-            </p>
-          </div>
-
-          <AdminPlayerAllocation currentUser={currentUser} onAllocationUpdate={fetchDraftData} />
-        </div>
-      )}
     </div>
   );
 }
@@ -974,3 +893,4 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
 }
 
 export default Draft;
+
