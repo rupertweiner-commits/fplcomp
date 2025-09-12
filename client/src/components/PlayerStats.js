@@ -214,16 +214,16 @@ function PlayerStats({ players: propPlayers }) {
             style={{ backgroundColor: '#034694' }}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Data</span>
+            <span>Refresh Player Data</span>
           </button>
           <button
             className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:opacity-90 text-white disabled:opacity-50"
             disabled={loading}
             onClick={fetchLiveData}
-            style={{ backgroundColor: '#034694' }}
+            style={{ backgroundColor: '#10B981' }}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Live Data</span>
+            <span>Refresh Live Scores</span>
           </button>
         </div>
       </div>

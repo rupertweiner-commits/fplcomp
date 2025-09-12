@@ -97,22 +97,22 @@ function PlayerProfile({ player, isOpen, onClose, showCaptainBadge = false, show
             <div className="text-white text-2xl font-bold">{player.first_name}</div>
             <div className="text-white text-3xl font-bold">{player.second_name}</div>
             <div className="text-white/80 text-sm">Chelsea</div>
-            
-            {/* Captain/Vice Captain Badges */}
-            <div className="flex space-x-2 mt-2">
-              {showCaptainBadge && (
-                <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold flex items-center">
-                  <Crown className="h-4 w-4 mr-1" />
-                  Captain
-                </div>
-              )}
-              {showViceCaptainBadge && (
-                <div className="bg-purple-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold flex items-center">
-                  <Shield className="h-4 w-4 mr-1" />
-                  Vice Captain
-                </div>
-              )}
-            </div>
+          </div>
+
+          {/* Captain/Vice Captain Badges - Bottom right */}
+          <div className="absolute bottom-4 right-6 flex space-x-2">
+            {showCaptainBadge && (
+              <div className="bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold flex items-center">
+                <Crown className="h-4 w-4 mr-1" />
+                Captain
+              </div>
+            )}
+            {showViceCaptainBadge && (
+              <div className="bg-purple-400 text-purple-900 px-3 py-1 rounded-full text-sm font-bold flex items-center">
+                <Shield className="h-4 w-4 mr-1" />
+                Vice Captain
+              </div>
+            )}
           </div>
         </div>
 
