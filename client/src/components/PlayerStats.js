@@ -221,7 +221,7 @@ function PlayerStats({ players: propPlayers }) {
                     Assists
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    CS
+                    Clean Sheets
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Saves
@@ -231,6 +231,9 @@ function PlayerStats({ players: propPlayers }) {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Availability
                   </th>
                 </tr>
               </thead>
@@ -262,22 +265,27 @@ function PlayerStats({ players: propPlayers }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      £{(player.now_cost || player.price || 0) / 10}M
+                      £{player.price || 0}m
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {player.total_points || 0}
+                      <div className="font-semibold text-blue-600">{player.total_points || 0}</div>
+                      <div className="text-xs text-gray-500">BPS: {player.bps || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {player.form || 0}
+                      <div className="font-semibold text-purple-600">{player.form || 0}</div>
+                      <div className="text-xs text-gray-500">ICT: {player.ict_index || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {player.goals_scored || 0}
+                      <div className="font-semibold text-green-600">{player.goals_scored || 0}</div>
+                      <div className="text-xs text-gray-500">Threat: {player.threat || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {player.assists || 0}
+                      <div className="font-semibold text-orange-600">{player.assists || 0}</div>
+                      <div className="text-xs text-gray-500">Creativity: {player.creativity || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {player.clean_sheets || 0}
+                      <div className="font-semibold text-blue-600">{player.clean_sheets || 0}</div>
+                      <div className="text-xs text-gray-500">Saves: {player.saves || 0}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {player.saves || 0}
@@ -286,9 +294,30 @@ function PlayerStats({ players: propPlayers }) {
                       {player.bonus || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`text-sm font-medium ${getAvailabilityColor(player.availability_status)}`}>
-                        {player.availability_status || 'Unknown'}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        player.is_available 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {player.is_available ? 'Available' : 'Unavailable'}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-xs">
+                        <div className={`font-medium ${
+                          player.availability_status === 'Available' ? 'text-green-600' :
+                          player.availability_status === 'Injured' ? 'text-red-600' :
+                          player.availability_status === 'Doubtful' ? 'text-yellow-600' :
+                          'text-gray-600'
+                        }`}>
+                          {player.availability_status || 'Unknown'}
+                        </div>
+                        {player.availability_reason && (
+                          <div className="text-gray-500 mt-1 max-w-xs truncate" title={player.availability_reason}>
+                            {player.availability_reason}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
