@@ -318,7 +318,6 @@ function FPLSync({ currentUser, onSyncComplete }) {
                     </tbody>
                   </table>
                 </div>
-              </div>
               
               {/* Availability Summary */}
               {syncResult && syncResult.availability_breakdown && (
