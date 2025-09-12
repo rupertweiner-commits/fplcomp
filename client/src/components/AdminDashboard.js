@@ -53,8 +53,12 @@ function AdminDashboard({ currentUser }) {
         }
       });
       const playersData = await playersResponse.json();
+      console.log('Players response:', playersData);
       if (playersData.success && playersData.data && playersData.data.players) {
+        console.log('Setting available players:', playersData.data.players.length);
         setAvailablePlayers(playersData.data.players);
+      } else {
+        console.error('Failed to load players:', playersData);
       }
 
       // Fetch current allocations
@@ -517,7 +521,7 @@ function AdminDashboard({ currentUser }) {
                     onChange={(e) => setSelectedPlayer(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Choose a player...</option>
+                    <option value="">Choose a player... ({availablePlayers.length} players loaded)</option>
                     {availablePlayers.map(player => (
                       <option key={player.id} value={player.id}>
                         {player.web_name || player.name} ({player.position}) - {player.total_points || 0} pts - {player.availability_status || 'Available'}
