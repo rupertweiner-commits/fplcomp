@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import supabase from '../config/supabase';
 import ChipManagement from './ChipManagement';
+import PlayerCard from './PlayerCard';
 
 function UserTeamManagement({ currentUser }) {
   const [myTeam, setMyTeam] = useState([]);
@@ -371,57 +372,45 @@ function UserTeamManagement({ currentUser }) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {myTeam.map((player, index) => (
-                    <div key={player.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-2xl font-bold text-gray-400">#{index + 1}</div>
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-semibold text-gray-900">{player.name}</h3>
-                            <span className={`px-2 py-1 text-xs font-medium rounded border ${getPositionColor(player.position)}`}>
-                              {player.position}
-                            </span>
-                            {player.is_captain && (
-                              <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded border border-yellow-300 flex items-center">
-                                <Crown className="h-3 w-3 mr-1" />
-                                Captain
-                              </span>
-                            )}
-                            {player.is_vice_captain && (
-                              <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded border border-green-300 flex items-center">
-                                <Shield className="h-3 w-3 mr-1" />
-                                Vice Captain
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {player.total_points} points • {player.price}M
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex space-x-2">
-                        {!player.is_captain && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {myTeam.map((player, index) => (
+                      <div key={player.id} className="relative">
+                        <PlayerCard
+                          player={player}
+                          showCaptainBadge={player.is_captain}
+                          showViceCaptainBadge={player.is_vice_captain}
+                          compact={false}
+                        />
+                        {/* Action Buttons Overlay */}
+                        <div className="absolute top-2 left-2 flex space-x-1">
                           <button
                             onClick={() => handleSetCaptain(player.id)}
                             disabled={loading}
-                            className="px-3 py-1 text-xs bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 disabled:opacity-50"
+                            className={`px-2 py-1 text-xs font-bold rounded-full ${
+                              player.is_captain
+                                ? 'bg-yellow-400 text-yellow-900'
+                                : 'bg-white/90 text-gray-600 hover:bg-yellow-100'
+                            } disabled:opacity-50`}
+                            title={player.is_captain ? 'Remove Captain' : 'Set Captain'}
                           >
-                            Set Captain
+                            <Crown className="h-3 w-3" />
                           </button>
-                        )}
-                        {!player.is_vice_captain && (
                           <button
                             onClick={() => handleSetViceCaptain(player.id)}
                             disabled={loading}
-                            className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200 disabled:opacity-50"
+                            className={`px-2 py-1 text-xs font-bold rounded-full ${
+                              player.is_vice_captain
+                                ? 'bg-purple-400 text-purple-900'
+                                : 'bg-white/90 text-gray-600 hover:bg-purple-100'
+                            } disabled:opacity-50`}
+                            title={player.is_vice_captain ? 'Remove Vice Captain' : 'Set Vice Captain'}
                           >
-                            Set VC
+                            <Shield className="h-3 w-3" />
                           </button>
-                        )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
