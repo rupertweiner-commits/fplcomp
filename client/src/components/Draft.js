@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../config/supabase';
 import PlayerStats from './PlayerStats';
-import ProfileManager from './ProfileManager';
+import ProfileManagerClean from './ProfileManagerClean';
 import UserTeamManagement from './UserTeamManagement';
 import AdminDashboard from './AdminDashboard';
 import DraftQueue from './DraftQueue.js';
@@ -701,7 +701,7 @@ function Draft({ wsService, currentUser }) {
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8">
           {(() => {
-            const baseTabs = ['team-management', 'stats', 'profile', 'notifications'];
+            const baseTabs = ['team-management', 'stats', 'profile'];
             // Add admin-only tab
             if (currentUser?.isAdmin) {
               baseTabs.push('admin');
@@ -719,8 +719,7 @@ function Draft({ wsService, currentUser }) {
             >
               {tab === 'team-management' && '⚽ My Team'}
               {tab === 'stats' && '📊 Stats'}
-              {tab === 'profile' && '👤 Profile'}
-              {tab === 'notifications' && '🔔 Notifications'}
+              {tab === 'profile' && '👤 Profile & Settings'}
               {tab === 'admin' && '👑 Admin'}
             </button>
           ))}
@@ -765,14 +764,13 @@ function Draft({ wsService, currentUser }) {
       )}
 
       {selectedTab === 'profile' && (
-        <ProfileManager
-          onProfileUpdate={fetchDraftData}
-          userId={currentUser?.id}
-        />
-      )}
-
-      {selectedTab === 'notifications' && (
-        <NotificationPreferences currentUser={currentUser} />
+        <div className="space-y-8">
+          <ProfileManagerClean
+            onProfileUpdate={fetchDraftData}
+            userId={currentUser?.id}
+          />
+          <NotificationPreferences currentUser={currentUser} />
+        </div>
       )}
 
       {selectedTab === 'draft-queue' && (
