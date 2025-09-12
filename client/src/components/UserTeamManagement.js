@@ -397,8 +397,8 @@ function UserTeamManagement({ currentUser }) {
                           onPlayerClick={handlePlayerClick}
                           compact={false}
                         />
-                        {/* Action Buttons Overlay */}
-                        <div className="absolute top-2 left-2 flex space-x-1">
+                        {/* Action Buttons Overlay - Right side */}
+                        <div className="absolute top-2 right-2 flex space-x-1">
                           <button
                             onClick={() => handleSetCaptain(player.id)}
                             disabled={loading}

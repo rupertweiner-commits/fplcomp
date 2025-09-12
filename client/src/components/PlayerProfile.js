@@ -60,14 +60,28 @@ function PlayerProfile({ player, isOpen, onClose, showCaptainBadge = false, show
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className={`h-32 bg-gradient-to-r ${getPositionColor(player.position)} relative rounded-t-2xl`}>
           {/* Close Button */}
           <button
-            onClick={onClose}
-            className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-all"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-2 transition-all z-10"
           >
             <X className="h-5 w-5" />
           </button>
@@ -297,31 +311,8 @@ function PlayerProfile({ player, isOpen, onClose, showCaptainBadge = false, show
 
           {/* Season History Table */}
           <div className="mb-6">
-            <div className="flex space-x-4 mb-4">
-              <button
-                onClick={() => setActiveTab('history')}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  activeTab === 'history'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Season History
-              </button>
-              <button
-                onClick={() => setActiveTab('fixtures')}
-                className={`px-4 py-2 rounded-lg font-medium ${
-                  activeTab === 'fixtures'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Upcoming Fixtures
-              </button>
-            </div>
-
-            {activeTab === 'history' && (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Season History</h3>
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead className="bg-gray-50">
@@ -380,20 +371,7 @@ function PlayerProfile({ player, isOpen, onClose, showCaptainBadge = false, show
                   </table>
                 </div>
               </div>
-            )}
-
-            {activeTab === 'fixtures' && (
-              <div className="bg-gray-50 rounded-lg p-6 text-center">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Upcoming Fixtures</h3>
-                <p className="text-gray-600">
-                  All players are Chelsea players, so fixtures are the same for everyone.
-                  <br />
-                  Check the main dashboard for Chelsea's upcoming matches.
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
         </div>
       </div>
     </div>

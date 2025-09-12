@@ -24,6 +24,7 @@ import ForgotPassword from './ForgotPassword.js';
 import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
 import NotificationPreferences from './NotificationPreferences.js';
+import ChelseaNextGame from './ChelseaNextGame.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -667,6 +668,9 @@ function Draft({ wsService, currentUser }) {
 
   return (
     <div className="space-y-8">
+      {/* Chelsea Next Game */}
+      <ChelseaNextGame />
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
         <div>
