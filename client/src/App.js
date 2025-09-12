@@ -6,7 +6,7 @@ import { Wifi, WifiOff, Shield, User } from 'lucide-react';
 // Import components
 import Draft from './components/Draft';
 import MobileNavigation from './components/MobileNavigation';
-import ProfileManager from './components/ProfileManager';
+import ProfileManagerClean from './components/ProfileManagerClean';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 
 // Import services
@@ -348,7 +348,7 @@ function App() {
                 <Route
                   element={
                     currentUser ? (
-                      <ProfileManager onProfileUpdate={() => {}} userId={currentUser.id} />
+                      <ProfileManagerClean onProfileUpdate={() => {}} userId={currentUser.id} />
                     ) : (
                       <div className="text-center py-12">
                         <p className="text-gray-600">Please log in to access your profile.</p>
