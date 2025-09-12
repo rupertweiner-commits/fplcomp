@@ -1,8 +1,10 @@
 -- Fix FPL Sync Log Table
 -- This table is needed for the fpl-sync API to work properly
 
--- Create fpl_sync_log table if it doesn't exist
-CREATE TABLE IF NOT EXISTS fpl_sync_log (
+-- Drop and recreate fpl_sync_log table to ensure correct structure
+DROP TABLE IF EXISTS fpl_sync_log;
+
+CREATE TABLE fpl_sync_log (
     id SERIAL PRIMARY KEY,
     sync_type VARCHAR(50) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'in_progress',

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Users, Trophy, Target, CheckCircle, AlertCircle, Settings, BarChart3, UserCheck, RefreshCw, Database, TestTube } from 'lucide-react';
 import TeamCompositionValidator from './TeamCompositionValidator';
 import InjuryStatusDisplay from './InjuryStatusDisplay';
+import FPLSync from './FPLSync';
+import APITester from './APITester';
 
 function AdminDashboard({ currentUser }) {
   const [activeSection, setActiveSection] = useState('draft-allocation');
@@ -749,55 +751,24 @@ function AdminDashboard({ currentUser }) {
 
         {/* FPL Sync Section */}
         {activeSection === 'fpl-sync' && (
-          <div className="space-y-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <RefreshCw className="h-6 w-6 mr-2 text-blue-600" />
-                FPL Data Synchronization
-              </h2>
-              
-              <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-medium text-blue-900 mb-2">Sync Status</h3>
-                  <p className="text-sm text-blue-700">
-                    Keep your Chelsea player data synchronized with the latest FPL information.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Last Sync</h4>
-                    <p className="text-sm text-gray-600">Never synced</p>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Players Synced</h4>
-                    <p className="text-sm text-gray-600">{availablePlayers.length} players</p>
-                  </div>
-                </div>
-
-                <div className="flex space-x-4">
-                  <button
-                    onClick={() => setMessage({ type: 'info', text: 'FPL sync functionality will be implemented here' })}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    <RefreshCw className="h-4 w-4 inline mr-2" />
-                    Sync FPL Data
-                  </button>
-                  <button
-                    onClick={() => setMessage({ type: 'info', text: 'Force refresh will be implemented here' })}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-                  >
-                    <Database className="h-4 w-4 inline mr-2" />
-                    Force Refresh
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <FPLSync 
+            currentUser={currentUser} 
+            onSyncComplete={() => {
+              setMessage({ type: 'success', text: 'FPL sync completed successfully!' });
+              // Refresh data after sync
+              fetchDraftStatus();
+              fetchAvailablePlayers();
+            }} 
+          />
         )}
 
         {/* API Test Section */}
         {activeSection === 'api-test' && (
+          <APITester currentUser={currentUser} />
+        )}
+
+        {/* Legacy API Test Section - Hidden */}
+        {false && activeSection === 'api-test' && (
           <div className="space-y-8">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
