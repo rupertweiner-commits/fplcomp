@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw, Users, Shield, Search, TrendingUp, Award, Target } from 'lucide-react';
-import PlayerCard from './PlayerCard';
+import PlayingCard from './PlayerCard';
 
 function PlayerStats() {
   const [players, setPlayers] = useState([]);
@@ -285,7 +285,7 @@ function PlayerStats() {
       {/* Player Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredPlayers.slice(0, 50).map(player => (
-          <PlayerCard
+          <PlayingCard
             key={player.id}
             player={player}
             showCaptainBadge={false}
