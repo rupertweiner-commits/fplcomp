@@ -394,11 +394,6 @@ function UserTeamManagement({ currentUser }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* My Team */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Chip Management Section */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chip System</h2>
-              <ChipManagement currentUser={currentUser} />
-            </div>
             {/* Team Overview */}
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">My Team ({myTeam.length}/5 players)</h2>
@@ -592,6 +587,12 @@ function UserTeamManagement({ currentUser }) {
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* Chip Management Section */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Chip System</h2>
+              <ChipManagement currentUser={currentUser} />
             </div>
           </div>
         </div>
