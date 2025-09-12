@@ -43,24 +43,11 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // Fetch my assigned players from user_teams table
+      // Fetch my assigned players from chelsea_players table where assigned_to_user_id matches current user
       const { data: userTeamData, error } = await supabase
-        .from('user_teams')
-        .select(`
-          *,
-          chelsea_players (
-            id,
-            name,
-            web_name,
-            position,
-            total_points,
-            price,
-            availability_status,
-            news,
-            is_strategic_pick
-          )
-        `)
-        .eq('user_id', currentUser.id)
+        .from('chelsea_players')
+        .select('*')
+        .eq('assigned_to_user_id', currentUser.id)
         .order('total_points', { ascending: false });
 
       if (error) {
@@ -68,18 +55,19 @@ function UserTeamManagement({ currentUser }) {
       }
 
       // Transform the data to match the expected format
-      const players = userTeamData?.map(team => ({
-        id: team.player_id,
-        name: team.player_name || team.chelsea_players?.name || 'Unknown Player',
-        web_name: team.chelsea_players?.web_name,
-        position: team.position || team.chelsea_players?.position || 'UNKNOWN',
-        total_points: team.chelsea_players?.total_points || 0,
-        price: team.price || team.chelsea_players?.price || 0,
-        availability_status: team.chelsea_players?.availability_status,
-        news: team.chelsea_players?.news,
-        is_strategic_pick: team.chelsea_players?.is_strategic_pick,
-        is_captain: team.is_captain || false,
-        is_vice_captain: team.is_vice_captain || false
+      const players = userTeamData?.map(player => ({
+        id: player.id,
+        name: player.web_name || player.name || 'Unknown Player',
+        web_name: player.web_name,
+        position: player.position || 'UNKNOWN',
+        total_points: player.total_points || 0,
+        price: player.price || 0,
+        availability_status: player.availability_status,
+        news: player.news,
+        is_strategic_pick: player.is_strategic_pick,
+        is_captain: player.is_captain || false,
+        is_vice_captain: player.is_vice_captain || false,
+        ...player // Include all player data for PlayerCard component
       })) || [];
 
       setMyTeam(players);
@@ -156,18 +144,18 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // First, remove captain from all players in user_teams
+      // First, remove captain from all players assigned to this user
       await supabase
-        .from('user_teams')
+        .from('chelsea_players')
         .update({ is_captain: false })
-        .eq('user_id', currentUser.id);
+        .eq('assigned_to_user_id', currentUser.id);
 
       // Set new captain
       const { error } = await supabase
-        .from('user_teams')
+        .from('chelsea_players')
         .update({ is_captain: true })
-        .eq('player_id', playerId)
-        .eq('user_id', currentUser.id);
+        .eq('id', playerId)
+        .eq('assigned_to_user_id', currentUser.id);
 
       if (error) {
         throw error;
@@ -189,18 +177,18 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      // First, remove vice captain from all players in user_teams
+      // First, remove vice captain from all players assigned to this user
       await supabase
-        .from('user_teams')
+        .from('chelsea_players')
         .update({ is_vice_captain: false })
-        .eq('user_id', currentUser.id);
+        .eq('assigned_to_user_id', currentUser.id);
 
       // Set new vice captain
       const { error } = await supabase
-        .from('user_teams')
+        .from('chelsea_players')
         .update({ is_vice_captain: true })
-        .eq('player_id', playerId)
-        .eq('user_id', currentUser.id);
+        .eq('id', playerId)
+        .eq('assigned_to_user_id', currentUser.id);
 
       if (error) {
         throw error;
