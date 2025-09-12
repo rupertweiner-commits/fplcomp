@@ -169,12 +169,33 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
         return;
       }
 
-      console.log('✅ Login successful, auth state will handle the rest');
+      console.log('✅ Login successful, triggering FPL sync...');
+      
+      // Trigger FPL sync on login (fire and forget)
+      triggerFPLSync();
+      
       // Don't manually reset loading - let the auth state change handle it
     } catch (error) {
       console.error('❌ Login error:', error);
       setErrors({ submit: error.message || 'An unexpected error occurred. Please try again.' });
       setLoading(false);
+    }
+  };
+
+  const triggerFPLSync = async () => {
+    try {
+      // Trigger FPL sync in the background (don't wait for response)
+      fetch('/api/fpl-comprehensive-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ trigger: 'login' })
+      }).catch(error => {
+        console.log('FPL sync triggered (background):', error.message);
+      });
+    } catch (error) {
+      console.log('FPL sync trigger failed (non-critical):', error.message);
     }
   };
 
