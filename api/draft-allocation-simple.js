@@ -157,15 +157,28 @@ async function handleGetAvailablePlayers(req, res) {
 
 // Helper function to determine availability status
 function getAvailabilityStatus(player) {
+  // Use the actual column name from the database
+  if (player.availability_status) {
+    return player.availability_status;
+  }
+  
+  // Fallback to FPL status codes if availability_status is not set
   if (player.status === 'a') return 'Available';
   if (player.status === 'i') return 'Injured';
   if (player.status === 's') return 'Suspended';
   if (player.status === 'u') return 'Unavailable';
+  
   return 'Unknown';
 }
 
 // Helper function to get availability reason
 function getAvailabilityReason(player) {
+  // Use the actual column name from the database
+  if (player.availability_reason) {
+    return player.availability_reason;
+  }
+  
+  // Fallback to FPL status codes if availability_reason is not set
   if (player.status === 'a') return 'Fully fit and ready to play';
   
   if (player.status === 'i') {
@@ -190,9 +203,14 @@ function getAvailabilityReason(player) {
 // Helper function to determine if player is a strategic pick
 function isStrategicPick(player) {
   // High-value players who are temporarily unavailable
-  return (player.status === 'i' || player.status === 's') && 
+  const isUnavailable = player.availability_status === 'Injured' || 
+                       player.availability_status === 'Suspended' ||
+                       player.status === 'i' || 
+                       player.status === 's';
+  
+  return isUnavailable && 
          player.total_points > 50 && 
-         player.chance_of_playing_next_round > 50;
+         (player.chance_of_playing_next_round > 50 || player.chance_of_playing_this_round > 50);
 }
 
 // Get current allocations
