@@ -353,6 +353,7 @@ function FPLSync({ currentUser, onSyncComplete }) {
                 </div>
               )}
             </div>
+          </div>
           </Card>
         )}
 
