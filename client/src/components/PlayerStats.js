@@ -6,6 +6,10 @@ function PlayerStats({ players: propPlayers }) {
   const [loading, setLoading] = useState(!propPlayers);
   const [error, setError] = useState(null);
   const [currentGameweek, setCurrentGameweek] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedPosition, setSelectedPosition] = useState('');
+  const [sortField, setSortField] = useState('total_points');
+  const [sortDirection, setSortDirection] = useState('desc');
 
   // Update players when prop changes
   useEffect(() => {
@@ -73,8 +77,33 @@ function PlayerStats({ players: propPlayers }) {
     }
   };
 
+  // Filter and sort players
+  const filteredPlayers = players.filter(player => {
+    const matchesSearch = !searchTerm || 
+      player.web_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      player.second_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesPosition = !selectedPosition || player.position === selectedPosition;
+    
+    return matchesSearch && matchesPosition;
+  });
+
+  // Sort filtered players
+  const sortedPlayers = [...filteredPlayers].sort((a, b) => {
+    const aValue = a[sortField] || 0;
+    const bValue = b[sortField] || 0;
+    
+    if (sortDirection === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
   // Group players by position category
-  const groupedPlayers = players.reduce((groups, player) => {
+  const groupedPlayers = sortedPlayers.reduce((groups, player) => {
     const position = player.position;
     let category = 'DEF';
     
@@ -91,10 +120,22 @@ function PlayerStats({ players: propPlayers }) {
     return groups;
   }, {});
 
-  // Sort players within each group by total points
-  Object.keys(groupedPlayers).forEach(category => {
-    groupedPlayers[category].sort((a, b) => (b.total_points || 0) - (a.total_points || 0));
-  });
+  // Get unique positions for filter dropdown
+  const positions = [...new Set(players.map(p => p.position))].sort();
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === 'asc' ? '↑' : '↓';
+  };
 
   const getPositionColor = (position) => {
     switch (position) {
@@ -183,6 +224,103 @@ function PlayerStats({ players: propPlayers }) {
         </div>
       </div>
 
+      {/* Filters and Search */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Search Players
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name..."
+                type="text"
+                value={searchTerm}
+              />
+            </div>
+          </div>
+
+          {/* Position Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Position
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSelectedPosition(e.target.value)}
+              value={selectedPosition}
+            >
+              <option value="">All Positions</option>
+              {positions.map(position => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Sort Field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Sort By
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSortField(e.target.value)}
+              value={sortField}
+            >
+              <option value="total_points">Total Points</option>
+              <option value="form">Form</option>
+              <option value="price">Price</option>
+              <option value="goals_scored">Goals</option>
+              <option value="assists">Assists</option>
+              <option value="clean_sheets">Clean Sheets</option>
+              <option value="saves">Saves</option>
+              <option value="bonus">Bonus Points</option>
+              <option value="selected_by_percent">Ownership %</option>
+              <option value="ict_index">ICT Index</option>
+            </select>
+          </div>
+
+          {/* Sort Direction */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Direction
+            </label>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onChange={(e) => setSortDirection(e.target.value)}
+              value={sortDirection}
+            >
+              <option value="desc">High to Low</option>
+              <option value="asc">Low to High</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Results count and clear filters */}
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Showing {filteredPlayers.length} of {players.length} players
+          </div>
+          {(searchTerm || selectedPosition) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedPosition('');
+              }}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Player Statistics by Position */}
       {Object.keys(groupedPlayers).map(category => (
         <div key={category} className="bg-white rounded-lg shadow overflow-hidden">
@@ -205,29 +343,53 @@ function PlayerStats({ players: propPlayers }) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Position
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('price')}
+                  >
+                    Price {getSortIcon('price')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Points
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('total_points')}
+                  >
+                    Points {getSortIcon('total_points')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Form
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('form')}
+                  >
+                    Form {getSortIcon('form')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Goals
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('goals_scored')}
+                  >
+                    Goals {getSortIcon('goals_scored')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Assists
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('assists')}
+                  >
+                    Assists {getSortIcon('assists')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Clean Sheets
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('clean_sheets')}
+                  >
+                    Clean Sheets {getSortIcon('clean_sheets')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Saves
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('saves')}
+                  >
+                    Saves {getSortIcon('saves')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bonus
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('bonus')}
+                  >
+                    Bonus {getSortIcon('bonus')}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
@@ -329,29 +491,33 @@ function PlayerStats({ players: propPlayers }) {
 
       {/* Summary Stats */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Team Summary</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          {filteredPlayers.length === players.length ? 'Team Summary' : 'Filtered Results Summary'}
+        </h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">
-              {players.length}
+              {filteredPlayers.length}
             </div>
-            <div className="text-sm text-gray-600">Total Players</div>
+            <div className="text-sm text-gray-600">
+              {filteredPlayers.length === players.length ? 'Total Players' : 'Filtered Players'}
+            </div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">
-              {players.reduce((sum, p) => sum + (p.total_points || 0), 0)}
+              {filteredPlayers.reduce((sum, p) => sum + (p.total_points || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Total Points</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-yellow-600">
-              {players.reduce((sum, p) => sum + (p.goals_scored || 0), 0)}
+              {filteredPlayers.reduce((sum, p) => sum + (p.goals_scored || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Total Goals</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-purple-600">
-              {players.reduce((sum, p) => sum + (p.assists || 0), 0)}
+              {filteredPlayers.reduce((sum, p) => sum + (p.assists || 0), 0)}
             </div>
             <div className="text-sm text-gray-600">Total Assists</div>
           </div>
