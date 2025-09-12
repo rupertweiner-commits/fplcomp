@@ -9,8 +9,8 @@ function APITester({ currentUser }) {
   const [results, setResults] = useState([]);
 
   const endpoints = [
-    { method: 'GET', url: '/api/fpl?action=bootstrap', name: 'FPL Bootstrap', public: true },
-    { method: 'GET', url: '/api/fpl?action=current-gameweek', name: 'FPL Current Gameweek', public: true },
+    { method: 'GET', url: '/api/fpl-sync?action=bootstrap', name: 'FPL Bootstrap', public: true },
+    { method: 'GET', url: '/api/fpl-sync?action=current-gameweek', name: 'FPL Current Gameweek', public: true },
     { method: 'GET', url: '/api/simulation?action=status', name: 'Simulation Status', public: true },
     { method: 'GET', url: '/api/simulation?action=leaderboard', name: 'Simulation Leaderboard', public: true },
     { method: 'GET', url: '/api/teams?action=all', name: 'All Teams', public: true },

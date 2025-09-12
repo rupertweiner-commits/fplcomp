@@ -410,58 +410,72 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         </div>
 
         {/* Profile Information Section */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h3 className="text-lg font-semibold text-gray-700">Profile Information</h3>
 
-          <form className="space-y-4" id="profile-form">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <input
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                disabled
-                name="username"
-                type="text"
-                value={profile.username}
-              />
+          {!editing ? (
+            // View Mode - Clean display
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Username</label>
+                    <div className="text-lg font-medium text-gray-900">{profile.username}</div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Display Name</label>
+                    <div className="text-lg font-medium text-gray-900">{profile.displayName || 'Not set'}</div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-500 mb-1">Email</label>
+                    <div className="text-lg font-medium text-gray-900">{profile.email || 'Not set'}</div>
+                  </div>
+                </div>
+              </div>
             </div>
+          ) : (
+            // Edit Mode - Form fields
+            <form className="space-y-4" id="profile-form">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  disabled
+                  name="username"
+                  type="text"
+                  value={profile.username}
+                />
+                <p className="text-xs text-gray-500 mt-1">Username cannot be changed</p>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Display Name
-              </label>
-              <input
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  editing ?
-                    'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' :
-                    'border-gray-300 bg-gray-50'
-                }`}
-                defaultValue={profile.displayName}
-                disabled={!editing}
-                name="displayName"
-                type="text"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Display Name
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  defaultValue={profile.displayName}
+                  name="displayName"
+                  type="text"
+                  placeholder="Enter your display name"
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <input
-                className={`w-full px-3 py-2 border rounded-lg ${
-                  editing ?
-                    'border-blue-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500' :
-                    'border-gray-300 bg-gray-50'
-                }`}
-                defaultValue={profile.email || ''}
-                disabled={!editing}
-                name="email"
-                type="email"
-              />
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email
+                </label>
+                <input
+                  className="w-full px-3 py-2 border border-blue-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  defaultValue={profile.email || ''}
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                />
+              </div>
 
-            {editing && (
               <div className="flex space-x-3 pt-2">
                 <button
                   className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -479,27 +493,19 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                   Cancel
                 </button>
               </div>
-            )}
-          </form>
+            </form>
+          )}
         </div>
       </div>
 
-      {/* Password Change Section */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-700 flex items-center">
+      {/* Password Change Section - Only show when editing */}
+      {editing && (
+        <div className="mt-8 pt-6 border-t border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-700 flex items-center mb-4">
             <Lock className="mr-2 h-5 w-5" />
             Change Password
           </h3>
-          <button
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-            onClick={() => setShowPasswordForm(!showPasswordForm)}
-          >
-            {showPasswordForm ? 'Cancel' : 'Change Password'}
-          </button>
-        </div>
 
-        {showPasswordForm && (
           <form className="max-w-md space-y-4" onSubmit={handlePasswordChange}>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -514,6 +520,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 required
                 type="password"
                 value={passwordForm.currentPassword}
+                placeholder="Enter current password"
               />
             </div>
 
@@ -531,6 +538,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 required
                 type="password"
                 value={passwordForm.newPassword}
+                placeholder="Enter new password (min 6 characters)"
               />
             </div>
 
@@ -548,6 +556,7 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
                 required
                 type="password"
                 value={passwordForm.confirmPassword}
+                placeholder="Confirm new password"
               />
             </div>
 
@@ -566,11 +575,10 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
               )}
             </button>
           </form>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Username Change Section */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
+      {/* Username Change Section - Removed since usernames cannot be changed */}
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-700 flex items-center">
             <User className="mr-2 h-5 w-5" />
@@ -740,28 +748,6 @@ const ProfileManager = ({ userId, onProfileUpdate }) => {
         </div>
       )}
 
-      {/* Stats Section */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-700 mb-4">Account Statistics</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg text-center">
-            <div className="text-2xl font-bold text-blue-600">{profile.teamSize}</div>
-            <div className="text-sm text-blue-800">Players</div>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg text-center">
-            <div className="text-2xl font-bold text-green-600">{profile.totalPoints}</div>
-            <div className="text-sm text-green-800">Total Points</div>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg text-center">
-            <div className="text-2xl font-bold text-purple-600">{profile.chipsCount}</div>
-            <div className="text-sm text-purple-800">Available Chips</div>
-          </div>
-          <div className="bg-orange-50 p-4 rounded-lg text-center">
-            <div className="text-2xl font-bold text-orange-600">{profile.usedChipsCount}</div>
-            <div className="text-sm text-orange-800">Used Chips</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

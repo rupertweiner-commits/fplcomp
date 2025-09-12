@@ -29,7 +29,7 @@ const NotificationPreferences = ({ currentUser }) => {
 
   const fetchPreferences = async() => {
     try {
-      const response = await fetch(`/api/notifications/email?action=preferences&userId=${currentUser.id}`, {
+      const response = await fetch(`/api/notifications?type=email&action=preferences&userId=${currentUser.id}`, {
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
@@ -83,7 +83,7 @@ const NotificationPreferences = ({ currentUser }) => {
       });
 
       // Send subscription to server
-      const response = await fetch('/api/notifications/push?action=subscribe', {
+      const response = await fetch('/api/notifications?type=push&action=subscribe', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -116,7 +116,7 @@ const NotificationPreferences = ({ currentUser }) => {
       setError('');
       setSuccess('');
 
-      const response = await fetch('/api/notifications/email?action=preferences', {
+      const response = await fetch('/api/notifications?type=email&action=preferences', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,

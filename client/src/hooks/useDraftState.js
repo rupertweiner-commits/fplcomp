@@ -103,7 +103,7 @@ export function useDraftState(currentUser) {
     try {
       console.log('🔄 Fetching live scores...');
 
-      const response = await fetch('/api/fpl?action=live-scores');
+      const response = await fetch('/api/fpl-sync?action=live-scores');
       const data = await response.json();
 
       if (data.success) {

@@ -30,6 +30,14 @@ export default async function handler(req, res) {
         return await handleDailySync(req, res);
       case 'login-sync':
         return await handleLoginSync(req, res);
+      case 'bootstrap':
+        return await handleBootstrap(req, res);
+      case 'current-gameweek':
+        return await handleCurrentGameweek(req, res);
+      case 'dashboard':
+        return await handleDashboard(req, res);
+      case 'live-scores':
+        return await handleLiveScores(req, res);
       case 'test':
         return res.status(200).json({ 
           success: true, 
@@ -42,7 +50,7 @@ export default async function handler(req, res) {
           }
         });
       default:
-        return res.status(400).json({ error: 'Invalid action. Available actions: sync-chelsea-players, sync-status, get-chelsea-players, daily-sync, login-sync, test' });
+        return res.status(400).json({ error: 'Invalid action. Available actions: sync-chelsea-players, sync-status, get-chelsea-players, daily-sync, login-sync, bootstrap, current-gameweek, dashboard, live-scores, test' });
     }
 
   } catch (error) {
@@ -464,5 +472,158 @@ async function handleLoginSync(req, res) {
       error: 'Login sync failed',
       details: error.message
     });
+  }
+}
+
+// FPL Data Handlers (merged from fpl.js)
+async function handleBootstrap(req, res) {
+  try {
+    // Return basic bootstrap data
+    const bootstrapData = {
+      events: [
+        {
+          id: 1,
+          name: "Gameweek 1",
+          deadline_time: "2024-08-16T18:30:00Z",
+          finished: false,
+          is_current: true
+        }
+      ],
+      teams: [
+        { id: 1, name: "Arsenal", short_name: "ARS" },
+        { id: 2, name: "Chelsea", short_name: "CHE" },
+        { id: 3, name: "Liverpool", short_name: "LIV" },
+        { id: 4, name: "Manchester City", short_name: "MCI" },
+        { id: 5, name: "Manchester United", short_name: "MUN" }
+      ],
+      elements: [
+        {
+          id: 1,
+          first_name: "Mohamed",
+          second_name: "Salah",
+          web_name: "Salah",
+          element_type: 3, // Midfielder
+          team: 3, // Liverpool
+          now_cost: 130, // £13.0M
+          total_points: 0,
+          selected_by_percent: "45.2"
+        },
+        {
+          id: 2,
+          first_name: "Erling",
+          second_name: "Haaland",
+          web_name: "Haaland",
+          element_type: 4, // Forward
+          team: 4, // Manchester City
+          now_cost: 140, // £14.0M
+          total_points: 0,
+          selected_by_percent: "52.1"
+        }
+      ],
+      element_types: [
+        { id: 1, singular_name: "Goalkeeper", plural_name: "Goalkeepers" },
+        { id: 2, singular_name: "Defender", plural_name: "Defenders" },
+        { id: 3, singular_name: "Midfielder", plural_name: "Midfielders" },
+        { id: 4, singular_name: "Forward", plural_name: "Forwards" }
+      ]
+    };
+
+    res.status(200).json({
+      success: true,
+      data: bootstrapData
+    });
+
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function handleCurrentGameweek(req, res) {
+  try {
+    const currentGameweek = {
+      id: 1,
+      name: "Gameweek 1",
+      deadline_time: "2024-08-16T18:30:00Z",
+      finished: false,
+      is_current: true
+    };
+
+    res.status(200).json({
+      success: true,
+      data: currentGameweek
+    });
+
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function handleDashboard(req, res) {
+  try {
+    const dashboardData = {
+      current_gameweek: 1,
+      total_managers: 4,
+      total_players: 2,
+      recent_activity: [
+        {
+          id: 1,
+          type: "player_allocated",
+          player_name: "Mohamed Salah",
+          user_name: "Rupert",
+          timestamp: new Date().toISOString()
+        }
+      ],
+      top_performers: [
+        {
+          id: 1,
+          name: "Mohamed Salah",
+          points: 0,
+          team: "Liverpool"
+        }
+      ]
+    };
+
+    res.status(200).json({
+      success: true,
+      data: dashboardData
+    });
+
+  } catch (error) {
+    throw error;
+  }
+}
+
+async function handleLiveScores(req, res) {
+  try {
+    const liveScores = {
+      gameweek: 1,
+      fixtures: [
+        {
+          id: 1,
+          home_team: "Arsenal",
+          away_team: "Chelsea",
+          home_score: null,
+          away_score: null,
+          status: "scheduled",
+          kickoff_time: "2024-08-16T15:00:00Z"
+        }
+      ],
+      players: [
+        {
+          id: 1,
+          name: "Mohamed Salah",
+          points: 0,
+          team: "Liverpool"
+        }
+      ]
+    };
+
+    res.status(200).json({
+      success: true,
+      data: liveScores
+    });
+
+  } catch (error) {
+    throw error;
   }
 }

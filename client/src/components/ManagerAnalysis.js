@@ -24,7 +24,7 @@ function ManagerAnalysis() {
       setError(null);
 
       // Get current gameweek first
-      const gwResponse = await fetch('/api/fpl?action=current-gameweek');
+      const gwResponse = await fetch('/api/fpl-sync?action=current-gameweek');
       const gwData = await gwResponse.json();
       const gameweek = gwData.data.currentGameweek;
 
