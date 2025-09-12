@@ -81,6 +81,26 @@ function PlayerStats({ players: propPlayers }) {
     }
   };
 
+  const handleRefreshAll = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Refresh both player data and live data
+      await Promise.all([
+        fetchPlayersData(),
+        fetchLiveData()
+      ]);
+      
+      console.log('✅ All data refreshed successfully');
+    } catch (error) {
+      console.error('Failed to refresh all data:', error);
+      setError('Failed to refresh data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Filter and sort players
   const filteredPlayers = players.filter(player => {
     const matchesSearch = !searchTerm || 
@@ -210,20 +230,11 @@ function PlayerStats({ players: propPlayers }) {
           <button
             className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:opacity-90 text-white disabled:opacity-50"
             disabled={loading}
-            onClick={fetchPlayersData}
+            onClick={handleRefreshAll}
             style={{ backgroundColor: '#034694' }}
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Player Data</span>
-          </button>
-          <button
-            className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:opacity-90 text-white disabled:opacity-50"
-            disabled={loading}
-            onClick={fetchLiveData}
-            style={{ backgroundColor: '#10B981' }}
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh Live Scores</span>
+            <span>Refresh All Data</span>
           </button>
         </div>
       </div>
