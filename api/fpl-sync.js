@@ -26,6 +26,10 @@ export default async function handler(req, res) {
         return await handleSyncStatus(req, res);
       case 'get-chelsea-players':
         return await handleGetChelseaPlayers(req, res);
+      case 'daily-sync':
+        return await handleDailySync(req, res);
+      case 'login-sync':
+        return await handleLoginSync(req, res);
       case 'test':
         return res.status(200).json({ 
           success: true, 
@@ -38,7 +42,7 @@ export default async function handler(req, res) {
           }
         });
       default:
-        return res.status(400).json({ error: 'Invalid action. Available actions: sync-chelsea-players, sync-status, get-chelsea-players, test' });
+        return res.status(400).json({ error: 'Invalid action. Available actions: sync-chelsea-players, sync-status, get-chelsea-players, daily-sync, login-sync, test' });
     }
 
   } catch (error) {
@@ -336,6 +340,128 @@ async function handleGetChelseaPlayers(req, res) {
     res.status(500).json({
       success: false,
       error: 'Failed to get Chelsea players',
+      details: error.message
+    });
+  }
+}
+
+async function handleDailySync(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    console.log('🕐 Starting daily FPL sync');
+
+    // Check if we've already synced today
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todaySync } = await supabase
+      .from('fpl_sync_log')
+      .select('*')
+      .eq('sync_type', 'daily')
+      .gte('created_at', `${today}T00:00:00.000Z`)
+      .single();
+
+    if (todaySync) {
+      return res.status(200).json({
+        success: true,
+        message: 'Daily sync already completed today',
+        lastSync: todaySync.created_at
+      });
+    }
+
+    // Call the existing sync function
+    const syncResult = await handleSyncChelseaPlayers(req, res);
+    
+    // Log the daily sync
+    await supabase
+      .from('fpl_sync_log')
+      .insert({
+        sync_type: 'daily',
+        status: 'success',
+        completed_at: new Date().toISOString()
+      });
+
+    console.log('✅ Daily sync completed successfully');
+    return syncResult;
+
+  } catch (error) {
+    console.error('❌ Daily sync failed:', error);
+    
+    // Log the failure
+    await supabase
+      .from('fpl_sync_log')
+      .insert({
+        sync_type: 'daily',
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString()
+      });
+
+    res.status(500).json({
+      success: false,
+      error: 'Daily sync failed',
+      details: error.message
+    });
+  }
+}
+
+async function handleLoginSync(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  try {
+    console.log('👤 Starting login-triggered FPL sync');
+
+    // Check if we've synced recently (within last hour)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: recentSync } = await supabase
+      .from('fpl_sync_log')
+      .select('*')
+      .eq('sync_type', 'login')
+      .gte('created_at', oneHourAgo)
+      .single();
+
+    if (recentSync) {
+      return res.status(200).json({
+        success: true,
+        message: 'Login sync already completed recently',
+        lastSync: recentSync.created_at
+      });
+    }
+
+    // Call the existing sync function
+    const syncResult = await handleSyncChelseaPlayers(req, res);
+    
+    // Log the login sync
+    await supabase
+      .from('fpl_sync_log')
+      .insert({
+        sync_type: 'login',
+        status: 'success',
+        completed_at: new Date().toISOString()
+      });
+
+    console.log('✅ Login sync completed successfully');
+    return syncResult;
+
+  } catch (error) {
+    console.error('❌ Login sync failed:', error);
+    
+    // Log the failure
+    await supabase
+      .from('fpl_sync_log')
+      .insert({
+        sync_type: 'login',
+        status: 'failed',
+        error_message: error.message,
+        completed_at: new Date().toISOString()
+      });
+
+    res.status(500).json({
+      success: false,
+      error: 'Login sync failed',
       details: error.message
     });
   }

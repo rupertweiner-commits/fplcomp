@@ -184,13 +184,12 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
 
   const triggerFPLSync = async () => {
     try {
-      // Trigger FPL sync in the background (don't wait for response)
-      fetch('/api/fpl-comprehensive-sync', {
+      // Trigger FPL sync in the background using existing API
+      fetch('/api/fpl-sync?action=login-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ trigger: 'login' })
+        }
       }).catch(error => {
         console.log('FPL sync triggered (background):', error.message);
       });
