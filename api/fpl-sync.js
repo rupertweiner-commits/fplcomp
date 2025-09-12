@@ -97,14 +97,22 @@ async function handleSyncChelseaPlayers(req, res) {
 
     console.log(`📊 Found Chelsea team: ${chelseaTeam.name} (ID: ${chelseaTeam.id})`);
 
-    // Filter Chelsea players
+    // Filter Chelsea players - include ALL players regardless of availability
     const chelseaPlayers = data.elements.filter(player => 
-      player.team === chelseaTeam.id && 
-      player.status !== 'u' && // Not unavailable
-      !player.news // No injury news
+      player.team === chelseaTeam.id
     );
 
     console.log(`📊 Found ${chelseaPlayers.length} Chelsea players in FPL data`);
+    
+    // Log availability breakdown
+    const availableCount = chelseaPlayers.filter(p => p.status === 'a').length;
+    const unavailableCount = chelseaPlayers.filter(p => p.status !== 'a').length;
+    const injuredCount = chelseaPlayers.filter(p => p.news && p.news.toLowerCase().includes('injur')).length;
+    
+    console.log(`📊 Availability breakdown:`);
+    console.log(`   - Available: ${availableCount}`);
+    console.log(`   - Unavailable: ${unavailableCount}`);
+    console.log(`   - With injury news: ${injuredCount}`);
 
     // Clear existing Chelsea players
     console.log('🗑️ Clearing existing Chelsea players...');
@@ -158,7 +166,17 @@ async function handleSyncChelseaPlayers(req, res) {
       ict_index: player.ict_index,
       starts: player.starts,
       minutes: player.minutes,
-      is_available: true,
+      is_available: player.status === 'a', // Available only if status is 'a' (available)
+      availability_status: player.status === 'a' ? 'Available' : 
+                          player.status === 'u' ? 'Unavailable' : 
+                          player.status === 'd' ? 'Doubtful' : 
+                          player.status === 'i' ? 'Injured' : 
+                          player.status === 's' ? 'Suspended' : 'Unknown',
+      availability_reason: player.news || null, // Injury/news description
+      chance_of_playing_this_round: player.chance_of_playing_this_round,
+      chance_of_playing_next_round: player.chance_of_playing_next_round,
+      selected_by_percent: player.selected_by_percent,
+      news_added: player.news_added,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }));
@@ -203,6 +221,12 @@ async function handleSyncChelseaPlayers(req, res) {
         players_created: insertedPlayers.length,
         chelsea_team: chelseaTeam.name,
         sync_log_id: syncLog.id,
+        availability_breakdown: {
+          total: chelseaPlayers.length,
+          available: availableCount,
+          unavailable: unavailableCount,
+          injured: injuredCount
+        },
         players: insertedPlayers
       }
     });
