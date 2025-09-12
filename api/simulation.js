@@ -467,7 +467,7 @@ async function handleSimulateNextGameweek(req, res) {
         gameweek: nextGameweek,
         player_id: player.fpl_id,
         player_name: player.name,
-        team_id: 4, // Chelsea
+        team_id: 7, // Chelsea (correct team ID)
         position: player.position,
         points: performance.points,
         goals_scored: performance.goals_scored,
@@ -481,6 +481,50 @@ async function handleSimulateNextGameweek(req, res) {
         price: player.price
       };
     });
+
+    // Also store in player_gameweek_performance table for detailed tracking
+    const playerPerformanceData = players.map(player => {
+      const performance = generatePlayerPerformance(player, nextGameweek);
+      return {
+        player_id: player.fpl_id,
+        player_name: player.name,
+        gameweek: nextGameweek,
+        season: '2024-25',
+        minutes_played: performance.minutes_played,
+        goals_scored: performance.goals_scored,
+        assists: performance.assists,
+        clean_sheets: performance.clean_sheets,
+        goals_conceded: 0, // Could be calculated based on team performance
+        own_goals: 0,
+        penalties_saved: 0,
+        penalties_missed: 0,
+        yellow_cards: performance.yellow_cards,
+        red_cards: performance.red_cards,
+        saves: performance.saves,
+        total_points: performance.points,
+        bonus_points: performance.bonus_points,
+        bps: performance.bonus_points * 3, // Rough BPS calculation
+        influence: Math.random() * 50,
+        creativity: Math.random() * 50,
+        threat: Math.random() * 50,
+        ict_index: Math.random() * 20,
+        was_available: true,
+        availability_reason: null
+      };
+    });
+
+    // Insert player performance data
+    const { error: perfError } = await supabase
+      .from('player_gameweek_performance')
+      .upsert(playerPerformanceData, {
+        onConflict: 'player_id,gameweek,season'
+      });
+
+    if (perfError) {
+      console.warn('⚠️ Could not store player performance data:', perfError);
+    } else {
+      console.log(`✅ Player performance data stored for ${playerPerformanceData.length} players`);
+    }
 
     // Insert gameweek results
     const { data: insertedResults, error: insertError } = await supabase
