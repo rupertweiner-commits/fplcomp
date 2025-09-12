@@ -96,7 +96,7 @@ function FPLSync({ currentUser, onSyncComplete }) {
       setLoading(true);
       console.log('🔍 Checking Supabase Chelsea players...');
       
-      const response = await fetch('/api/check-chelsea-players');
+      const response = await fetch('/api/fpl-sync?action=get-chelsea-players');
       const data = await response.json();
       
       if (data.success) {

@@ -13,23 +13,23 @@ export default async function handler(req, res) {
       throw new Error('Failed to fetch fixtures from FPL API');
     }
 
-    // Filter for Chelsea fixtures (team_id: 4 for Chelsea)
+    // Filter for Chelsea fixtures (team_id: 7 for Chelsea)
     const chelseaFixtures = fixturesData
-      .filter(fixture => fixture.team_h === 4 || fixture.team_a === 4)
+      .filter(fixture => fixture.team_h === 7 || fixture.team_a === 7)
       .map(fixture => ({
         id: fixture.id,
         gameweek: fixture.event,
-        home_team: fixture.team_h === 4 ? 'Chelsea' : getTeamName(fixture.team_h),
-        away_team: fixture.team_a === 4 ? 'Chelsea' : getTeamName(fixture.team_a),
-        is_home: fixture.team_h === 4,
-        opponent: fixture.team_h === 4 ? getTeamName(fixture.team_a) : getTeamName(fixture.team_h),
-        venue: fixture.team_h === 4 ? 'Stamford Bridge' : getTeamVenue(fixture.team_a),
+        home_team: fixture.team_h === 7 ? 'Chelsea' : getTeamName(fixture.team_h),
+        away_team: fixture.team_a === 7 ? 'Chelsea' : getTeamName(fixture.team_a),
+        is_home: fixture.team_h === 7,
+        opponent: fixture.team_h === 7 ? getTeamName(fixture.team_a) : getTeamName(fixture.team_h),
+        venue: fixture.team_h === 7 ? 'Stamford Bridge' : getTeamVenue(fixture.team_a),
         kickoff_time: fixture.kickoff_time,
         finished: fixture.finished,
         started: fixture.started,
         home_score: fixture.team_h_score,
         away_score: fixture.team_a_score,
-        difficulty: fixture.team_h === 4 ? fixture.team_h_difficulty : fixture.team_a_difficulty
+        difficulty: fixture.team_h === 7 ? fixture.team_h_difficulty : fixture.team_a_difficulty
       }))
       .sort((a, b) => new Date(a.kickoff_time) - new Date(b.kickoff_time));
 

@@ -20,7 +20,7 @@ function PlayerStats() {
       setLoading(true);
 
       // Fetch synced Chelsea players from our database
-      const response = await fetch('/api/check-chelsea-players');
+      const response = await fetch('/api/fpl-sync?action=get-chelsea-players');
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
