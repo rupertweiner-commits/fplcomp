@@ -10,10 +10,6 @@ function AdminDashboard({ currentUser }) {
   const [mockUsers, setMockUsers] = useState([]);
   const [availablePlayers, setAvailablePlayers] = useState([]);
   const [allocations, setAllocations] = useState([]);
-  const [selectedUser, setSelectedUser] = useState('');
-  const [selectedPlayer, setSelectedPlayer] = useState('');
-  const [isCaptain, setIsCaptain] = useState(false);
-  const [isViceCaptain, setIsViceCaptain] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -27,13 +23,20 @@ function AdminDashboard({ currentUser }) {
 
   // Bulk allocation state
   const [bulkAllocations, setBulkAllocations] = useState({});
-  const [showBulkAllocation, setShowBulkAllocation] = useState(false);
+  const [showBulkAllocation, setShowBulkAllocation] = useState(true);
   const [draggedPlayer, setDraggedPlayer] = useState(null);
   const [hoveredUser, setHoveredUser] = useState(null);
 
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Initialize bulk allocations when mock users are loaded
+  useEffect(() => {
+    if (mockUsers.length > 0 && Object.keys(bulkAllocations).length === 0) {
+      initializeBulkAllocations();
+    }
+  }, [mockUsers]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -47,9 +50,6 @@ function AdminDashboard({ currentUser }) {
       const usersData = await usersResponse.json();
       if (usersData.success && usersData.data && usersData.data.users) {
         setMockUsers(usersData.data.users);
-        if (usersData.data.users.length > 0) {
-          setSelectedUser(usersData.data.users[0].id);
-        }
       }
 
       // Fetch available players
@@ -108,45 +108,6 @@ function AdminDashboard({ currentUser }) {
     }
   };
 
-  const handleAllocatePlayer = async () => {
-    if (!selectedUser || !selectedPlayer) {
-      setMessage({ type: 'error', text: 'Please select both a user and a player' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await fetch('/api/draft-allocation-simple?action=allocate-player', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.access_token || ''}`
-        },
-        body: JSON.stringify({
-          targetUserId: selectedUser,
-          playerId: parseInt(selectedPlayer),
-          isCaptain: isCaptain,
-          isViceCaptain: isViceCaptain
-        })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setMessage({ type: 'success', text: 'Player allocated successfully!' });
-        setSelectedPlayer('');
-        setIsCaptain(false);
-        setIsViceCaptain(false);
-        fetchData(); // Refresh data
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Failed to allocate player' });
-      }
-    } catch (error) {
-      console.error('Error allocating player:', error);
-      setMessage({ type: 'error', text: 'Failed to allocate player' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCompleteDraft = async () => {
     setLoading(true);
@@ -687,129 +648,6 @@ function AdminDashboard({ currentUser }) {
               </div>
             </div>
 
-            {/* Player Allocation */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Allocate Player</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select User</label>
-                  <select
-                    value={selectedUser}
-                    onChange={(e) => setSelectedUser(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose a user...</option>
-                    {mockUsers.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.first_name} {user.last_name} ({user.username})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Player</label>
-                  <select
-                    value={selectedPlayer}
-                    onChange={(e) => setSelectedPlayer(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Choose a player... ({availablePlayers.length} players loaded)</option>
-                    {availablePlayers.map(player => (
-                      <option key={player.id} value={player.id}>
-                        {player.web_name || player.name} ({player.position}) - {player.total_points || 0} pts - {player.availability_status || 'Available'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Captain/Vice Captain Selection */}
-              <div className="mt-4 flex space-x-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isCaptain}
-                    onChange={(e) => {
-                      setIsCaptain(e.target.checked);
-                      if (e.target.checked) setIsViceCaptain(false);
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700">Captain</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={isViceCaptain}
-                    onChange={(e) => {
-                      setIsViceCaptain(e.target.checked);
-                      if (e.target.checked) setIsCaptain(false);
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="text-sm text-gray-700">Vice Captain</span>
-                </label>
-              </div>
-
-              {/* Player Details and Availability Context */}
-              {selectedPlayer && (
-                <div className="mt-4">
-                  {(() => {
-                    const player = availablePlayers.find(p => p.id === parseInt(selectedPlayer));
-                    if (!player) return null;
-                    
-                    return (
-                      <div className="bg-gray-50 p-4 rounded-lg border">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-semibold text-gray-800">
-                            {player.web_name || player.name} ({player.position})
-                          </h3>
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-600">{player.total_points || 0} pts</span>
-                            {player.is_strategic_pick && (
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                                💡 Strategic Pick
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <InjuryStatusDisplay player={player} />
-                        
-                        {player.availability_reason && (
-                          <div className="mt-3 text-sm text-gray-600">
-                            <strong>Status:</strong> {player.availability_reason}
-                          </div>
-                        )}
-                        
-                        {player.news && (
-                          <div className="mt-2 text-sm text-gray-600">
-                            <strong>Latest News:</strong> {player.news}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* Allocate Button */}
-              <div className="mt-6">
-                <button
-                  onClick={handleAllocatePlayer}
-                  disabled={loading || !selectedUser || !selectedPlayer}
-                  className={`px-6 py-2 rounded-md font-medium ${
-                    loading || !selectedUser || !selectedPlayer
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
-                  }`}
-                >
-                  {loading ? 'Allocating...' : 'Allocate Player'}
-                </button>
-              </div>
-            </div>
 
             {/* Current Allocations */}
             <div className="bg-white rounded-lg shadow p-6">
@@ -861,41 +699,22 @@ function AdminDashboard({ currentUser }) {
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Bulk Allocation</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Player Allocation</h2>
                   <p className="text-gray-600 mt-1">Drag and drop players to quickly assign teams</p>
                 </div>
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => {
-                      setShowBulkAllocation(!showBulkAllocation);
-                      if (!showBulkAllocation) {
-                        initializeBulkAllocations();
-                      }
-                    }}
-                    className={`px-4 py-2 rounded-md font-medium ${
-                      showBulkAllocation
-                        ? 'bg-gray-600 text-white hover:bg-gray-700'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
+                    onClick={autoFillTeams}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                   >
-                    {showBulkAllocation ? 'Hide Bulk View' : 'Show Bulk View'}
+                    Auto Fill Teams
                   </button>
-                  {showBulkAllocation && (
-                    <>
-                      <button
-                        onClick={autoFillTeams}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                      >
-                        Auto Fill Teams
-                      </button>
-                      <button
-                        onClick={clearBulkAllocations}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                      >
-                        Clear All
-                      </button>
-                    </>
-                  )}
+                  <button
+                    onClick={clearBulkAllocations}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Clear All
+                  </button>
                 </div>
               </div>
 
