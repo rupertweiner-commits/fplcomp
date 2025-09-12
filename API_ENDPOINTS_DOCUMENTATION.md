@@ -40,9 +40,17 @@ This document provides a comprehensive overview of all API endpoints in the FPL 
 | Action | Method | Purpose | Status |
 |--------|--------|---------|--------|
 | `test` | GET | Test FPL sync connectivity | ✅ Working |
-| `sync-status` | GET | Get last sync status | ✅ Working |
+| `sync-status` | GET | Get last sync status | ⚠️ Needs fpl_sync_log table |
 | `get-chelsea-players` | GET | Get current Chelsea players | ✅ Working |
 | `sync-chelsea-players` | POST | Sync players from FPL API | ✅ Working |
+
+#### FPL Data APIs (`/api/fpl.js`)
+**Status**: ✅ Active - Direct FPL API access
+
+| Action | Method | Purpose | Status |
+|--------|--------|---------|--------|
+| `bootstrap` | GET | Get FPL bootstrap data | ✅ Working |
+| `current-gameweek` | GET | Get current gameweek info | ✅ Working |
 
 #### User & Activity APIs
 **Status**: ✅ Active - User management and activity tracking

@@ -283,7 +283,11 @@ function AdminDashboard({ currentUser }) {
       
       // User & Activity APIs
       { endpoint: 'activity', action: 'recent', method: 'GET' },
-      { endpoint: 'leaderboard', action: null, method: 'GET' }
+      { endpoint: 'leaderboard', action: null, method: 'GET' },
+      
+      // FPL Data APIs
+      { endpoint: 'fpl', action: 'bootstrap', method: 'GET' },
+      { endpoint: 'fpl', action: 'current-gameweek', method: 'GET' }
     ];
 
     // Run tests sequentially to avoid overwhelming the server
@@ -919,6 +923,28 @@ function AdminDashboard({ currentUser }) {
                         className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-green-50 text-sm"
                       >
                         🏆 Leaderboard (Legacy)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* FPL Data APIs */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-800 mb-3 flex items-center">
+                      <BarChart3 className="h-5 w-5 mr-2 text-indigo-600" />
+                      FPL Data APIs
+                    </h4>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => testApiEndpoint('fpl', 'bootstrap', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-indigo-50 text-sm"
+                      >
+                        📊 FPL Bootstrap
+                      </button>
+                      <button
+                        onClick={() => testApiEndpoint('fpl', 'current-gameweek', 'GET')}
+                        className="w-full text-left px-3 py-2 bg-white rounded border hover:bg-indigo-50 text-sm"
+                      >
+                        📅 Current Gameweek
                       </button>
                     </div>
                   </div>
