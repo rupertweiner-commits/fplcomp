@@ -325,15 +325,17 @@ async function handleGetChelseaPlayers(req, res) {
   }
 
   try {
+    // Get ALL Chelsea players (don't filter by availability)
     const { data: players, error: playersError } = await supabase
       .from('chelsea_players')
       .select('*')
-      .eq('is_available', true)
       .order('total_points', { ascending: false });
 
     if (playersError) {
       throw playersError;
     }
+
+    console.log(`📊 Retrieved ${players.length} Chelsea players from database`);
 
     res.status(200).json({
       success: true,

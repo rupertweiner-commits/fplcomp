@@ -32,12 +32,16 @@ function PlayerStats({ players: propPlayers }) {
 
       const data = await response.json();
 
-      if (!data.success || !data.players) {
+      console.log('🔍 FPL Sync API Response:', data);
+
+      if (!data.success || !data.data?.players) {
         throw new Error('No Chelsea players found in database');
       }
 
       // Use the synced Chelsea players data
-      const chelseaPlayers = data.players;
+      const chelseaPlayers = data.data.players;
+      
+      console.log('🔍 Chelsea Players Data:', chelseaPlayers.slice(0, 2)); // Log first 2 players for debugging
 
       if (chelseaPlayers.length === 0) {
         throw new Error('No Chelsea players found in database. Please sync FPL data first.');
