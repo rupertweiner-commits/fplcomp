@@ -49,46 +49,72 @@ function UserTeamManagement({ currentUser }) {
 
     setLoading(true);
     try {
-      console.log('Fetching team for user:', currentUser.id, 'Type:', typeof currentUser.id);
+      console.log('🔍 DEBUG: Fetching team for user:', currentUser.id, 'Type:', typeof currentUser.id);
+      console.log('🔍 DEBUG: Full currentUser object:', currentUser);
       
-      // First, let's check what players are actually assigned to this user
+      // 1. Verify user exists in user_profiles
+      const { data: userProfile, error: userError } = await supabase
+        .from('user_profiles')
+        .select('id, email, first_name, last_name')
+        .eq('id', currentUser.id)
+        .single();
+
+      console.log('🔍 DEBUG: User profile check:', { userProfile, userError });
+
+      if (userError) {
+        console.error('❌ User profile not found:', userError);
+        setMyTeam([]);
+        return;
+      }
+      
+      // 2. Check all assigned players to see what's in the system
       const { data: allAssignedPlayers, error: checkError } = await supabase
         .from('chelsea_players')
         .select('id, name, web_name, assigned_to_user_id')
         .not('assigned_to_user_id', 'is', null);
       
-      console.log('All assigned players:', allAssignedPlayers);
+      console.log('🔍 DEBUG: All assigned players in system:', allAssignedPlayers?.length || 0);
+      console.log('🔍 DEBUG: Players assigned to users:', allAssignedPlayers?.map(p => ({ name: p.name, user_id: p.assigned_to_user_id })));
       
-      // Fetch my assigned players from chelsea_players table where assigned_to_user_id matches current user
-      const { data: userTeamData, error } = await supabase
+      // 3. Check chelsea_players table for this user
+      const { data: chelseaPlayers, error: chelseaError } = await supabase
         .from('chelsea_players')
         .select('*')
         .eq('assigned_to_user_id', currentUser.id)
         .order('total_points', { ascending: false });
 
-      console.log('Team data response:', { userTeamData, error });
+      console.log('🔍 DEBUG: Chelsea players for user:', { count: chelseaPlayers?.length || 0, error: chelseaError });
+      
+      // 4. Focus on chelsea_players table as the single source of truth
+      let players = [];
+      let dataSource = 'none';
 
-      if (error) {
-        throw error;
+      if (chelseaPlayers && chelseaPlayers.length > 0) {
+        console.log('✅ Found players in chelsea_players table');
+        dataSource = 'chelsea_players';
+        players = chelseaPlayers.map(player => ({
+          id: player.id,
+          name: player.web_name || player.name || 'Unknown Player',
+          web_name: player.web_name,
+          position: player.position || 'UNKNOWN',
+          total_points: player.total_points || 0,
+          price: player.price || 0,
+          availability_status: player.availability_status,
+          news: player.news,
+          is_strategic_pick: player.is_strategic_pick,
+          is_captain: player.is_captain || false,
+          is_vice_captain: player.is_vice_captain || false,
+          ...player // Include all player data for PlayerCard component
+        }));
+      } else {
+        console.log('❌ No players found in chelsea_players table');
+        console.log('💡 You may need to allocate players first using the admin dashboard');
+        dataSource = 'none';
+        players = [];
       }
 
-      // Transform the data to match the expected format
-      const players = userTeamData?.map(player => ({
-        id: player.id,
-        name: player.web_name || player.name || 'Unknown Player',
-        web_name: player.web_name,
-        position: player.position || 'UNKNOWN',
-        total_points: player.total_points || 0,
-        price: player.price || 0,
-        availability_status: player.availability_status,
-        news: player.news,
-        is_strategic_pick: player.is_strategic_pick,
-        is_captain: player.is_captain || false,
-        is_vice_captain: player.is_vice_captain || false,
-        ...player // Include all player data for PlayerCard component
-      })) || [];
-
-      console.log('Processed players:', players);
+      console.log(`🔍 DEBUG: Final result - ${players.length} players from ${dataSource}`);
+      console.log('🔍 DEBUG: Player names:', players.map(p => p.name));
       setMyTeam(players);
       
       // Set captain and vice captain
