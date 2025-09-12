@@ -131,32 +131,105 @@ async function handleStartSimulation(req, res) {
 
   console.log('🔍 Starting simulation for admin:', user.email);
   
-  // Start simulation mode
-  const { data: simulationStatus, error: statusError } = await supabase
-    .from('simulation_status')
-    .upsert({
-      is_simulation_mode: true,
-      current_gameweek: 1,
-      is_draft_complete: true,
-      total_users: 4, // Assuming 4 users
-      started_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    })
-    .select()
-    .single();
+  try {
+    // Get all users and their current teams
+    const { data: users, error: usersError } = await supabase
+      .from('user_profiles')
+      .select('id, email, first_name, last_name')
+      .eq('is_active', true);
 
-  if (statusError) {
-    console.error('❌ Simulation status error:', statusError);
-    throw statusError;
+    if (usersError) {
+      throw usersError;
+    }
+
+    console.log(`📊 Found ${users.length} users for simulation`);
+
+    // Lock in each user's current team as a snapshot
+    for (const user of users) {
+      // Get user's current team from user_teams table
+      const { data: userTeam, error: teamError } = await supabase
+        .from('user_teams')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (teamError) {
+        console.warn(`⚠️ Could not fetch team for user ${user.email}:`, teamError);
+        continue;
+      }
+
+      if (userTeam && userTeam.length > 0) {
+        // Create team snapshot for gameweek 1
+        const teamSnapshot = {
+          user_id: user.id,
+          gameweek: 1,
+          season: '2024-25',
+          team_composition: userTeam.map(player => ({
+            player_id: player.player_id,
+            player_name: player.player_name,
+            position: player.position,
+            price: player.price,
+            is_captain: player.is_captain,
+            is_vice_captain: player.is_vice_captain
+          })),
+          formation: '4-4-2', // Default formation
+          transfers_made: 0,
+          transfer_cost: 0,
+          chip_used: null,
+          chip_points: 0
+        };
+
+        const { error: snapshotError } = await supabase
+          .from('user_team_snapshots')
+          .upsert(teamSnapshot, {
+            onConflict: 'user_id,gameweek,season'
+          });
+
+        if (snapshotError) {
+          console.warn(`⚠️ Could not create team snapshot for user ${user.email}:`, snapshotError);
+        } else {
+          console.log(`✅ Team snapshot created for user ${user.email}`);
+        }
+      }
+    }
+
+    // Start simulation mode
+    const { data: simulationStatus, error: statusError } = await supabase
+      .from('simulation_status')
+      .upsert({
+        is_simulation_mode: true,
+        current_gameweek: 1,
+        is_draft_complete: true,
+        total_users: users.length,
+        started_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (statusError) {
+      console.error('❌ Simulation status error:', statusError);
+      throw statusError;
+    }
+    
+    console.log('✅ Simulation started successfully with team snapshots');
+
+    res.status(200).json({
+      success: true,
+      message: 'Simulation started successfully with teams locked in',
+      data: {
+        ...simulationStatus,
+        teams_locked: users.length
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Start simulation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to start simulation',
+      details: error.message
+    });
   }
-  
-  console.log('✅ Simulation status updated:', simulationStatus);
-
-  res.status(200).json({
-    success: true,
-    message: 'Simulation started successfully',
-    data: simulationStatus
-  });
 }
 
 async function handleSimulateGameweek(req, res) {
@@ -278,13 +351,15 @@ async function handleGetLeaderboard(req, res) {
   try {
     console.log('🔍 Getting leaderboard...');
 
-    // Get user total points from the dedicated table
+    // Get user total points from the enhanced table
     const { data: userTotals, error: totalsError } = await supabase
       .from('user_total_points')
       .select(`
         *,
         user:user_profiles!user_total_points_user_id_fkey(id, first_name, last_name, email)
-      `);
+      `)
+      .eq('season', '2024-25')
+      .order('total_points', { ascending: false });
 
     if (totalsError) {
       console.error('❌ User totals error:', totalsError);
@@ -305,16 +380,20 @@ async function handleGetLeaderboard(req, res) {
     }
 
     // Sort by total points and add ranks
-    const leaderboard = userTotals
-      .sort((a, b) => b.total_points - a.total_points)
-      .map((user, index) => ({
-        user_id: user.user_id,
-        user: user.user,
-        totalPoints: user.total_points,
-        gameweeksPlayed: user.gameweeks_played,
-        averagePoints: user.average_points,
-        rank: index + 1
-      }));
+    const leaderboard = userTotals.map((user, index) => ({
+      user_id: user.user_id,
+      user: user.user,
+      totalPoints: user.total_points || 0,
+      gameweeksPlayed: user.gameweeks_played || 0,
+      averagePoints: user.average_points || 0,
+      currentRank: user.current_rank || (index + 1),
+      bestRank: user.best_rank || (index + 1),
+      worstRank: user.worst_rank || (index + 1),
+      rank: index + 1,
+      highestGameweekScore: user.highest_gameweek_score || 0,
+      lowestGameweekScore: user.lowest_gameweek_score || 0,
+      consistency: user.score_variance ? (100 - (user.score_variance / (user.average_points || 1) * 100)) : 0
+    }));
 
     console.log('✅ Leaderboard retrieved:', leaderboard.length, 'users');
 
@@ -645,26 +724,52 @@ async function calculateUserScoresForGameweek(gameweek) {
 
     // Calculate scores for each user
     for (const user of users) {
-      // Get user's team for this gameweek
-      const { data: userTeam, error: teamError } = await supabase
-        .from('user_teams')
-        .select('*')
-        .eq('user_id', user.id);
+      // Get user's team snapshot for this gameweek (simulation mode)
+      const { data: teamSnapshot, error: snapshotError } = await supabase
+        .from('user_team_snapshots')
+        .select('team_composition')
+        .eq('user_id', user.id)
+        .eq('gameweek', gameweek)
+        .eq('season', '2024-25')
+        .single();
 
-      if (teamError) {
-        console.error(`❌ User team error for ${user.email}:`, teamError);
-        continue;
-      }
+      let userTeam = [];
+      
+      if (snapshotError || !teamSnapshot) {
+        // Fallback to current user_teams table if no snapshot exists
+        const { data: currentTeam, error: teamError } = await supabase
+          .from('user_teams')
+          .select('*')
+          .eq('user_id', user.id);
 
-      if (!userTeam || userTeam.length === 0) {
-        console.log(`📊 No team found for user ${user.email}`);
-        continue;
+        if (teamError) {
+          console.error(`❌ User team error for ${user.email}:`, teamError);
+          continue;
+        }
+
+        if (!currentTeam || currentTeam.length === 0) {
+          console.log(`📊 No team found for user ${user.email}`);
+          continue;
+        }
+
+        userTeam = currentTeam;
+      } else {
+        // Convert team composition from snapshot to team format
+        userTeam = teamSnapshot.team_composition.map(player => ({
+          player_id: player.player_id,
+          player_name: player.player_name,
+          position: player.position,
+          price: player.price,
+          is_captain: player.is_captain,
+          is_vice_captain: player.is_vice_captain
+        }));
       }
 
       // Calculate total points
       let totalPoints = 0;
       let captainPoints = 0;
       let viceCaptainPoints = 0;
+      let startingXiPoints = 0;
 
       for (const teamPlayer of userTeam) {
         const playerResult = gameweekResults.find(
@@ -673,14 +778,16 @@ async function calculateUserScoresForGameweek(gameweek) {
 
         if (playerResult) {
           const playerPoints = playerResult.points;
-          totalPoints += playerPoints;
+          startingXiPoints += playerPoints;
 
           if (teamPlayer.is_captain) {
-            captainPoints = playerPoints * 2; // Captain gets double points
-            totalPoints += playerPoints; // Add the extra points
+            captainPoints = playerPoints; // Captain gets double points
+            totalPoints += playerPoints * 2;
           } else if (teamPlayer.is_vice_captain) {
-            viceCaptainPoints = playerPoints * 1.5; // Vice captain gets 1.5x points
-            totalPoints += playerPoints * 0.5; // Add the extra points
+            viceCaptainPoints = playerPoints * 0.5; // Vice captain gets 1.5x points
+            totalPoints += playerPoints * 1.5;
+          } else {
+            totalPoints += playerPoints;
           }
         }
       }
@@ -691,25 +798,30 @@ async function calculateUserScoresForGameweek(gameweek) {
         .upsert({
           user_id: user.id,
           gameweek: gameweek,
+          season: '2024-25',
           total_points: totalPoints,
+          starting_xi_points: startingXiPoints,
           captain_points: captainPoints,
           vice_captain_points: viceCaptainPoints,
           bench_points: 0, // TODO: Calculate bench points
           chip_used: null, // TODO: Track chip usage
-          chip_points: 0
+          chip_points: 0,
+          transfer_cost: 0,
+          calculated_at: new Date().toISOString()
         }, {
-          onConflict: 'user_id,gameweek'
+          onConflict: 'user_id,gameweek,season'
         });
 
       if (scoreError) {
         console.error(`❌ Score storage error for ${user.email}:`, scoreError);
       }
 
-      // Update total points
+      // Update total points using enhanced schema
       const { data: existingTotal, error: totalError } = await supabase
         .from('user_total_points')
-        .select('*')
+        .select('total_points, gameweeks_played')
         .eq('user_id', user.id)
+        .eq('season', '2024-25')
         .single();
 
       if (totalError && totalError.code !== 'PGRST116') {
@@ -725,22 +837,102 @@ async function calculateUserScoresForGameweek(gameweek) {
         .from('user_total_points')
         .upsert({
           user_id: user.id,
+          season: '2024-25',
           total_points: newTotalPoints,
           gameweeks_played: newGameweeksPlayed,
           average_points: newAveragePoints,
+          current_rank: 0, // Will be calculated separately
           last_updated: new Date().toISOString()
         }, {
-          onConflict: 'user_id'
+          onConflict: 'user_id,season'
         });
 
       if (updateTotalError) {
         console.error(`❌ Total points update error for ${user.email}:`, updateTotalError);
+      } else {
+        console.log(`✅ Updated total points for ${user.email}: ${newTotalPoints} (GW${gameweek}: +${totalPoints})`);
       }
     }
+
+    // Update gameweek rankings
+    await updateGameweekRankings(gameweek);
 
     console.log(`✅ User scores calculated for gameweek ${gameweek}`);
 
   } catch (error) {
     console.error('❌ Calculate user scores error:', error);
+  }
+}
+
+// Helper function to update gameweek rankings
+async function updateGameweekRankings(gameweek) {
+  try {
+    console.log(`📊 Updating gameweek ${gameweek} rankings...`);
+
+    // Get all user scores for this gameweek, ordered by total points
+    const { data: gameweekScores, error: scoresError } = await supabase
+      .from('user_gameweek_scores')
+      .select('user_id, total_points')
+      .eq('gameweek', gameweek)
+      .eq('season', '2024-25')
+      .order('total_points', { ascending: false });
+
+    if (scoresError) {
+      console.error('❌ Gameweek scores error:', scoresError);
+      return;
+    }
+
+    if (!gameweekScores || gameweekScores.length === 0) {
+      console.log('⚠️ No gameweek scores found for ranking');
+      return;
+    }
+
+    // Get previous gameweek rankings for rank change calculation
+    const { data: previousRankings, error: prevError } = await supabase
+      .from('gameweek_rankings')
+      .select('user_id, rank')
+      .eq('gameweek', gameweek - 1)
+      .eq('season', '2024-25');
+
+    const prevRankings = {};
+    if (previousRankings) {
+      previousRankings.forEach(ranking => {
+        prevRankings[ranking.user_id] = ranking.rank;
+      });
+    }
+
+    // Create rankings for this gameweek
+    const rankings = gameweekScores.map((score, index) => {
+      const currentRank = index + 1;
+      const previousRank = prevRankings[score.user_id] || currentRank;
+      const rankChange = previousRank - currentRank; // Positive means moved up
+
+      return {
+        gameweek: gameweek,
+        season: '2024-25',
+        user_id: score.user_id,
+        rank: currentRank,
+        points: score.total_points,
+        rank_change: rankChange,
+        points_change: 0, // Could calculate from previous gameweek if needed
+        calculated_at: new Date().toISOString()
+      };
+    });
+
+    // Insert rankings
+    const { error: insertError } = await supabase
+      .from('gameweek_rankings')
+      .upsert(rankings, {
+        onConflict: 'gameweek,season,user_id'
+      });
+
+    if (insertError) {
+      console.error('❌ Rankings insert error:', insertError);
+    } else {
+      console.log(`✅ Gameweek ${gameweek} rankings updated for ${rankings.length} users`);
+    }
+
+  } catch (error) {
+    console.error('❌ Update gameweek rankings error:', error);
   }
 }

@@ -133,11 +133,11 @@ function SimulationTab({
       setLoading(true);
       console.log('📅 Simulating next gameweek...');
 
-      const response = await fetch('/api/simulation-gameweek?action=simulate-next', {
+      const response = await fetch('/api/simulation?action=simulate-next', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.access_token || ''}`
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
 
