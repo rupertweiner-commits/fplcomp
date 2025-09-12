@@ -5,7 +5,6 @@ import { Wifi, WifiOff, Shield, User } from 'lucide-react';
 
 // Import components
 import Draft from './components/Draft';
-import DraftRefactored from './components/DraftRefactored';
 import MobileNavigation from './components/MobileNavigation';
 import ProfileManager from './components/ProfileManager';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -344,8 +343,8 @@ function App() {
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <ErrorBoundary>
               <Routes>
-                <Route element={<DraftRefactored currentUser={currentUser} wsService={null} />} path="/" />
-                <Route element={<DraftRefactored currentUser={currentUser} wsService={null} />} path="/draft" />
+                <Route element={<Draft currentUser={currentUser} wsService={null} />} path="/" />
+                <Route element={<Draft currentUser={currentUser} wsService={null} />} path="/draft" />
                 <Route
                   element={
                     currentUser ? (
