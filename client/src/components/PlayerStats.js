@@ -47,6 +47,27 @@ function PlayerStats({ players: propPlayers }) {
         throw new Error('No Chelsea players found in database. Please sync FPL data first.');
       }
 
+      // Check if players have zero stats (need fresh FPL sync)
+      const playersWithStats = chelseaPlayers.filter(p => p.total_points > 0);
+      const needsSync = playersWithStats.length === 0;
+
+      if (needsSync) {
+        console.log('🔄 Players have zero stats, triggering automatic FPL sync...');
+        await triggerAutoSync();
+        
+        // Fetch again after sync
+        const syncResponse = await fetch('/api/fpl-sync?action=get-chelsea-players');
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json();
+          if (syncData.success && syncData.data?.players) {
+            console.log('✅ Auto-sync completed, using fresh data');
+            setPlayers(syncData.data.players);
+            setError(null);
+            return;
+          }
+        }
+      }
+
       setPlayers(chelseaPlayers);
       setError(null);
     } catch (err) {
@@ -54,6 +75,27 @@ function PlayerStats({ players: propPlayers }) {
       setError('Failed to load Chelsea players. Please sync FPL data first.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const triggerAutoSync = async () => {
+    try {
+      console.log('🔄 Triggering automatic FPL sync...');
+      const syncResponse = await fetch('/api/fpl-sync?action=login-sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (syncResponse.ok) {
+        const syncResult = await syncResponse.json();
+        console.log('✅ Auto-sync result:', syncResult);
+      } else {
+        console.warn('⚠️ Auto-sync failed, but continuing...');
+      }
+    } catch (error) {
+      console.warn('⚠️ Auto-sync error (non-critical):', error.message);
     }
   };
 
