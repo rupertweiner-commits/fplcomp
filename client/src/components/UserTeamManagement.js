@@ -17,6 +17,7 @@ import {
 import supabase from '../config/supabase';
 import ChipManagement from './ChipManagement';
 import PlayerCard from './PlayerCard';
+import PlayerProfile from './PlayerProfile';
 
 function UserTeamManagement({ currentUser }) {
   const [myTeam, setMyTeam] = useState([]);
@@ -29,6 +30,8 @@ function UserTeamManagement({ currentUser }) {
   const [isTransferWeek, setIsTransferWeek] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [showPlayerProfile, setShowPlayerProfile] = useState(false);
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -251,6 +254,16 @@ function UserTeamManagement({ currentUser }) {
     }
   };
 
+  const handlePlayerClick = (player) => {
+    setSelectedPlayer(player);
+    setShowPlayerProfile(true);
+  };
+
+  const handleClosePlayerProfile = () => {
+    setShowPlayerProfile(false);
+    setSelectedPlayer(null);
+  };
+
   const getPositionColor = (position) => {
     switch (position) {
       case 'GK': return 'bg-green-100 text-green-800 border-green-300';
@@ -381,6 +394,7 @@ function UserTeamManagement({ currentUser }) {
                           player={player}
                           showCaptainBadge={player.is_captain}
                           showViceCaptainBadge={player.is_vice_captain}
+                          onPlayerClick={handlePlayerClick}
                           compact={false}
                         />
                         {/* Action Buttons Overlay */}
@@ -549,6 +563,15 @@ function UserTeamManagement({ currentUser }) {
           </div>
         </div>
       </div>
+
+      {/* Player Profile Modal */}
+      <PlayerProfile
+        player={selectedPlayer}
+        isOpen={showPlayerProfile}
+        onClose={handleClosePlayerProfile}
+        showCaptainBadge={selectedPlayer?.is_captain}
+        showViceCaptainBadge={selectedPlayer?.is_vice_captain}
+      />
     </div>
   );
 }

@@ -7,7 +7,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 
-function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = false, compact = false }) {
+function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = false, compact = false, onPlayerClick = null }) {
   const [expanded, setExpanded] = useState(false);
 
   if (!player) return null;
@@ -68,7 +68,10 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
   }
 
   return (
-    <div className="relative bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden">
+    <div 
+      className="relative bg-white rounded-xl border border-gray-200 shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={() => onPlayerClick && onPlayerClick(player)}
+    >
       {/* Card Header */}
       <div className={`h-16 bg-gradient-to-r ${getPositionColor(player.position)} relative`}>
         {/* Position Symbol */}
@@ -76,7 +79,17 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
           {getPositionSymbol(player.position)}
         </div>
         
-        {/* Captain/Vice Captain Badges */}
+        {/* Player Name */}
+        <div className="absolute bottom-2 left-3 right-16">
+          <h3 className="text-white font-bold text-base truncate">
+            {player.web_name || player.name}
+          </h3>
+          <p className="text-white/90 text-xs">
+            {player.position}
+          </p>
+        </div>
+        
+        {/* Captain/Vice Captain Badges - Right side */}
         <div className="absolute top-2 right-3 flex space-x-1">
           {showCaptainBadge && (
             <div className="bg-yellow-400 text-yellow-900 p-1 rounded-full">
@@ -89,37 +102,19 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
             </div>
           )}
         </div>
-        
-        {/* Player Name */}
-        <div className="absolute bottom-2 left-3 right-3">
-          <h3 className="text-white font-bold text-base truncate">
-            {player.web_name || player.name}
-          </h3>
-          <p className="text-white/90 text-xs">
-            {player.position}
-          </p>
-        </div>
       </div>
 
       {/* Main Content */}
       <div className="p-4">
-        {/* Key Stats - Clean 4-column layout */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        {/* Key Stats - Clean 2-column layout */}
+        <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="text-center">
             <div className="text-xl font-bold text-gray-900">{player.total_points || 0}</div>
             <div className="text-xs text-gray-500">Points</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-gray-900">£{player.price || 0}M</div>
-            <div className="text-xs text-gray-500">Price</div>
-          </div>
-          <div className="text-center">
             <div className="text-lg font-bold text-gray-900">{player.form || 0}</div>
             <div className="text-xs text-gray-500">Form</div>
-          </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-gray-900">{player.selected_by_percent || 0}%</div>
-            <div className="text-xs text-gray-500">Selected</div>
           </div>
         </div>
 
