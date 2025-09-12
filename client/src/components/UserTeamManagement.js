@@ -32,12 +32,15 @@ function UserTeamManagement({ currentUser }) {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerProfile, setShowPlayerProfile] = useState(false);
+  const [canMakeChanges, setCanMakeChanges] = useState(true);
+  const [deadline, setDeadline] = useState(null);
 
   useEffect(() => {
     if (currentUser?.id) {
       fetchMyTeam();
       fetchChips();
       fetchGameweekInfo();
+      fetchDeadlineInfo();
     }
   }, [currentUser]);
 
@@ -159,6 +162,12 @@ function UserTeamManagement({ currentUser }) {
   const handleSetCaptain = async (playerId) => {
     if (!currentUser?.id) return;
 
+    // Check if changes are allowed
+    if (!canMakeChanges) {
+      setMessage({ type: 'error', text: 'Team changes are locked! The deadline has passed.' });
+      return;
+    }
+
     setLoading(true);
     try {
       // First, remove captain from all players assigned to this user
@@ -191,6 +200,12 @@ function UserTeamManagement({ currentUser }) {
 
   const handleSetViceCaptain = async (playerId) => {
     if (!currentUser?.id) return;
+
+    // Check if changes are allowed
+    if (!canMakeChanges) {
+      setMessage({ type: 'error', text: 'Team changes are locked! The deadline has passed.' });
+      return;
+    }
 
     setLoading(true);
     try {
@@ -262,6 +277,20 @@ function UserTeamManagement({ currentUser }) {
   const handleClosePlayerProfile = () => {
     setShowPlayerProfile(false);
     setSelectedPlayer(null);
+  };
+
+  const fetchDeadlineInfo = async () => {
+    try {
+      const response = await fetch('/api/chelsea-fixtures');
+      const data = await response.json();
+
+      if (data.success) {
+        setCanMakeChanges(data.data.canMakeChanges);
+        setDeadline(data.data.deadline);
+      }
+    } catch (error) {
+      console.error('Error fetching deadline info:', error);
+    }
   };
 
   const getPositionColor = (position) => {
@@ -401,25 +430,29 @@ function UserTeamManagement({ currentUser }) {
                         <div className="absolute top-2 right-2 flex space-x-1">
                           <button
                             onClick={() => handleSetCaptain(player.id)}
-                            disabled={loading}
+                            disabled={loading || !canMakeChanges}
                             className={`px-2 py-1 text-xs font-bold rounded-full ${
                               player.is_captain
                                 ? 'bg-yellow-400 text-yellow-900'
-                                : 'bg-white/90 text-gray-600 hover:bg-yellow-100'
+                                : canMakeChanges 
+                                  ? 'bg-white/90 text-gray-600 hover:bg-yellow-100'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             } disabled:opacity-50`}
-                            title={player.is_captain ? 'Remove Captain' : 'Set Captain'}
+                            title={!canMakeChanges ? 'Changes locked - deadline passed' : (player.is_captain ? 'Remove Captain' : 'Set Captain')}
                           >
                             <Crown className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleSetViceCaptain(player.id)}
-                            disabled={loading}
+                            disabled={loading || !canMakeChanges}
                             className={`px-2 py-1 text-xs font-bold rounded-full ${
                               player.is_vice_captain
                                 ? 'bg-purple-400 text-purple-900'
-                                : 'bg-white/90 text-gray-600 hover:bg-purple-100'
+                                : canMakeChanges 
+                                  ? 'bg-white/90 text-gray-600 hover:bg-purple-100'
+                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             } disabled:opacity-50`}
-                            title={player.is_vice_captain ? 'Remove Vice Captain' : 'Set Vice Captain'}
+                            title={!canMakeChanges ? 'Changes locked - deadline passed' : (player.is_vice_captain ? 'Remove Vice Captain' : 'Set Vice Captain')}
                           >
                             <Shield className="h-3 w-3" />
                           </button>
