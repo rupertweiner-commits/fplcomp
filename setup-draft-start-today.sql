@@ -1,28 +1,7 @@
 -- Setup Draft Competition Starting Today
 -- This script configures the system to only count points from today onwards
 
--- 1. Set the competition start date to today
-DO $$
-DECLARE
-    today_date DATE := CURRENT_DATE;
-    competition_start_gameweek INTEGER := 1; -- Adjust if needed
-BEGIN
-    -- Update or create draft status with today as start date
-    INSERT INTO draft_status (id, is_draft_active, is_draft_complete, simulation_mode, current_gameweek, competition_start_date, points_start_date)
-    VALUES (1, true, false, false, competition_start_gameweek, today_date, today_date)
-    ON CONFLICT (id) 
-    DO UPDATE SET 
-        is_draft_active = true,
-        is_draft_complete = false,
-        competition_start_date = today_date,
-        points_start_date = today_date,
-        current_gameweek = competition_start_gameweek,
-        updated_at = NOW();
-        
-    RAISE NOTICE 'Competition start date set to: %', today_date;
-END $$;
-
--- 2. Add competition_start_date and points_start_date columns if they don't exist
+-- 1. First, add the required columns if they don't exist
 DO $$
 BEGIN
     -- Add competition start date column
@@ -54,6 +33,27 @@ BEGIN
         ALTER TABLE chelsea_players ADD COLUMN baseline_points INTEGER DEFAULT 0;
         RAISE NOTICE 'Added baseline_points column to chelsea_players';
     END IF;
+END $$;
+
+-- 2. Now set the competition start date to today
+DO $$
+DECLARE
+    today_date DATE := CURRENT_DATE;
+    competition_start_gameweek INTEGER := 1; -- Adjust if needed
+BEGIN
+    -- Update or create draft status with today as start date
+    INSERT INTO draft_status (id, is_draft_active, is_draft_complete, simulation_mode, current_gameweek, competition_start_date, points_start_date)
+    VALUES (1, true, false, false, competition_start_gameweek, today_date, today_date)
+    ON CONFLICT (id) 
+    DO UPDATE SET 
+        is_draft_active = true,
+        is_draft_complete = false,
+        competition_start_date = today_date,
+        points_start_date = today_date,
+        current_gameweek = competition_start_gameweek,
+        updated_at = NOW();
+        
+    RAISE NOTICE 'Competition start date set to: %', today_date;
 END $$;
 
 -- 3. Set baseline points for all Chelsea players (their current total_points)
