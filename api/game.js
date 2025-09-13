@@ -599,7 +599,23 @@ async function handleGetAllAllocations(req, res) {
       return res.status(500).json({ error: 'Failed to fetch allocations' });
     }
 
-    return res.status(200).json({ success: true, allocations: allocations || [] });
+    // Group players by user
+    const userAllocations = {};
+    (allocations || []).forEach(player => {
+      const userId = player.assigned_to_user_id;
+      if (!userAllocations[userId]) {
+        userAllocations[userId] = {
+          user: player.user_profiles,
+          players: []
+        };
+      }
+      userAllocations[userId].players.push(player);
+    });
+
+    // Convert to array format expected by frontend
+    const groupedAllocations = Object.values(userAllocations);
+
+    return res.status(200).json({ success: true, allocations: groupedAllocations });
 
   } catch (error) {
     console.error('❌ Get all allocations error:', error);
