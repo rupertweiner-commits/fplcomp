@@ -141,6 +141,41 @@ function AdminDashboard({ currentUser }) {
     }
   };
 
+  const handleClearAllocations = async () => {
+    if (!window.confirm('Are you sure you want to clear ALL player allocations? This will reset the draft and cannot be undone.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/game?action=clear-allocations', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: `All allocations cleared! ${data.data?.clearedPlayers || 0} players reset. Draft is ready to start fresh.` 
+        });
+        // Reset bulk allocations state
+        setBulkAllocations({});
+        initializeBulkAllocations();
+        fetchData(); // Refresh data
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to clear allocations' });
+      }
+    } catch (error) {
+      console.error('Error clearing allocations:', error);
+      setMessage({ type: 'error', text: 'Failed to clear allocations' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleToggleSimulation = async () => {
     setLoading(true);
     try {
@@ -869,12 +904,15 @@ function AdminDashboard({ currentUser }) {
               )}
             </div>
 
-            {/* Complete Draft Button */}
+            {/* Draft Management Buttons */}
             <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Draft Management</h2>
+              
+              {/* Complete Draft */}
+              <div className="flex items-center justify-between mb-4 p-4 border border-green-200 rounded-lg bg-green-50">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">Complete Draft</h2>
-                  <p className="text-gray-600 mt-1">Finalize all player allocations and start the competition</p>
+                  <h3 className="text-lg font-medium text-green-900">Complete Draft</h3>
+                  <p className="text-green-700 text-sm">Finalize all player allocations and start the competition</p>
                 </div>
                 <button
                   onClick={handleCompleteDraft}
@@ -886,6 +924,25 @@ function AdminDashboard({ currentUser }) {
                   }`}
                 >
                   {loading ? 'Completing...' : 'Complete Draft'}
+                </button>
+              </div>
+
+              {/* Clear Allocations */}
+              <div className="flex items-center justify-between p-4 border border-red-200 rounded-lg bg-red-50">
+                <div>
+                  <h3 className="text-lg font-medium text-red-900">Clear All Allocations</h3>
+                  <p className="text-red-700 text-sm">Reset all player assignments and start the draft over</p>
+                </div>
+                <button
+                  onClick={handleClearAllocations}
+                  disabled={loading}
+                  className={`px-6 py-2 rounded-md font-medium ${
+                    loading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-red-600 text-white hover:bg-red-700'
+                  }`}
+                >
+                  {loading ? 'Clearing...' : 'Clear Allocations'}
                 </button>
               </div>
             </div>

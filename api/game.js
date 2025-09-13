@@ -59,6 +59,8 @@ export default async function handler(req, res) {
         return await handleSetViceCaptain(req, res);
       case 'complete-draft':
         return await handleCompleteDraft(req, res);
+      case 'clear-allocations':
+        return await handleClearAllocations(req, res);
 
       default:
         return res.status(400).json({ error: 'Invalid action' });
@@ -825,5 +827,59 @@ async function handleCompleteDraft(req, res) {
   } catch (error) {
     console.error('❌ Complete draft error:', error);
     return res.status(500).json({ error: 'Failed to complete draft' });
+  }
+}
+
+async function handleClearAllocations(req, res) {
+  try {
+    console.log('🧹 Clearing all player allocations...');
+
+    // Clear all player allocations
+    const { data: clearedPlayers, error: clearError } = await supabase
+      .from('chelsea_players')
+      .update({ 
+        assigned_to_user_id: null,
+        is_captain: false,
+        is_vice_captain: false
+      })
+      .not('assigned_to_user_id', 'is', null)
+      .select('id, name');
+
+    if (clearError) {
+      console.error('Error clearing player allocations:', clearError);
+      return res.status(500).json({ error: 'Failed to clear player allocations' });
+    }
+
+    // Try to reset draft status (don't fail if table doesn't exist)
+    try {
+      await supabase
+        .from('draft_status')
+        .update({ 
+          is_draft_active: true,
+          is_draft_complete: false,
+          total_picks: 0,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', 1);
+      console.log('✅ Draft status reset');
+    } catch (statusError) {
+      console.warn('⚠️ Could not reset draft status (table may not exist):', statusError.message);
+    }
+
+    const clearedCount = clearedPlayers?.length || 0;
+    console.log(`✅ Cleared ${clearedCount} player allocations`);
+
+    return res.status(200).json({
+      success: true,
+      message: `Successfully cleared ${clearedCount} player allocations`,
+      data: {
+        clearedPlayers: clearedCount,
+        resetAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Clear allocations error:', error);
+    return res.status(500).json({ error: 'Failed to clear allocations' });
   }
 }

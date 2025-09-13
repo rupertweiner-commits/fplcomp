@@ -1,7 +1,7 @@
 -- Reset Draft Allocations for Live Draft
 -- Run this in Supabase SQL Editor to clear all test allocations
 
--- 1. Clear all player allocations (reset ownership)
+-- 1. Clear all player allocations (reset ownership) - ESSENTIAL
 UPDATE chelsea_players 
 SET 
     assigned_to_user_id = NULL,
@@ -9,34 +9,56 @@ SET
     is_vice_captain = false
 WHERE assigned_to_user_id IS NOT NULL;
 
--- 2. Reset draft status to active (ready for new draft)
-UPDATE draft_status 
-SET 
-    is_draft_active = true,
-    is_draft_complete = false,
-    total_picks = 0,
-    updated_at = NOW()
-WHERE id = 1;
+-- 2. Reset draft status to active (ready for new draft) - if table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'draft_status') THEN
+        UPDATE draft_status 
+        SET 
+            is_draft_active = true,
+            is_draft_complete = false,
+            total_picks = 0,
+            updated_at = NOW()
+        WHERE id = 1;
+    END IF;
+END $$;
 
--- 3. Clear any user team records (if they exist)
-DELETE FROM user_teams 
-WHERE user_id IS NOT NULL;
+-- 3. Clear user team records - if table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_teams') THEN
+        DELETE FROM user_teams WHERE user_id IS NOT NULL;
+    END IF;
+END $$;
 
--- 4. Clear any draft picks records (if they exist)
-DELETE FROM draft_picks 
-WHERE user_id IS NOT NULL;
+-- 4. Clear draft picks records - if table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'draft_picks') THEN
+        DELETE FROM draft_picks WHERE user_id IS NOT NULL;
+    END IF;
+END $$;
 
--- 5. Reset any user chips to unused (optional - for fresh start)
-UPDATE user_chips 
-SET 
-    used = false,
-    used_in_gameweek = NULL,
-    used_at = NULL
-WHERE used = true;
+-- 5. Reset user chips - if table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_chips') THEN
+        UPDATE user_chips 
+        SET 
+            used = false,
+            used_in_gameweek = NULL,
+            used_at = NULL
+        WHERE used = true;
+    END IF;
+END $$;
 
--- 6. Clear any existing performance tracking (optional)
-DELETE FROM user_team_performance 
-WHERE user_id IS NOT NULL;
+-- 6. Clear performance tracking - if table exists
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'user_team_performance') THEN
+        DELETE FROM user_team_performance WHERE user_id IS NOT NULL;
+    END IF;
+END $$;
 
 -- Verification queries - check that everything is reset
 SELECT 'Players Reset Check' as check_type, 
@@ -56,6 +78,5 @@ WHERE id = 1;
 
 SELECT 'User Summary' as check_type,
        COUNT(*) as total_users,
-       STRING_AGG(first_name, ', ') as user_names
-FROM user_profiles
-ORDER BY first_name;
+       STRING_AGG(first_name, ', ' ORDER BY first_name) as user_names
+FROM user_profiles;
