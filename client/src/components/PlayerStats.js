@@ -34,12 +34,12 @@ function PlayerStats({ players: propPlayers }) {
 
       console.log('🔍 FPL Sync API Response:', data);
 
-      if (!data.success || !data.data?.players) {
+      if (!data.success || !data.players) {
         throw new Error('No Chelsea players found in database');
       }
 
       // Use the synced Chelsea players data
-      const chelseaPlayers = data.data.players;
+      const chelseaPlayers = data.players;
       
       console.log('🔍 Chelsea Players Data:', chelseaPlayers.slice(0, 2)); // Log first 2 players for debugging
 
@@ -47,26 +47,8 @@ function PlayerStats({ players: propPlayers }) {
         throw new Error('No Chelsea players found in database. Please sync FPL data first.');
       }
 
-      // Check if players have zero stats (need fresh FPL sync)
-      const playersWithStats = chelseaPlayers.filter(p => p.total_points > 0);
-      const needsSync = playersWithStats.length === 0;
-
-      if (needsSync) {
-        console.log('🔄 Players have zero stats, triggering automatic FPL sync...');
-        await triggerAutoSync();
-        
-        // Fetch again after sync
-        const syncResponse = await fetch('/api/players?action=get-chelsea-players');
-        if (syncResponse.ok) {
-          const syncData = await syncResponse.json();
-          if (syncData.success && syncData.data?.players) {
-            console.log('✅ Auto-sync completed, using fresh data');
-            setPlayers(syncData.data.players);
-            setError(null);
-            return;
-          }
-        }
-      }
+      // Display players as-is, independent of FPL sync status
+      console.log('📊 Displaying Chelsea players from database (independent of sync status)');
 
       setPlayers(chelseaPlayers);
       setError(null);
