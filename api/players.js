@@ -217,7 +217,11 @@ async function handleSyncChelseaPlayers(req, res) {
       data: {
         synced_count: syncedPlayers.length,
         total_fpl_count: chelseaPlayers.length,
-        players: syncedPlayers
+        players: syncedPlayers,
+        // Fields expected by FPLSync component
+        playersCreated: syncedPlayers.length,
+        playersUpdated: syncedPlayers.length, // All are upserts, so count as both
+        totalPlayers: syncedPlayers.length
       }
     });
 
