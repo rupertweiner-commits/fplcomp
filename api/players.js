@@ -17,6 +17,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Check Supabase connection
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('❌ Missing Supabase environment variables');
+      return res.status(500).json({ 
+        error: 'Server configuration error',
+        details: 'Missing Supabase configuration' 
+      });
+    }
+
     const { action } = req.query;
 
     switch (action) {
@@ -53,6 +62,10 @@ export default async function handler(req, res) {
         return await handleGetUserTeamScores(req, res);
       case 'get-gameweek-breakdown':
         return await handleGetGameweekBreakdown(req, res);
+
+      // Test endpoint for debugging
+      case 'test-connection':
+        return await handleTestConnection(req, res);
 
       default:
         return res.status(400).json({ error: 'Invalid action' });
@@ -100,11 +113,26 @@ async function handleSyncChelseaPlayers(req, res) {
   try {
     console.log('🔄 Starting Chelsea players sync...');
 
+    // Test Supabase connection first
+    const { data: testConnection, error: connectionError } = await supabase
+      .from('chelsea_players')
+      .select('id')
+      .limit(1);
+
+    if (connectionError) {
+      console.error('❌ Supabase connection failed:', connectionError);
+      throw new Error(`Database connection failed: ${connectionError.message}`);
+    }
+
+    console.log('✅ Supabase connection verified');
+
     // First, get bootstrap data from FPL API
+    console.log('📡 Fetching FPL bootstrap data...');
     const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
     
     if (!fplResponse.ok) {
-      throw new Error(`FPL API error: ${fplResponse.status}`);
+      console.error(`❌ FPL API error: ${fplResponse.status} ${fplResponse.statusText}`);
+      throw new Error(`FPL API error: ${fplResponse.status} - ${fplResponse.statusText}`);
     }
 
     const fplData = await fplResponse.json();
@@ -838,7 +866,71 @@ async function handleGetGameweekBreakdown(req, res) {
   }
 }
 
-// ========== UTILITY FUNCTIONS ==========
+// ========== TEST & UTILITY FUNCTIONS ==========
+
+async function handleTestConnection(req, res) {
+  try {
+    console.log('🧪 Testing API connections...');
+
+    const results = {
+      timestamp: new Date().toISOString(),
+      environment: {
+        supabaseUrl: supabaseUrl ? 'Set' : 'Missing',
+        supabaseKey: supabaseKey ? 'Set' : 'Missing'
+      },
+      tests: {}
+    };
+
+    // Test Supabase connection
+    try {
+      const { data, error } = await supabase
+        .from('chelsea_players')
+        .select('id')
+        .limit(1);
+
+      results.tests.supabase = {
+        status: error ? 'Failed' : 'Success',
+        error: error?.message || null,
+        recordCount: data?.length || 0
+      };
+    } catch (err) {
+      results.tests.supabase = {
+        status: 'Failed',
+        error: err.message
+      };
+    }
+
+    // Test FPL API connection
+    try {
+      const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+      const fplData = await fplResponse.json();
+      
+      results.tests.fplApi = {
+        status: fplResponse.ok ? 'Success' : 'Failed',
+        statusCode: fplResponse.status,
+        playerCount: fplData.elements?.length || 0,
+        teamCount: fplData.teams?.length || 0
+      };
+    } catch (err) {
+      results.tests.fplApi = {
+        status: 'Failed',
+        error: err.message
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: results
+    });
+
+  } catch (error) {
+    console.error('❌ Test connection error:', error);
+    return res.status(500).json({ 
+      error: 'Test connection failed',
+      details: error.message 
+    });
+  }
+}
 
 function getPositionFromElementType(elementType) {
   switch (elementType) {
