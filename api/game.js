@@ -713,21 +713,30 @@ async function handleCompleteDraft(req, res) {
   try {
     console.log('🏁 Completing draft...');
 
-    // Update draft status to complete
-    const { data: draftStatus, error: draftError } = await supabase
-      .from('draft_status')
-      .update({ 
-        is_draft_complete: true,
-        is_draft_active: false,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', 1)
-      .select()
-      .single();
+    // Try to update draft status, but don't fail if table doesn't exist
+    let draftStatus = null;
+    try {
+      const { data, error } = await supabase
+        .from('draft_status')
+        .upsert({ 
+          id: 1,
+          is_draft_complete: true,
+          is_draft_active: false,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'id'
+        })
+        .select()
+        .single();
 
-    if (draftError) {
-      console.error('Error updating draft status:', draftError);
-      return res.status(500).json({ error: 'Failed to update draft status' });
+      if (!error) {
+        draftStatus = data;
+        console.log('✅ Draft status updated successfully');
+      } else {
+        console.warn('⚠️ Could not update draft_status table:', error.message);
+      }
+    } catch (statusError) {
+      console.warn('⚠️ Draft status table not available, continuing without it:', statusError.message);
     }
 
     // Get all allocated players to verify completeness
