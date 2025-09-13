@@ -1,6 +1,10 @@
 // Consolidated Game Management API
 // Combines: simulation.js + competition-points.js + draft-allocation-simple.js
-import { supabase } from '../client/src/config/supabase.js';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
   // Enable CORS
