@@ -25,6 +25,7 @@ import ProfileCompletion from './ProfileCompletion.js';
 import AuthForm from './AuthForm.js';
 import NotificationPreferences from './NotificationPreferences.js';
 import ChelseaNextGame from './ChelseaNextGame.js';
+import EnhancedLeaderboardTab from './tabs/EnhancedLeaderboardTab.js';
 
 function Draft({ wsService, currentUser }) {
   const [draftStatus, setDraftStatus] = useState(null);
@@ -795,27 +796,6 @@ function Draft({ wsService, currentUser }) {
 // Smaller components that can stay in the same file
 function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   const [activeStatsTab, setActiveStatsTab] = useState('leaderboard');
-  const [simulationLeaderboard, setSimulationLeaderboard] = useState([]);
-
-  // Fetch simulation data when in simulation mode
-  const fetchSimulationData = useCallback(async() => {
-    try {
-      const response = await fetch('/api/simulation?action=leaderboard');
-      const data = await response.json();
-
-      if (data.success) {
-        setSimulationLeaderboard(data.leaderboard);
-      }
-    } catch (err) {
-      console.error('Failed to fetch simulation data:', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (draftStatus?.simulationMode) {
-      fetchSimulationData();
-    }
-  }, [draftStatus?.simulationMode, fetchSimulationData]);
 
   return (
     <div className="space-y-6">
@@ -828,7 +808,7 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
           }`}
           onClick={() => setActiveStatsTab('leaderboard')}
         >
-          Leaderboard
+          🏆 Enhanced Leaderboard
         </button>
         <button
           className={`px-4 py-2 rounded-lg ${
@@ -843,45 +823,10 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
       </div>
 
       {activeStatsTab === 'leaderboard' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Current Leaderboard</h2>
-          <div className="space-y-3">
-            {simulationLeaderboard.map((user, index) => (
-              <div
-                key={user.userId}
-                className={`p-4 rounded-lg flex items-center justify-between ${
-                  user.userId === currentUser?.id ? 'bg-blue-50 border-2 border-blue-200' : 'bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                      index === 0 ? 'bg-yellow-500' :
-                        index === 1 ? 'bg-gray-400' :
-                          index === 2 ? 'bg-amber-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="font-medium">{user.username}</div>
-                    <div className="text-sm text-gray-600">
-                      {user.gameweeksPlayed || 0}
-                      {' '}
-                      gameweeks played
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {user.totalPoints || 0}
-                  </div>
-                  <div className="text-sm text-gray-600">total points</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <EnhancedLeaderboardTab 
+          currentUser={currentUser}
+          draftStatus={draftStatus}
+        />
       )}
 
       {activeStatsTab === 'player-stats' && (

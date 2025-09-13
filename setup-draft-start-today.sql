@@ -78,16 +78,37 @@ SELECT
     END as competition_points_with_multiplier
 FROM chelsea_players cp;
 
--- 5. Reset all user team scores to zero for fair start
-UPDATE user_teams 
-SET total_score = 0, 
-    gameweek_score = 0
-WHERE total_score IS NOT NULL;
+-- 5. Reset user team scores if the table and columns exist
+DO $$
+BEGIN
+    -- Only update if user_teams table exists and has the columns
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'user_teams') THEN
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_teams' AND column_name = 'total_score') THEN
+            UPDATE user_teams SET total_score = 0 WHERE total_score IS NOT NULL;
+            RAISE NOTICE 'Reset user_teams total_score to 0';
+        END IF;
+        
+        IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'user_teams' AND column_name = 'gameweek_score') THEN
+            UPDATE user_teams SET gameweek_score = 0 WHERE gameweek_score IS NOT NULL;
+            RAISE NOTICE 'Reset user_teams gameweek_score to 0';
+        END IF;
+    ELSE
+        RAISE NOTICE 'user_teams table does not exist - skipping reset';
+    END IF;
+END $$;
 
--- 6. Clear any existing gameweek results to start fresh
-DELETE FROM gameweek_results WHERE gameweek >= (
-    SELECT current_gameweek FROM draft_status WHERE id = 1
-);
+-- 6. Clear existing gameweek results if table exists
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'gameweek_results') THEN
+        DELETE FROM gameweek_results WHERE gameweek >= (
+            SELECT COALESCE(current_gameweek, 1) FROM draft_status WHERE id = 1
+        );
+        RAISE NOTICE 'Cleared existing gameweek_results';
+    ELSE
+        RAISE NOTICE 'gameweek_results table does not exist - skipping clear';
+    END IF;
+END $$;
 
 -- 7. Create competition tracking table
 CREATE TABLE IF NOT EXISTS competition_tracking (
