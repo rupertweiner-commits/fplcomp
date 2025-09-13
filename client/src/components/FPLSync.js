@@ -54,9 +54,9 @@ function FPLSync({ currentUser, onSyncComplete }) {
 
       if (data.success) {
         setSyncResult(data.data);
-        setSyncedPlayers(data.data.players || []);
+        setSyncedPlayers(data.data?.players || []);
         console.log('✅ FPL sync completed:', data.data);
-        console.log('📊 Synced players:', data.data.players?.length || 0);
+        console.log('📊 Synced players:', data.data?.players?.length || 0);
         
         // Notify parent component that sync completed
         if (onSyncComplete) {
@@ -100,10 +100,9 @@ function FPLSync({ currentUser, onSyncComplete }) {
       const data = await response.json();
       
       if (data.success) {
-        setSupabasePlayers(data.data.players || []);
-        console.log('📊 Supabase data:', data.data);
-        console.log(`Found ${data.data.totalPlayers} players in Supabase`);
-        console.log('Position counts:', data.data.positionCounts);
+        setSupabasePlayers(data.players || []);
+        console.log('📊 Supabase data:', data);
+        console.log(`Found ${data.count || data.players?.length || 0} players in Supabase`);
       } else {
         throw new Error(data.error || 'Failed to fetch Supabase data');
       }
