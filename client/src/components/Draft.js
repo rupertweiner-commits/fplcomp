@@ -219,7 +219,7 @@ function Draft({ wsService, currentUser }) {
 
   const fetchSimulationStatus = async() => {
     try {
-      const response = await fetch('/api/simulation?action=status');
+      const response = await fetch('/api/game?action=simulation-status');
       const data = await response.json();
 
       if (data.success) {
@@ -232,7 +232,7 @@ function Draft({ wsService, currentUser }) {
 
   const fetchLeaderboard = async() => {
     try {
-      const response = await fetch('/api/simulation?action=leaderboard');
+      const response = await fetch('/api/game?action=leaderboard');
       const data = await response.json();
 
       if (data.success) {
@@ -254,7 +254,7 @@ function Draft({ wsService, currentUser }) {
       console.log('🚀 Starting global simulation (affects all users)');
 
       // First, start the simulation via API
-      const response = await fetch('/api/simulation?action=start', {
+      const response = await fetch('/api/game?action=start-simulation', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
@@ -376,7 +376,7 @@ function Draft({ wsService, currentUser }) {
     }
 
     try {
-      const response = await fetch('/api/simulation?action=simulate', {
+      const response = await fetch('/api/game?action=simulate-gameweek', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,

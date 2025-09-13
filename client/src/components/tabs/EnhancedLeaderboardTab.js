@@ -30,7 +30,7 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
       setLoading(true);
       console.log('📊 Fetching enhanced leaderboard...');
 
-      const response = await fetch('/api/enhanced-leaderboard?action=get_leaderboard');
+      const response = await fetch('/api/users?action=get-leaderboard');
       const data = await response.json();
 
       if (data.success) {
@@ -50,7 +50,7 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
   // Fetch awards data
   const fetchAwards = async () => {
     try {
-      const response = await fetch('/api/enhanced-leaderboard?action=get_awards');
+      const response = await fetch('/api/users?action=get-awards');
       const data = await response.json();
 
       if (data.success) {
@@ -66,7 +66,7 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
   const calculateAwards = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/enhanced-leaderboard?action=calculate_awards', {
+      const response = await fetch('/api/users?action=calculate-awards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ season: '2024-25' })

@@ -24,7 +24,7 @@ function PlayerStats({ players: propPlayers }) {
       setLoading(true);
 
       // Fetch synced Chelsea players from our database
-      const response = await fetch('/api/fpl-sync?action=get-chelsea-players');
+      const response = await fetch('/api/players?action=get-chelsea-players');
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,7 +56,7 @@ function PlayerStats({ players: propPlayers }) {
         await triggerAutoSync();
         
         // Fetch again after sync
-        const syncResponse = await fetch('/api/fpl-sync?action=get-chelsea-players');
+        const syncResponse = await fetch('/api/players?action=get-chelsea-players');
         if (syncResponse.ok) {
           const syncData = await syncResponse.json();
           if (syncData.success && syncData.data?.players) {
@@ -81,7 +81,7 @@ function PlayerStats({ players: propPlayers }) {
   const triggerAutoSync = async () => {
     try {
       console.log('🔄 Triggering automatic FPL sync...');
-      const syncResponse = await fetch('/api/fpl-sync?action=login-sync', {
+      const syncResponse = await fetch('/api/players?action=login-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -109,7 +109,7 @@ function PlayerStats({ players: propPlayers }) {
   const fetchLiveData = async() => {
     try {
       setLoading(true);
-      const response = await fetch('/api/fpl-sync?action=live-scores');
+      const response = await fetch('/api/players?action=live-scores');
       const data = await response.json();
 
       if (data.success) {
