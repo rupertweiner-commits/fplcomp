@@ -57,6 +57,8 @@ export default async function handler(req, res) {
         return await handleSetCaptain(req, res);
       case 'set-vice-captain':
         return await handleSetViceCaptain(req, res);
+      case 'complete-draft':
+        return await handleCompleteDraft(req, res);
 
       default:
         return res.status(400).json({ error: 'Invalid action' });
@@ -704,5 +706,79 @@ async function handleSetViceCaptain(req, res) {
   } catch (error) {
     console.error('❌ Set vice captain error:', error);
     return res.status(500).json({ error: 'Failed to set vice captain' });
+  }
+}
+
+async function handleCompleteDraft(req, res) {
+  try {
+    console.log('🏁 Completing draft...');
+
+    // Update draft status to complete
+    const { data: draftStatus, error: draftError } = await supabase
+      .from('draft_status')
+      .update({ 
+        is_draft_complete: true,
+        is_draft_active: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', 1)
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error('Error updating draft status:', draftError);
+      return res.status(500).json({ error: 'Failed to update draft status' });
+    }
+
+    // Get all allocated players to verify completeness
+    const { data: allocatedPlayers, error: playersError } = await supabase
+      .from('chelsea_players')
+      .select(`
+        id,
+        name,
+        position,
+        assigned_to_user_id,
+        user_profiles!inner(first_name, last_name, email)
+      `)
+      .not('assigned_to_user_id', 'is', null);
+
+    if (playersError) {
+      console.error('Error fetching allocated players:', playersError);
+      return res.status(500).json({ error: 'Failed to fetch allocated players' });
+    }
+
+    // Group players by user for summary
+    const userTeams = {};
+    allocatedPlayers.forEach(player => {
+      const userId = player.assigned_to_user_id;
+      if (!userTeams[userId]) {
+        userTeams[userId] = {
+          user: player.user_profiles,
+          players: [],
+          totalPlayers: 0
+        };
+      }
+      userTeams[userId].players.push(player);
+      userTeams[userId].totalPlayers++;
+    });
+
+    console.log('✅ Draft completed successfully');
+    console.log(`📊 Total allocations: ${allocatedPlayers.length} players across ${Object.keys(userTeams).length} users`);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Draft completed successfully!',
+      data: {
+        draftStatus,
+        totalAllocations: allocatedPlayers.length,
+        totalUsers: Object.keys(userTeams).length,
+        userTeams: Object.values(userTeams),
+        completedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Complete draft error:', error);
+    return res.status(500).json({ error: 'Failed to complete draft' });
   }
 }
