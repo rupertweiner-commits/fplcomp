@@ -48,8 +48,8 @@ function AdminDashboard({ currentUser }) {
         }
       });
       const usersData = await usersResponse.json();
-      if (usersData.success && usersData.data && usersData.data.users) {
-        setMockUsers(usersData.data.users);
+      if (usersData.success && usersData.users) {
+        setMockUsers(usersData.users);
       }
 
       // Fetch available players
@@ -60,22 +60,22 @@ function AdminDashboard({ currentUser }) {
       });
       const playersData = await playersResponse.json();
       console.log('Players response:', playersData);
-      if (playersData.success && playersData.data && playersData.data.players) {
-        console.log('Setting available players:', playersData.data.players.length);
-        setAvailablePlayers(playersData.data.players);
+      if (playersData.success && playersData.players) {
+        console.log('Setting available players:', playersData.players.length);
+        setAvailablePlayers(playersData.players);
       } else {
         console.error('Failed to load players:', playersData);
       }
 
-      // Fetch current allocations
-      const allocationsResponse = await fetch('/api/game?action=get-user-team', {
+      // Fetch current allocations (all users)
+      const allocationsResponse = await fetch('/api/game?action=get-all-allocations', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
       });
       const allocationsData = await allocationsResponse.json();
-      if (allocationsData.success && allocationsData.data && allocationsData.data.allocations) {
-        setAllocations(allocationsData.data.allocations);
+      if (allocationsData.success && allocationsData.allocations) {
+        setAllocations(allocationsData.allocations);
       }
 
       // Fetch simulation status

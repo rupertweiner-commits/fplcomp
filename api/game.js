@@ -49,6 +49,8 @@ export default async function handler(req, res) {
         return await handleAllocatePlayer(req, res);
       case 'get-user-team':
         return await handleGetUserTeam(req, res);
+      case 'get-all-allocations':
+        return await handleGetAllAllocations(req, res);
       case 'deallocate-player':
         return await handleDeallocatePlayer(req, res);
       case 'set-captain':
@@ -540,6 +542,46 @@ async function handleGetUserTeam(req, res) {
   } catch (error) {
     console.error('❌ Get user team error:', error);
     return res.status(500).json({ error: 'Failed to fetch user team' });
+  }
+}
+
+async function handleGetAllAllocations(req, res) {
+  try {
+    console.log('📊 Fetching all player allocations...');
+
+    // Get all allocated players with user information
+    const { data: allocations, error } = await supabase
+      .from('chelsea_players')
+      .select(`
+        id,
+        name,
+        position,
+        price,
+        total_points,
+        assigned_to_user_id,
+        is_captain,
+        is_vice_captain,
+        user_profiles!inner(
+          id,
+          first_name,
+          last_name,
+          email
+        )
+      `)
+      .not('assigned_to_user_id', 'is', null)
+      .order('position')
+      .order('name');
+
+    if (error) {
+      console.error('Error fetching allocations:', error);
+      return res.status(500).json({ error: 'Failed to fetch allocations' });
+    }
+
+    return res.status(200).json({ success: true, allocations: allocations || [] });
+
+  } catch (error) {
+    console.error('❌ Get all allocations error:', error);
+    return res.status(500).json({ error: 'Failed to fetch all allocations' });
   }
 }
 
