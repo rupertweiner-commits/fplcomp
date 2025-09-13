@@ -185,7 +185,7 @@ const AuthForm = ({ onLogin, error, onForgotPassword }) => {
   const triggerFPLSync = async () => {
     try {
       // Trigger FPL sync in the background using existing API
-      fetch('/api/fpl-sync?action=login-sync', {
+      fetch('/api/players?action=login-sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

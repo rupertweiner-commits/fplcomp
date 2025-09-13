@@ -15,7 +15,7 @@ const FPLDataSync = () => {
     try {
       setStatus('Syncing Chelsea players from FPL API to database...');
 
-      const response = await fetch('/api/fpl-sync?action=sync-chelsea-players', {
+      const response = await fetch('/api/players?action=sync-chelsea-players', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ const FPLDataSync = () => {
     try {
       setStatus('Testing FPL API connection...');
 
-      const response = await fetch('/api/fpl-sync?action=bootstrap');
+      const response = await fetch('/api/players?action=bootstrap');
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

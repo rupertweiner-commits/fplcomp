@@ -28,7 +28,7 @@ const ChipManagement = ({ currentUser }) => {
 
   const fetchGameweekStatus = async () => {
     try {
-      const response = await fetch('/api/fpl-sync?action=current-gameweek');
+      const response = await fetch('/api/players?action=current-gameweek');
       const data = await response.json();
       setGameweekStatus(data);
     } catch (err) {

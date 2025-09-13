@@ -48,7 +48,7 @@ const TeamAssignment = ({ currentUser }) => {
 
   const fetchAllocations = async() => {
     try {
-      const response = await fetch('/api/admin?action=allocations', {
+      const response = await fetch('/api/users?action=validate-all-teams', {
         headers: {
           Authorization: `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }

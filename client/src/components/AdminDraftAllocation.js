@@ -23,7 +23,7 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       
       // Fetch mock users
-      const usersResponse = await fetch('/api/draft-allocation-simple?action=get-mock-users', {
+      const usersResponse = await fetch('/api/game?action=get-users', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -40,7 +40,7 @@ function AdminDraftAllocation({ currentUser }) {
       }
 
       // Fetch available players
-      const playersResponse = await fetch('/api/draft-allocation-simple?action=get-available-players', {
+      const playersResponse = await fetch('/api/game?action=get-available-players', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -54,7 +54,7 @@ function AdminDraftAllocation({ currentUser }) {
       }
 
       // Fetch current allocations
-      const allocationsResponse = await fetch('/api/draft-allocation-simple?action=get-allocations', {
+      const allocationsResponse = await fetch('/api/game?action=get-user-team', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -85,7 +85,7 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('/api/draft-allocation-simple?action=allocate-player', {
+      const response = await fetch('/api/game?action=allocate-player', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ function AdminDraftAllocation({ currentUser }) {
       setLoading(true);
       setMessage({ type: '', text: '' });
 
-      const response = await fetch('/api/draft-allocation-simple?action=complete-draft', {
+      const response = await fetch('/api/game?action=complete-draft', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

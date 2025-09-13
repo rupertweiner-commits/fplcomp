@@ -27,7 +27,7 @@ function FPLSync({ currentUser, onSyncComplete }) {
 
       console.log('🔄 Starting FPL sync...');
 
-      const response = await fetch('/api/fpl-sync?action=sync-chelsea-players', {
+      const response = await fetch('/api/players?action=sync-chelsea-players', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ function FPLSync({ currentUser, onSyncComplete }) {
   const handleCheckSyncStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/fpl-sync?action=sync-status');
+      const response = await fetch('/api/players?action=sync-status');
       const data = await response.json();
       
       if (data.success) {
@@ -96,7 +96,7 @@ function FPLSync({ currentUser, onSyncComplete }) {
       setLoading(true);
       console.log('🔍 Checking Supabase Chelsea players...');
       
-      const response = await fetch('/api/fpl-sync?action=get-chelsea-players');
+      const response = await fetch('/api/players?action=get-chelsea-players');
       const data = await response.json();
       
       if (data.success) {

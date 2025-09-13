@@ -23,7 +23,7 @@ function StatsTab({ liveScores, draftStatus, currentUser, chelseaPlayers }) {
   const fetchSimulationData = async() => {
     try {
       setLoading(true);
-      const response = await fetch('/api/simulation?action=status');
+      const response = await fetch('/api/game?action=simulation-status');
       const data = await response.json();
 
       if (data.success) {

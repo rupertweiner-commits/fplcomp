@@ -42,7 +42,7 @@ function AdminDashboard({ currentUser }) {
     setLoading(true);
     try {
       // Fetch mock users
-      const usersResponse = await fetch('/api/draft-allocation-simple?action=get-mock-users', {
+      const usersResponse = await fetch('/api/game?action=get-users', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -53,7 +53,7 @@ function AdminDashboard({ currentUser }) {
       }
 
       // Fetch available players
-      const playersResponse = await fetch('/api/draft-allocation-simple?action=get-available-players', {
+      const playersResponse = await fetch('/api/game?action=get-available-players', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -68,7 +68,7 @@ function AdminDashboard({ currentUser }) {
       }
 
       // Fetch current allocations
-      const allocationsResponse = await fetch('/api/draft-allocation-simple?action=get-allocations', {
+      const allocationsResponse = await fetch('/api/game?action=get-user-team', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -79,7 +79,7 @@ function AdminDashboard({ currentUser }) {
       }
 
       // Fetch simulation status
-      const simulationResponse = await fetch('/api/simulation?action=get-status', {
+      const simulationResponse = await fetch('/api/game?action=simulation-status', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -90,7 +90,7 @@ function AdminDashboard({ currentUser }) {
       }
 
       // Fetch draft status
-      const draftResponse = await fetch('/api/draft-allocation-simple?action=get-draft-status', {
+      const draftResponse = await fetch('/api/game?action=simulation-status', {
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
         }
@@ -112,7 +112,7 @@ function AdminDashboard({ currentUser }) {
   const handleCompleteDraft = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/draft-allocation-simple?action=complete-draft', {
+      const response = await fetch('/api/game?action=complete-draft', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
@@ -138,7 +138,7 @@ function AdminDashboard({ currentUser }) {
     setLoading(true);
     try {
       const action = simulationStatus?.is_simulation_mode ? 'exit-simulation' : 'start-simulation';
-      const response = await fetch(`/api/simulation?action=${action}`, {
+      const response = await fetch(`/api/game?action=${action}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${currentUser?.access_token || ''}`
@@ -412,7 +412,7 @@ function AdminDashboard({ currentUser }) {
           const isViceCaptain = allocation.viceCaptain === player.id;
           
           promises.push(
-            fetch('/api/draft-allocation-simple?action=allocate-player', {
+            fetch('/api/game?action=allocate-player', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

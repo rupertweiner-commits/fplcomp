@@ -231,7 +231,7 @@ function App() {
         console.log('🔧 WebSocket service should be disabled in this version');
 
         // Test connection to our Vercel API
-        const response = await fetch('/api/fpl-sync?action=bootstrap', {
+        const response = await fetch('/api/players?action=bootstrap', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

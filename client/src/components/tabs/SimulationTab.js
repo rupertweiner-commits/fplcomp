@@ -31,7 +31,7 @@ function SimulationTab({
 
   const fetchSimulationData = async() => {
     try {
-      const response = await fetch('/api/simulation?action=status');
+      const response = await fetch('/api/game?action=simulation-status');
       const data = await response.json();
 
       if (data.success) {
@@ -56,7 +56,7 @@ function SimulationTab({
       setLoading(true);
       console.log('🎯 Starting gameweek simulation...');
 
-      const response = await fetch('/api/simulation?action=simulate', {
+      const response = await fetch('/api/game?action=simulate-gameweek', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -98,7 +98,7 @@ function SimulationTab({
       setLoading(true);
       console.log('🔄 Resetting simulation...');
 
-      const response = await fetch('/api/simulation?action=reset', {
+      const response = await fetch('/api/game?action=reset-simulation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -133,7 +133,7 @@ function SimulationTab({
       setLoading(true);
       console.log('📅 Simulating next gameweek...');
 
-      const response = await fetch('/api/simulation?action=simulate-next', {
+      const response = await fetch('/api/game?action=simulate-next', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

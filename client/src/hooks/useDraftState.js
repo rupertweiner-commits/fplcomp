@@ -103,7 +103,7 @@ export function useDraftState(currentUser) {
     try {
       console.log('🔄 Fetching live scores...');
 
-      const response = await fetch('/api/fpl-sync?action=live-scores');
+      const response = await fetch('/api/players?action=live-scores');
       const data = await response.json();
 
       if (data.success) {
@@ -121,7 +121,7 @@ export function useDraftState(currentUser) {
     try {
       console.log('🔄 Fetching leaderboard...');
 
-      const response = await fetch('/api/simulation?action=leaderboard');
+      const response = await fetch('/api/game?action=leaderboard');
       const data = await response.json();
 
       if (data.success) {
@@ -144,7 +144,7 @@ export function useDraftState(currentUser) {
     try {
       console.log('🚀 Starting simulation...');
 
-      const response = await fetch('/api/simulation?action=start', {
+      const response = await fetch('/api/game?action=start-simulation', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -177,7 +177,7 @@ export function useDraftState(currentUser) {
     try {
       console.log('🎯 Simulating gameweek...');
 
-      const response = await fetch('/api/simulation?action=simulate', {
+      const response = await fetch('/api/game?action=simulate-gameweek', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
