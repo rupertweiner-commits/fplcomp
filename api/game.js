@@ -483,18 +483,38 @@ async function handleGetAvailablePlayers(req, res) {
 
 async function handleAllocatePlayer(req, res) {
   try {
-    const { playerId, userId } = req.body;
+    const { playerId, userId, isCaptain, isViceCaptain } = req.body;
     
     if (!playerId || !userId) {
       return res.status(400).json({ error: 'Player ID and User ID are required' });
     }
 
-    console.log('🎯 Allocating player:', { playerId, userId });
+    console.log('🎯 Allocating player:', { playerId, userId, isCaptain, isViceCaptain });
 
-    // Allocate player to user
+    // If setting as captain, remove captain from other players for this user
+    if (isCaptain) {
+      await supabase
+        .from('chelsea_players')
+        .update({ is_captain: false })
+        .eq('assigned_to_user_id', userId);
+    }
+
+    // If setting as vice captain, remove vice captain from other players for this user
+    if (isViceCaptain) {
+      await supabase
+        .from('chelsea_players')
+        .update({ is_vice_captain: false })
+        .eq('assigned_to_user_id', userId);
+    }
+
+    // Allocate player to user with captain/vice captain status
     const { data: result, error } = await supabase
       .from('chelsea_players')
-      .update({ assigned_to_user_id: userId })
+      .update({ 
+        assigned_to_user_id: userId,
+        is_captain: isCaptain || false,
+        is_vice_captain: isViceCaptain || false
+      })
       .eq('id', playerId)
       .select('*')
       .single();

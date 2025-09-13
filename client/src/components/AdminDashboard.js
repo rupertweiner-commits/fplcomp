@@ -112,6 +112,10 @@ function AdminDashboard({ currentUser }) {
   const handleCompleteDraft = async () => {
     setLoading(true);
     try {
+      // First apply any pending bulk allocations
+      await applyBulkAllocations();
+      
+      // Then complete the draft
       const response = await fetch('/api/game?action=complete-draft', {
         method: 'POST',
         headers: {
@@ -121,7 +125,10 @@ function AdminDashboard({ currentUser }) {
 
       const data = await response.json();
       if (data.success) {
-        setMessage({ type: 'success', text: 'Draft completed successfully!' });
+        setMessage({ 
+          type: 'success', 
+          text: `Draft completed! ${data.data?.totalAllocations || 0} players allocated to ${data.data?.totalUsers || 0} users. Users can now access their teams in "My Team" tab.` 
+        });
         fetchData(); // Refresh data
       } else {
         setMessage({ type: 'error', text: data.error || 'Failed to complete draft' });
@@ -419,7 +426,7 @@ function AdminDashboard({ currentUser }) {
                 'Authorization': `Bearer ${currentUser?.access_token || ''}`
               },
               body: JSON.stringify({
-                targetUserId: userId,
+                userId: userId,
                 playerId: player.id,
                 isCaptain,
                 isViceCaptain
