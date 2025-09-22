@@ -490,8 +490,7 @@ function AdminDashboard({ currentUser }) {
               body: JSON.stringify({
                 userId: userId,
                 playerId: player.id,
-                isCaptain,
-                isViceCaptain
+                isCaptain
               })
             })
           );
