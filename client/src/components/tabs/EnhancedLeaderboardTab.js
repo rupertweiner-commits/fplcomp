@@ -11,10 +11,12 @@ import {
   Calendar,
   Star,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  BarChart3
 } from 'lucide-react';
 import Card from '../ui/Card';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import LeaderboardVisualizations from '../LeaderboardVisualizations';
 
 function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
   const [leaderboardData, setLeaderboardData] = useState(null);
@@ -22,7 +24,7 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedUser, setExpandedUser] = useState(null);
-  const [activeView, setActiveView] = useState('leaderboard'); // 'leaderboard', 'awards', 'stats'
+  const [activeView, setActiveView] = useState('leaderboard'); // 'leaderboard', 'awards', 'stats', 'visualizations'
 
   // Fetch enhanced leaderboard data
   const fetchLeaderboardData = async () => {
@@ -171,7 +173,8 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
           {[
             { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
             { id: 'awards', label: 'Awards', icon: Award },
-            { id: 'stats', label: 'Stats', icon: TrendingUp }
+            { id: 'stats', label: 'Stats', icon: TrendingUp },
+            { id: 'visualizations', label: 'Charts', icon: BarChart3 }
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -410,6 +413,14 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Visualizations View */}
+      {activeView === 'visualizations' && (
+        <LeaderboardVisualizations 
+          leaderboardData={leaderboardData}
+          currentUser={currentUser}
+        />
       )}
 
       {/* Live Updates Info */}
