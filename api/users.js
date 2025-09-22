@@ -62,74 +62,15 @@ async function getEnhancedLeaderboard(req, res) {
   try {
     console.log('📊 Fetching enhanced leaderboard...');
 
-    // Try the enhanced view first, fallback to basic calculation
-    let leaderboardData;
-    let leaderboardError;
-    
-    try {
-      const { data, error } = await supabase
-        .from('enhanced_leaderboard_with_ownership')
-        .select('*')
-        .order('competition_points_with_multiplier', { ascending: false });
-      
-      leaderboardData = data;
-      leaderboardError = error;
-    } catch (viewError) {
-      console.warn('⚠️ Enhanced view not available, using fallback calculation');
-      leaderboardError = viewError;
-    }
+    // Get leaderboard data from the ownership-aware enhanced view
+    const { data: leaderboardData, error: leaderboardError } = await supabase
+      .from('enhanced_leaderboard_with_ownership')
+      .select('*')
+      .order('competition_points_with_multiplier', { ascending: false });
 
-    // If enhanced view fails, calculate leaderboard manually
-    if (leaderboardError || !leaderboardData) {
-      console.log('📊 Using fallback leaderboard calculation...');
-      
-      const { data: users, error: usersError } = await supabase
-        .from('user_profiles')
-        .select('id, first_name, last_name, email, is_admin');
-
-      if (usersError) {
-        console.error('❌ Error fetching users:', usersError);
-        return res.status(500).json({ error: 'Failed to fetch users' });
-      }
-
-      leaderboardData = [];
-      
-      for (const user of users) {
-        const { data: playerData, error: playerError } = await supabase
-          .from('chelsea_players')
-          .select('id, name, total_points, baseline_points, is_captain, goals_scored, assists, clean_sheets')
-          .eq('assigned_to_user_id', user.id);
-
-        if (playerError) {
-          console.error('Error fetching player data:', playerError);
-          continue;
-        }
-
-        const competitionPoints = playerData.reduce((sum, player) => {
-          const basePoints = Math.max(0, (player.total_points || 0) - (player.baseline_points || 0));
-          return sum + (player.is_captain ? basePoints * 2 : basePoints);
-        }, 0);
-
-        const totalGoals = playerData.reduce((sum, player) => sum + (player.goals_scored || 0), 0);
-        const totalAssists = playerData.reduce((sum, player) => sum + (player.assists || 0), 0);
-        const totalCleanSheets = playerData.reduce((sum, player) => sum + (player.clean_sheets || 0), 0);
-
-        leaderboardData.push({
-          user_id: user.id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          is_admin: user.is_admin,
-          competition_points_with_multiplier: Math.round(competitionPoints),
-          total_goals: totalGoals,
-          total_assists: totalAssists,
-          total_clean_sheets: totalCleanSheets,
-          player_count: playerData.length
-        });
-      }
-
-      // Sort by competition points
-      leaderboardData.sort((a, b) => b.competition_points_with_multiplier - a.competition_points_with_multiplier);
+    if (leaderboardError) {
+      console.error('❌ Error fetching leaderboard:', leaderboardError);
+      return res.status(500).json({ error: 'Failed to fetch leaderboard data' });
     }
 
     // Add rankings
