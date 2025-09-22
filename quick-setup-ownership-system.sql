@@ -94,7 +94,8 @@ EXCEPTION WHEN OTHERS THEN
 END $$;
 
 -- Step 3: Create simplified leaderboard view that works immediately
-CREATE OR REPLACE VIEW enhanced_leaderboard_with_ownership AS
+DROP VIEW IF EXISTS enhanced_leaderboard_with_ownership;
+CREATE VIEW enhanced_leaderboard_with_ownership AS
 SELECT 
     up.id as user_id,
     up.email,
