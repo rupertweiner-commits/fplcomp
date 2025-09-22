@@ -123,33 +123,146 @@ async function handleGetChelseaPlayers(req, res) {
 
 async function handleSyncChelseaPlayers(req, res) {
   try {
-    console.log('🔄 Starting ultra-simple sync to avoid any errors...');
-
-    // Skip all database operations that might fail
-    // Just return a successful response that matches what the frontend expects
+    console.log('🔄 Starting Chelsea players sync with detailed logging...');
     
+    // Step 1: Test Supabase connection first
+    console.log('🔍 Testing Supabase connection...');
+    const { data: testData, error: testError } = await supabase
+      .from('chelsea_players')
+      .select('id')
+      .limit(1);
+    
+    if (testError) {
+      console.error('❌ Supabase connection failed:', testError);
+      return res.status(500).json({ 
+        error: 'Database connection failed',
+        details: testError.message 
+      });
+    }
+    
+    console.log('✅ Supabase connection successful');
+    
+    // Step 2: Test FPL API
+    console.log('📡 Testing FPL API connection...');
+    const fplResponse = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/');
+    
+    if (!fplResponse.ok) {
+      console.error('❌ FPL API failed:', fplResponse.status);
+      return res.status(500).json({ 
+        error: 'FPL API connection failed',
+        details: `HTTP ${fplResponse.status}` 
+      });
+    }
+    
+    console.log('✅ FPL API connection successful');
+    
+    const fplData = await fplResponse.json();
+    console.log('📊 FPL data received, parsing...');
+    
+    // Step 3: Find Chelsea players (team ID 8 for Chelsea)
+    const chelseaPlayers = fplData.elements.filter(player => player.team === 8);
+    console.log(`📊 Found ${chelseaPlayers.length} Chelsea players in FPL API`);
+    
+    if (chelseaPlayers.length === 0) {
+      return res.status(500).json({ 
+        error: 'No Chelsea players found',
+        details: 'Chelsea team not found in FPL data' 
+      });
+    }
+
+    // Step 4: Sync first few players only to test
+    const playersToSync = chelseaPlayers.slice(0, 3); // Just 3 players to start
+    let syncedCount = 0;
+    let createdCount = 0;
+    let updatedCount = 0;
+
+    console.log(`🔄 Syncing ${playersToSync.length} players...`);
+
+    for (const player of playersToSync) {
+      console.log(`🔄 Processing ${player.web_name}...`);
+      
+      const playerData = {
+        fpl_id: player.id,
+        name: `${player.first_name} ${player.second_name}`.trim(),
+        web_name: player.web_name,
+        position: player.element_type === 1 ? 'GKP' : 
+                 player.element_type === 2 ? 'DEF' : 
+                 player.element_type === 3 ? 'MID' : 'FWD',
+        total_points: player.total_points || 0,
+        now_cost: player.now_cost || 0,
+        form: parseFloat(player.form || 0),
+        goals_scored: player.goals_scored || 0,
+        assists: player.assists || 0,
+        clean_sheets: player.clean_sheets || 0,
+        minutes: player.minutes || 0,
+        is_available: player.status === 'a',
+        news: player.news || '',
+        chance_of_playing_this_round: player.chance_of_playing_this_round
+      };
+
+      // Check if player exists
+      const { data: existingPlayer } = await supabase
+        .from('chelsea_players')
+        .select('id')
+        .eq('fpl_id', player.id)
+        .single();
+
+      if (existingPlayer) {
+        // Update existing player
+        const { error: updateError } = await supabase
+          .from('chelsea_players')
+          .update(playerData)
+          .eq('fpl_id', player.id);
+
+        if (!updateError) {
+          updatedCount++;
+          syncedCount++;
+          console.log(`✅ Updated ${player.web_name}`);
+        } else {
+          console.error(`❌ Failed to update ${player.web_name}:`, updateError);
+        }
+      } else {
+        // Insert new player
+        const { error: insertError } = await supabase
+          .from('chelsea_players')
+          .insert(playerData);
+
+        if (!insertError) {
+          createdCount++;
+          syncedCount++;
+          console.log(`✅ Created ${player.web_name}`);
+        } else {
+          console.error(`❌ Failed to create ${player.web_name}:`, insertError);
+        }
+      }
+    }
+
     const result = {
-      totalPlayers: 25,
-      playersCreated: 5,
-      playersUpdated: 20,
-      playersSkipped: 0,
-      currentGameweek: 6,
-      message: 'Sync completed successfully (simplified mode)'
+      totalPlayers: chelseaPlayers.length,
+      playersCreated: createdCount,
+      playersUpdated: updatedCount,
+      playersProcessed: syncedCount,
+      playersSkipped: chelseaPlayers.length - playersToSync.length
     };
 
-    console.log('✅ Ultra-simple sync completed');
+    console.log(`✅ Sync completed: ${syncedCount}/${playersToSync.length} players processed`);
     
     return res.status(200).json({
       success: true,
-      message: 'Successfully synced 25 Chelsea players (ultra-simple mode)',
+      message: `Successfully processed ${syncedCount} of ${playersToSync.length} Chelsea players (${createdCount} created, ${updatedCount} updated)`,
       data: result
     });
 
   } catch (error) {
-    console.error('❌ Ultra-simple sync error:', error);
+    console.error('❌ Sync error with full details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     return res.status(500).json({ 
       error: 'Failed to sync Chelsea players',
-      details: error.message 
+      details: error.message,
+      type: error.name
     });
   }
 }
