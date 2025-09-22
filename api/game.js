@@ -62,6 +62,12 @@ export default async function handler(req, res) {
       case 'clear-allocations':
         return await handleClearAllocations(req, res);
 
+      case 'transfer-player':
+        return await handleTransferPlayer(req, res);
+
+      case 'initialize-ownership':
+        return await handleInitializeOwnership(req, res);
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
@@ -881,5 +887,85 @@ async function handleClearAllocations(req, res) {
   } catch (error) {
     console.error('❌ Clear allocations error:', error);
     return res.status(500).json({ error: 'Failed to clear allocations' });
+  }
+}
+
+async function handleTransferPlayer(req, res) {
+  try {
+    const { playerFplId, fromUserId, toUserId, transferGameweek, isCaptain = false, isViceCaptain = false } = req.body;
+
+    if (!playerFplId || !fromUserId || !toUserId || !transferGameweek) {
+      return res.status(400).json({ 
+        error: 'Missing required fields: playerFplId, fromUserId, toUserId, transferGameweek' 
+      });
+    }
+
+    console.log(`🔄 Transferring player ${playerFplId} from ${fromUserId} to ${toUserId} starting GW${transferGameweek}`);
+
+    // Call the transfer function
+    const { data, error } = await supabase
+      .rpc('transfer_player', {
+        p_player_fpl_id: playerFplId,
+        p_from_user_id: fromUserId,
+        p_to_user_id: toUserId,
+        p_transfer_gameweek: transferGameweek,
+        p_is_captain: isCaptain,
+        p_is_vice_captain: isViceCaptain
+      });
+
+    if (error) {
+      console.error('Transfer error:', error);
+      return res.status(500).json({ error: 'Failed to transfer player: ' + error.message });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Player transferred successfully starting from GW${transferGameweek}`,
+      data: {
+        playerFplId,
+        fromUserId,
+        toUserId,
+        transferGameweek,
+        transferredAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Transfer player error:', error);
+    return res.status(500).json({ error: 'Failed to transfer player' });
+  }
+}
+
+async function handleInitializeOwnership(req, res) {
+  try {
+    const { startGameweek = 4 } = req.body;
+
+    console.log(`🔄 Initializing ownership tracking from GW${startGameweek}`);
+
+    // Call the initialization function
+    const { data, error } = await supabase
+      .rpc('initialize_current_ownership', {
+        start_gameweek: startGameweek
+      });
+
+    if (error) {
+      console.error('Initialization error:', error);
+      return res.status(500).json({ error: 'Failed to initialize ownership: ' + error.message });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Ownership tracking initialized from GW${startGameweek}`,
+      data: {
+        startGameweek,
+        usersProcessed: data?.[0]?.users_processed || 0,
+        playersProcessed: data?.[0]?.players_processed || 0,
+        initializedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Initialize ownership error:', error);
+    return res.status(500).json({ error: 'Failed to initialize ownership tracking' });
   }
 }
