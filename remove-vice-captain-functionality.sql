@@ -5,6 +5,7 @@ DO $$
 DECLARE
     vice_captains_found INTEGER;
     updated_count INTEGER;
+    captain_record RECORD;
 BEGIN
     RAISE NOTICE '=== REMOVING VICE-CAPTAIN FUNCTIONALITY ===';
     
