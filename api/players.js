@@ -67,6 +67,10 @@ export default async function handler(req, res) {
       case 'test-connection':
         return await handleTestConnection(req, res);
 
+      // Sync individual gameweek points
+      case 'sync-gameweek-points':
+        return await handleSyncGameweekPoints(req, res);
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
@@ -939,5 +943,127 @@ function getPositionFromElementType(elementType) {
     case 3: return 'MID';
     case 4: return 'FWD';
     default: return 'UNK';
+  }
+}
+
+async function handleSyncGameweekPoints(req, res) {
+  try {
+    console.log('🔄 Starting gameweek points sync...');
+    
+    // Get all Chelsea players from our database
+    const { data: chelseaPlayers, error: playersError } = await supabase
+      .from('chelsea_players')
+      .select('fpl_id, name');
+    
+    if (playersError) {
+      console.error('Error fetching Chelsea players:', playersError);
+      return res.status(500).json({ error: 'Failed to fetch Chelsea players' });
+    }
+    
+    console.log(`📊 Found ${chelseaPlayers.length} Chelsea players to sync`);
+    
+    let syncedGameweeks = 0;
+    let totalRecords = 0;
+    
+    // Sync gameweeks 4 and 5 for each player
+    for (const player of chelseaPlayers) {
+      console.log(`🔄 Syncing ${player.name} (FPL ID: ${player.fpl_id})`);
+      
+      for (let gameweek = 4; gameweek <= 5; gameweek++) {
+        try {
+          // Fetch individual gameweek data from FPL API
+          const gwResponse = await fetch(
+            `https://fantasy.premierleague.com/api/element-summary/${player.fpl_id}/`
+          );
+          
+          if (!gwResponse.ok) {
+            console.warn(`⚠️ Failed to fetch data for ${player.name} GW${gameweek}: ${gwResponse.status}`);
+            continue;
+          }
+          
+          const gwData = await gwResponse.json();
+          const gameweekData = gwData.history.find(h => h.round === gameweek);
+          
+          if (!gameweekData) {
+            console.warn(`⚠️ No data found for ${player.name} GW${gameweek}`);
+            continue;
+          }
+          
+          // Insert/update gameweek points
+          const { error: upsertError } = await supabase
+            .from('gameweek_points')
+            .upsert({
+              fpl_id: player.fpl_id,
+              player_name: player.name,
+              gameweek: gameweek,
+              points: gameweekData.total_points,
+              minutes: gameweekData.minutes,
+              goals_scored: gameweekData.goals_scored,
+              assists: gameweekData.assists,
+              clean_sheets: gameweekData.clean_sheets,
+              goals_conceded: gameweekData.goals_conceded,
+              own_goals: gameweekData.own_goals,
+              penalties_saved: gameweekData.penalties_saved,
+              penalties_missed: gameweekData.penalties_missed,
+              yellow_cards: gameweekData.yellow_cards,
+              red_cards: gameweekData.red_cards,
+              saves: gameweekData.saves,
+              bonus: gameweekData.bonus,
+              bps: gameweekData.bps,
+              influence: parseFloat(gameweekData.influence || 0),
+              creativity: parseFloat(gameweekData.creativity || 0),
+              threat: parseFloat(gameweekData.threat || 0),
+              ict_index: parseFloat(gameweekData.ict_index || 0),
+              starts: gameweekData.starts,
+              expected_goals: parseFloat(gameweekData.expected_goals || 0),
+              expected_assists: parseFloat(gameweekData.expected_assists || 0),
+              expected_goal_involvements: parseFloat(gameweekData.expected_goal_involvements || 0),
+              expected_goals_conceded: parseFloat(gameweekData.expected_goals_conceded || 0),
+              value: gameweekData.value,
+              transfers_balance: gameweekData.transfers_balance,
+              selected: gameweekData.selected,
+              transfers_in: gameweekData.transfers_in,
+              transfers_out: gameweekData.transfers_out,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'fpl_id,gameweek'
+            });
+          
+          if (upsertError) {
+            console.error(`❌ Error upserting ${player.name} GW${gameweek}:`, upsertError);
+          } else {
+            console.log(`✅ Synced ${player.name} GW${gameweek}: ${gameweekData.total_points} points`);
+            totalRecords++;
+          }
+          
+          // Small delay to avoid overwhelming the API
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+        } catch (gwError) {
+          console.error(`❌ Error processing ${player.name} GW${gameweek}:`, gwError);
+        }
+      }
+      
+      syncedGameweeks++;
+    }
+    
+    console.log(`✅ Gameweek sync completed: ${totalRecords} records for ${syncedGameweeks} players`);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        playersProcessed: syncedGameweeks,
+        recordsCreated: totalRecords,
+        gameweeksSync: [4, 5],
+        message: `Synced individual gameweek points for GW4-5`
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Gameweek sync error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to sync gameweek points',
+      details: error.message 
+    });
   }
 }

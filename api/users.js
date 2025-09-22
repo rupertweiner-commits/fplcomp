@@ -62,9 +62,9 @@ async function getEnhancedLeaderboard(req, res) {
   try {
     console.log('📊 Fetching enhanced leaderboard...');
 
-    // Get leaderboard data from the enhanced view
+    // Get leaderboard data from the gameweek-specific enhanced view
     const { data: leaderboardData, error: leaderboardError } = await supabase
-      .from('enhanced_leaderboard')
+      .from('enhanced_leaderboard_gw')
       .select('*')
       .order('competition_points_with_multiplier', { ascending: false });
 

@@ -141,6 +141,38 @@ function AdminDashboard({ currentUser }) {
     }
   };
 
+  const handleSyncGameweekPoints = async () => {
+    if (!window.confirm('Sync individual gameweek points for GW4-5? This will fetch precise points from the FPL API and update the leaderboard.')) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/players?action=sync-gameweek-points', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: `Gameweek sync completed! ${data.data?.recordsCreated || 0} records synced for ${data.data?.playersProcessed || 0} players. Leaderboard now shows GW4-5 points only.` 
+        });
+        fetchData(); // Refresh data
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Failed to sync gameweek points' });
+      }
+    } catch (error) {
+      console.error('Error syncing gameweek points:', error);
+      setMessage({ type: 'error', text: 'Error syncing gameweek points' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClearAllocations = async () => {
     if (!window.confirm('Are you sure you want to clear ALL player allocations? This will reset the draft and cannot be undone.')) {
       return;
@@ -924,6 +956,25 @@ function AdminDashboard({ currentUser }) {
                   }`}
                 >
                   {loading ? 'Completing...' : 'Complete Draft'}
+                </button>
+              </div>
+
+              {/* Sync Gameweek Points */}
+              <div className="flex items-center justify-between p-4 border border-blue-200 rounded-lg bg-blue-50">
+                <div>
+                  <h3 className="text-lg font-medium text-blue-900">Sync Gameweek Points</h3>
+                  <p className="text-blue-700 text-sm">Fetch individual GW4-5 points from FPL API (Chalobah: GW4=3pts, GW5=8pts)</p>
+                </div>
+                <button
+                  onClick={handleSyncGameweekPoints}
+                  disabled={loading}
+                  className={`px-6 py-2 rounded-md font-medium ${
+                    loading
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                  }`}
+                >
+                  {loading ? 'Syncing...' : 'Sync GW4-5 Points'}
                 </button>
               </div>
 
