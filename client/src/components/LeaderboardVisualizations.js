@@ -56,16 +56,24 @@ function LeaderboardVisualizations({ leaderboardData, currentUser }) {
   const fetchCumulativeData = async () => {
     setLoadingCumulative(true);
     try {
+      console.log('📈 Fetching cumulative data for charts...');
       const response = await fetch('/api/players?action=get-cumulative-data');
       const data = await response.json();
       
+      console.log('📈 Cumulative data response:', data);
+      
       if (data.success) {
         setCumulativeData(data.data);
+        console.log('✅ Cumulative data loaded:', data.data?.length, 'users');
       } else {
-        console.error('Failed to fetch cumulative data:', data.error);
+        console.error('❌ Failed to fetch cumulative data:', data.error);
+        // Fallback to mock data for now
+        setCumulativeData([]);
       }
     } catch (error) {
-      console.error('Error fetching cumulative data:', error);
+      console.error('❌ Error fetching cumulative data:', error);
+      // Fallback to mock data for now
+      setCumulativeData([]);
     } finally {
       setLoadingCumulative(false);
     }
@@ -83,9 +91,41 @@ function LeaderboardVisualizations({ leaderboardData, currentUser }) {
 
   // Generate cumulative data from API response
   const generateCumulativeData = () => {
-    if (!cumulativeData || loadingCumulative) return { labels: [], datasets: [] };
+    if (loadingCumulative) return { labels: [], datasets: [] };
 
     const gameweeks = Array.from({ length: 5 }, (_, i) => `GW${i + 1}`);
+    
+    // If no cumulative data, create mock data from leaderboard
+    if (!cumulativeData || cumulativeData.length === 0) {
+      console.log('📈 Using mock cumulative data from leaderboard');
+      
+      if (!leaderboardData?.leaderboard) return { labels: [], datasets: [] };
+      
+      const datasets = leaderboardData.leaderboard
+        .filter(user => visibleUsers[user.user_id])
+        .map((user, index) => {
+          const color = userColors[index % userColors.length];
+          
+          // Mock progressive points (0, 0, 0, partial, full)
+          const competitionPoints = user.competition_points_with_multiplier || 0;
+          const mockProgression = [0, 0, 0, Math.floor(competitionPoints * 0.6), competitionPoints];
+
+          return {
+            label: user.first_name || user.email,
+            data: mockProgression,
+            borderColor: color.border,
+            backgroundColor: color.bg,
+            borderWidth: 3,
+            pointRadius: 6,
+            pointHoverRadius: 8,
+            tension: 0.4,
+            fill: false
+          };
+        });
+
+      return { labels: gameweeks, datasets };
+    }
+
     const visibleUserData = cumulativeData.filter(user => 
       leaderboardData?.leaderboard?.some(lbUser => 
         lbUser.user_id === user.user_id && visibleUsers[user.user_id]

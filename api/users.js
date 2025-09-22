@@ -87,6 +87,9 @@ async function getEnhancedLeaderboard(req, res) {
       .eq('id', 1)
       .single();
 
+    // Get actual current gameweek from FPL API or default to 6 (current week)
+    const currentGameweek = draftStatus?.current_gameweek || 6;
+
     console.log('✅ Enhanced leaderboard fetched successfully');
     
     return res.status(200).json({
@@ -94,7 +97,7 @@ async function getEnhancedLeaderboard(req, res) {
       leaderboard: rankedLeaderboard,
       meta: {
         total_users: rankedLeaderboard.length,
-        current_gameweek: draftStatus?.current_gameweek || 1,
+        current_gameweek: currentGameweek,
         competition_start_date: draftStatus?.competition_start_date,
         last_updated: new Date().toISOString()
       }

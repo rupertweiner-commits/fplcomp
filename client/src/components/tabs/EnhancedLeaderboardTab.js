@@ -310,8 +310,8 @@ function EnhancedLeaderboardTab({ currentUser, draftStatus }) {
                         <div className="mt-4 pt-4 border-t border-gray-200">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                             <div className="text-center p-3 bg-white rounded">
-                              <div className="text-lg font-bold text-blue-600">{team.total_fpl_points}</div>
-                              <div className="text-xs text-gray-600">Total FPL Points</div>
+                              <div className="text-lg font-bold text-blue-600">{team.competition_points_with_multiplier || 0}</div>
+                              <div className="text-xs text-gray-600">Competition Points</div>
                             </div>
                             <div className="text-center p-3 bg-white rounded">
                               <div className="text-lg font-bold text-green-600">{team.total_bonus_points}</div>
