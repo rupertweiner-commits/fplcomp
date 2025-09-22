@@ -150,8 +150,12 @@ FROM user_profiles up
 LEFT JOIN player_competition_points pcp ON pcp.assigned_to_user_id = up.id
 GROUP BY up.id, up.email, up.first_name, up.last_name, up.is_admin;
 
-RAISE NOTICE 'Gameweek points tracking system created successfully';
-RAISE NOTICE 'Tables: gameweek_points';
-RAISE NOTICE 'Views: player_competition_points, enhanced_leaderboard_gw';
-RAISE NOTICE 'Next step: Use API to populate gameweek_points with individual GW data';
-RAISE NOTICE 'Example: Chalobah GW4: 3 points, GW5: 8 points = 11 competition points total';
+-- Success messages
+DO $$
+BEGIN
+    RAISE NOTICE 'Gameweek points tracking system created successfully';
+    RAISE NOTICE 'Tables: gameweek_points';
+    RAISE NOTICE 'Views: player_competition_points, enhanced_leaderboard_gw';
+    RAISE NOTICE 'Next step: Use API to populate gameweek_points with individual GW data';
+    RAISE NOTICE 'Example: Chalobah GW4: 3 points, GW5: 8 points = 11 competition points total';
+END $$;
