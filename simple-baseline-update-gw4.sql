@@ -2,6 +2,8 @@
 -- This script ONLY updates baseline points, nothing else
 
 DO $$ 
+DECLARE
+    updated_players INTEGER;
 BEGIN
     RAISE NOTICE 'Starting simple baseline update for GW4...';
     
