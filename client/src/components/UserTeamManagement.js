@@ -75,12 +75,37 @@ function UserTeamManagement({ currentUser }) {
       console.log('🔍 DEBUG: All assigned players in system:', allAssignedPlayers?.length || 0);
       console.log('🔍 DEBUG: Players assigned to users:', allAssignedPlayers?.map(p => ({ name: p.name, user_id: p.assigned_to_user_id })));
       
-      // 3. Check chelsea_players table for this user
-      const { data: chelseaPlayers, error: chelseaError } = await supabase
-        .from('chelsea_players')
-        .select('*')
-        .eq('assigned_to_user_id', currentUser.id)
-        .order('total_points', { ascending: false });
+      // 3. Get current stats from API (same as Stats tab)
+      let chelseaPlayers = [];
+      let chelseaError = null;
+      
+      try {
+        console.log('🔄 Fetching current player stats from API...');
+        const response = await fetch('/api/players?action=get-chelsea-players');
+        const data = await response.json();
+        
+        if (data.success && data.players) {
+          // Filter to only show players assigned to current user
+          chelseaPlayers = data.players.filter(player => 
+            player.assigned_to_user_id === currentUser.id
+          );
+          console.log('✅ Found', chelseaPlayers.length, 'assigned players with current stats');
+        } else {
+          throw new Error('Failed to fetch current player stats');
+        }
+      } catch (apiError) {
+        console.warn('⚠️ API fetch failed, falling back to direct Supabase query:', apiError);
+        
+        // Fallback to direct Supabase query
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('chelsea_players')
+          .select('*')
+          .eq('assigned_to_user_id', currentUser.id)
+          .order('total_points', { ascending: false });
+          
+        chelseaPlayers = fallbackData || [];
+        chelseaError = fallbackError;
+      }
 
       console.log('🔍 DEBUG: Chelsea players for user:', { count: chelseaPlayers?.length || 0, error: chelseaError });
       

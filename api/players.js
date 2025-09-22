@@ -71,6 +71,14 @@ export default async function handler(req, res) {
       case 'sync-gameweek-points':
         return await handleSyncGameweekPoints(req, res);
 
+      // Get gameweek breakdown for visualizations
+      case 'get-gameweek-breakdown':
+        return await handleGetGameweekBreakdown(req, res);
+
+      // Get cumulative data for charts
+      case 'get-cumulative-data':
+        return await handleGetCumulativeData(req, res);
+
       default:
         return res.status(400).json({ error: 'Invalid action' });
     }
@@ -1063,6 +1071,207 @@ async function handleSyncGameweekPoints(req, res) {
     console.error('❌ Gameweek sync error:', error);
     return res.status(500).json({ 
       error: 'Failed to sync gameweek points',
+      details: error.message 
+    });
+  }
+}
+
+async function handleGetGameweekBreakdown(req, res) {
+  try {
+    const { gameweek } = req.query;
+    
+    if (!gameweek) {
+      return res.status(400).json({ error: 'Gameweek parameter required' });
+    }
+
+    console.log(`📊 Fetching gameweek ${gameweek} breakdown...`);
+
+    // Get all users with their allocated players
+    const { data: users, error: usersError } = await supabase
+      .from('user_profiles')
+      .select(`
+        id,
+        first_name,
+        last_name,
+        email
+      `);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return res.status(500).json({ error: 'Failed to fetch users' });
+    }
+
+    const breakdown = [];
+
+    for (const user of users) {
+      // Get user's players with their gameweek points
+      const { data: userPlayers, error: playersError } = await supabase
+        .from('chelsea_players')
+        .select(`
+          id,
+          name,
+          fpl_id,
+          is_captain,
+          is_vice_captain
+        `)
+        .eq('assigned_to_user_id', user.id);
+
+      if (playersError) {
+        console.error(`Error fetching players for user ${user.id}:`, playersError);
+        continue;
+      }
+
+      if (!userPlayers || userPlayers.length === 0) {
+        continue; // Skip users with no allocated players
+      }
+
+      const playerBreakdown = [];
+      let totalPoints = 0;
+
+      for (const player of userPlayers) {
+        // Get gameweek points for this player
+        const { data: gameweekData, error: gwError } = await supabase
+          .from('gameweek_points')
+          .select('points, goals_scored, assists, clean_sheets, minutes, bonus')
+          .eq('fpl_id', player.fpl_id)
+          .eq('gameweek', parseInt(gameweek))
+          .single();
+
+        const points = gameweekData?.points || 0;
+        const finalPoints = player.is_captain ? points * 2 : points;
+        totalPoints += finalPoints;
+
+        playerBreakdown.push({
+          name: player.name,
+          points: points,
+          final_points: finalPoints,
+          is_captain: player.is_captain,
+          is_vice_captain: player.is_vice_captain,
+          goals_scored: gameweekData?.goals_scored || 0,
+          assists: gameweekData?.assists || 0,
+          clean_sheets: gameweekData?.clean_sheets || 0,
+          minutes: gameweekData?.minutes || 0,
+          bonus: gameweekData?.bonus || 0
+        });
+      }
+
+      breakdown.push({
+        user_id: user.id,
+        user_name: user.first_name || user.email,
+        players: playerBreakdown,
+        total_points: totalPoints
+      });
+    }
+
+    // Sort by total points descending
+    breakdown.sort((a, b) => b.total_points - a.total_points);
+
+    console.log(`✅ Gameweek ${gameweek} breakdown fetched for ${breakdown.length} users`);
+
+    return res.status(200).json({
+      success: true,
+      gameweek: parseInt(gameweek),
+      breakdown: breakdown
+    });
+
+  } catch (error) {
+    console.error('❌ Gameweek breakdown error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch gameweek breakdown',
+      details: error.message 
+    });
+  }
+}
+
+async function handleGetCumulativeData(req, res) {
+  try {
+    console.log('📈 Fetching cumulative data for charts...');
+
+    // Get all users
+    const { data: users, error: usersError } = await supabase
+      .from('user_profiles')
+      .select('id, first_name, last_name, email');
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      return res.status(500).json({ error: 'Failed to fetch users' });
+    }
+
+    const gameweeks = [1, 2, 3, 4, 5]; // GW1-5
+    const cumulativeData = [];
+
+    for (const user of users) {
+      const userCumulative = {
+        user_id: user.id,
+        user_name: user.first_name || user.email,
+        gameweeks: []
+      };
+
+      let cumulativeTotal = 0;
+
+      for (const gw of gameweeks) {
+        // Get user's players
+        const { data: userPlayers, error: playersError } = await supabase
+          .from('chelsea_players')
+          .select('fpl_id, is_captain')
+          .eq('assigned_to_user_id', user.id);
+
+        if (playersError || !userPlayers) {
+          userCumulative.gameweeks.push({
+            gameweek: gw,
+            points: 0,
+            cumulative: cumulativeTotal
+          });
+          continue;
+        }
+
+        let gwPoints = 0;
+
+        // Get points for each player in this gameweek
+        for (const player of userPlayers) {
+          const { data: gwData, error: gwError } = await supabase
+            .from('gameweek_points')
+            .select('points')
+            .eq('fpl_id', player.fpl_id)
+            .eq('gameweek', gw)
+            .single();
+
+          const points = gwData?.points || 0;
+          const finalPoints = player.is_captain ? points * 2 : points;
+          
+          // Only count GW4+ for competition
+          if (gw >= 4) {
+            gwPoints += finalPoints;
+          }
+        }
+
+        if (gw >= 4) {
+          cumulativeTotal += gwPoints;
+        }
+
+        userCumulative.gameweeks.push({
+          gameweek: gw,
+          points: gwPoints,
+          cumulative: cumulativeTotal,
+          competition_gameweek: gw >= 4
+        });
+      }
+
+      cumulativeData.push(userCumulative);
+    }
+
+    console.log(`✅ Cumulative data fetched for ${cumulativeData.length} users`);
+
+    return res.status(200).json({
+      success: true,
+      data: cumulativeData,
+      gameweeks: gameweeks
+    });
+
+  } catch (error) {
+    console.error('❌ Cumulative data error:', error);
+    return res.status(500).json({ 
+      error: 'Failed to fetch cumulative data',
       details: error.message 
     });
   }
