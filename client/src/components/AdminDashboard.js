@@ -371,7 +371,6 @@ function AdminDashboard({ currentUser }) {
         user: user,
         players: [],
         captain: null,
-        viceCaptain: null
       };
     });
     setBulkAllocations(initialAllocations);
@@ -438,7 +437,6 @@ function AdminDashboard({ currentUser }) {
       ...userAllocation,
       players: updatedPlayers,
       captain: userAllocation.captain === playerId ? null : userAllocation.captain,
-      viceCaptain: userAllocation.viceCaptain === playerId ? null : userAllocation.viceCaptain
     };
 
     setBulkAllocations({
@@ -456,7 +454,6 @@ function AdminDashboard({ currentUser }) {
       [userId]: {
         ...userAllocation,
         captain: userAllocation.captain === playerId ? null : playerId,
-        viceCaptain: userAllocation.viceCaptain === playerId ? null : userAllocation.viceCaptain
       }
     });
   };
@@ -469,7 +466,6 @@ function AdminDashboard({ currentUser }) {
       ...bulkAllocations,
       [userId]: {
         ...userAllocation,
-        viceCaptain: userAllocation.viceCaptain === playerId ? null : playerId,
         captain: userAllocation.captain === playerId ? null : userAllocation.captain
       }
     });
@@ -483,7 +479,6 @@ function AdminDashboard({ currentUser }) {
       for (const [userId, allocation] of Object.entries(bulkAllocations)) {
         for (const player of allocation.players) {
           const isCaptain = allocation.captain === player.id;
-          const isViceCaptain = allocation.viceCaptain === player.id;
           
           promises.push(
             fetch('/api/game?action=allocate-player', {
@@ -755,9 +750,6 @@ function AdminDashboard({ currentUser }) {
                               {player.is_captain && (
                                 <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">C</span>
                               )}
-                              {player.is_vice_captain && (
-                                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">VC</span>
-                              )}
                               <span className="text-xs text-gray-500">{player.total_points} pts</span>
                             </div>
                           </div>
@@ -877,17 +869,6 @@ function AdminDashboard({ currentUser }) {
                                   title="Set as Captain"
                                 >
                                   C
-                                </button>
-                                <button
-                                  onClick={() => setBulkViceCaptain(userId, player.id)}
-                                  className={`p-1 rounded text-xs ${
-                                    allocation.viceCaptain === player.id
-                                      ? 'bg-purple-100 text-purple-800'
-                                      : 'bg-gray-100 text-gray-600 hover:bg-purple-50'
-                                  }`}
-                                  title="Set as Vice Captain"
-                                >
-                                  VC
                                 </button>
                                 <button
                                   onClick={() => removePlayerFromBulkTeam(userId, player.id)}

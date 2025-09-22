@@ -100,16 +100,11 @@ function PlayerCard({ player, showCaptainBadge = false, showViceCaptainBadge = f
           </p>
         </div>
         
-        {/* Captain/Vice Captain Badges - Top Right */}
+        {/* Captain Badge - Top Right */}
         <div className="absolute top-2 right-3 flex space-x-1">
           {showCaptainBadge && (
             <div className="bg-yellow-400 text-yellow-900 p-1 rounded-full">
               <Crown className="h-3 w-3" />
-            </div>
-          )}
-          {showViceCaptainBadge && (
-            <div className="bg-purple-400 text-purple-900 p-1 rounded-full">
-              <Shield className="h-3 w-3" />
             </div>
           )}
         </div>

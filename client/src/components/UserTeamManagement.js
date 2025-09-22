@@ -22,7 +22,6 @@ import PlayerProfile from './PlayerProfile';
 function UserTeamManagement({ currentUser }) {
   const [myTeam, setMyTeam] = useState([]);
   const [captain, setCaptain] = useState(null);
-  const [viceCaptain, setViceCaptain] = useState(null);
   const [benchedPlayer, setBenchedPlayer] = useState(null);
   const [availableChips, setAvailableChips] = useState([]);
   const [usedChips, setUsedChips] = useState([]);
@@ -103,7 +102,6 @@ function UserTeamManagement({ currentUser }) {
           news: player.news,
           is_strategic_pick: player.is_strategic_pick,
           is_captain: player.is_captain || false,
-          is_vice_captain: player.is_vice_captain || false,
           ...player // Include all player data for PlayerCard component
         }));
       } else {
@@ -117,16 +115,14 @@ function UserTeamManagement({ currentUser }) {
       console.log('🔍 DEBUG: Player names:', players.map(p => p.name));
       setMyTeam(players);
       
-      // Set captain and vice captain
+      // Set captain
       const captainPlayer = players?.find(p => p.is_captain);
-      const viceCaptainPlayer = players?.find(p => p.is_vice_captain);
-      console.log('Captain:', captainPlayer, 'Vice Captain:', viceCaptainPlayer);
+      console.log('Captain:', captainPlayer);
       setCaptain(captainPlayer || null);
-      setViceCaptain(viceCaptainPlayer || null);
 
       // Set benched player (first non-captain player if we have 5+ players)
       if (players && players.length > 4) {
-        const nonCaptainPlayers = players.filter(p => !p.is_captain && !p.is_vice_captain);
+        const nonCaptainPlayers = players.filter(p => !p.is_captain);
         setBenchedPlayer(nonCaptainPlayers[0] || null);
       }
 
@@ -224,44 +220,6 @@ function UserTeamManagement({ currentUser }) {
     }
   };
 
-  const handleSetViceCaptain = async (playerId) => {
-    if (!currentUser?.id) return;
-
-    // Check if changes are allowed
-    if (!canMakeChanges) {
-      setMessage({ type: 'error', text: 'Team changes are locked! The deadline has passed.' });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // First, remove vice captain from all players assigned to this user
-      await supabase
-        .from('chelsea_players')
-        .update({ is_vice_captain: false })
-        .eq('assigned_to_user_id', currentUser.id);
-
-      // Set new vice captain
-      const { error } = await supabase
-        .from('chelsea_players')
-        .update({ is_vice_captain: true })
-        .eq('id', playerId)
-        .eq('assigned_to_user_id', currentUser.id);
-
-      if (error) {
-        throw error;
-      }
-
-      setMessage({ type: 'success', text: 'Vice Captain updated successfully!' });
-      fetchMyTeam(); // Refresh team data
-
-    } catch (error) {
-      console.error('Error setting vice captain:', error);
-      setMessage({ type: 'error', text: 'Failed to update vice captain' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleUseChip = async (chipType) => {
     if (!currentUser?.id) return;
@@ -443,7 +401,6 @@ function UserTeamManagement({ currentUser }) {
                         <PlayerCard
                           player={player}
                           showCaptainBadge={player.is_captain}
-                          showViceCaptainBadge={player.is_vice_captain}
                           onPlayerClick={handlePlayerClick}
                           compact={false}
                         />
@@ -462,20 +419,6 @@ function UserTeamManagement({ currentUser }) {
                             title={!canMakeChanges ? 'Changes locked - deadline passed' : (player.is_captain ? 'Remove Captain' : 'Set Captain')}
                           >
                             <Crown className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => handleSetViceCaptain(player.id)}
-                            disabled={loading || !canMakeChanges}
-                            className={`px-2 py-1 text-xs font-bold rounded-full ${
-                              player.is_vice_captain
-                                ? 'bg-purple-400 text-purple-900'
-                                : canMakeChanges 
-                                  ? 'bg-white/90 text-gray-600 hover:bg-purple-100'
-                                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            } disabled:opacity-50`}
-                            title={!canMakeChanges ? 'Changes locked - deadline passed' : (player.is_vice_captain ? 'Remove Vice Captain' : 'Set Vice Captain')}
-                          >
-                            <Shield className="h-3 w-3" />
                           </button>
                         </div>
                       </div>
@@ -501,39 +444,21 @@ function UserTeamManagement({ currentUser }) {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Captain & Vice Captain */}
+            {/* Captain */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Leadership</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Captain</h3>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Captain</label>
-                  <div className="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                    {captain ? (
-                      <div className="flex items-center">
-                        <Crown className="h-4 w-4 text-yellow-600 mr-2" />
-                        <span className="font-medium">{captain.name}</span>
-                        <span className="ml-2 text-sm text-gray-600">({captain.total_points} pts)</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No captain selected</span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Vice Captain</label>
-                  <div className="mt-1 p-3 bg-green-50 border border-green-200 rounded-md">
-                    {viceCaptain ? (
-                      <div className="flex items-center">
-                        <Shield className="h-4 w-4 text-green-600 mr-2" />
-                        <span className="font-medium">{viceCaptain.name}</span>
-                        <span className="ml-2 text-sm text-gray-600">({viceCaptain.total_points} pts)</span>
-                      </div>
-                    ) : (
-                      <span className="text-gray-500">No vice captain selected</span>
-                    )}
-                  </div>
+              <div>
+                <div className="mt-1 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  {captain ? (
+                    <div className="flex items-center">
+                      <Crown className="h-4 w-4 text-yellow-600 mr-2" />
+                      <span className="font-medium">{captain.name}</span>
+                      <span className="ml-2 text-sm text-gray-600">({captain.total_points} pts - 2x multiplier)</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-500">No captain selected</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -630,7 +555,6 @@ function UserTeamManagement({ currentUser }) {
         isOpen={showPlayerProfile}
         onClose={handleClosePlayerProfile}
         showCaptainBadge={selectedPlayer?.is_captain}
-        showViceCaptainBadge={selectedPlayer?.is_vice_captain}
       />
     </div>
   );
